@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://precificacao.rafamaceno.com.br/sitemap.xml

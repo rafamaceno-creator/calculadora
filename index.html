@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de Precificação | Shopee, Mercado Livre, TikTok Shop e SHEIN</title>
+  <meta name="description" content="Calcule o preço sugerido por marketplace (Shopee por faixa, TikTok fixo, Mercado Livre Clássico/Premium) com custo, imposto e lucro desejado." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="./" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7RHBD29LS5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-7RHBD29LS5');
+  </script>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <div class="brand">
+        <span class="brand__dot" aria-hidden="true"></span>
+        <div>
+          <strong>Precificação</strong><br />
+          <small>Marketplaces</small>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Navegação">
+        <a href="#calculadora">Calculadora</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div class="topbar__cta">
+        <a class="btn btn--ghost js-cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
+        <a class="btn btn--primary js-cta-whatsapp" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <span class="kicker">Simples no início • Completo no avançado</span>
+      <h1>Digite custo, imposto e lucro.<br />Receba o preço sugerido por marketplace.</h1>
+      <p>Comece com custo, imposto e lucro. Depois, se quiser, ative <strong>peso</strong> e <strong>variáveis avançadas</strong>.</p>
+    </section>
+
+    <section id="calculadora" class="grid">
+      <div class="card">
+        <div class="card__inner">
+          <h2>Dados básicos</h2>
+
+          <div class="field">
+            <div class="label label-row">
+              <span>Preço de custo final (compra + impostos) (R$)</span>
+              <button class="info" type="button" aria-label="Info: Preço de custo final (compra + impostos) (R$)" data-tooltip="O custo total do produto antes da venda: compra + impostos/encargos de compra. Ex: preço do fornecedor + ICMS-ST (se houver) + frete de compra, se você já embute no custo.">i</button>
+            </div>
+            <div class="inputWrap">
+              <span class="inputPrefix">R$</span>
+              <input id="cost" type="number" step="0.01" min="0" value="60" />
+            </div>
+
+          </div>
+
+          <div class="field">
+            <div class="label label-row">
+              <span>Alíquota de imposto de venda (%)</span>
+              <button class="info" type="button" aria-label="Info: Alíquota de imposto de venda (%)" data-tooltip="Percentual de imposto que incide na venda (sobre o preço de venda). Use a alíquota efetiva do seu cenário.">i</button>
+            </div>
+            <div class="inputWrap">
+              <input id="tax" type="number" step="0.01" min="0" value="10" />
+              <span class="inputSuffix">%</span>
+            </div>
+
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <div class="label label-row">
+                <span id="profitValueLabel">Lucro desejado (valor)</span>
+
+                <button class="info" type="button" aria-label="Info: Lucro desejado (tipo)" data-tooltip="Escolha se o lucro desejado será um valor fixo em reais (R$) ou uma margem em % sobre o preço de venda.">i</button>
+              </div>
+              <select id="profitType">
+                <option value="brl">Em R$ (lucro em reais)</option>
+                <option value="pct">Em % (margem sobre o preço)</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <div class="label label-row">
+                <span>Lucro desejado (valor)</span>
+                <button class="info" type="button" aria-label="Info: Lucro desejado (valor)" data-tooltip="Se estiver em R$: digite o valor do lucro por pedido. Se estiver em %: digite a margem sobre o preço de venda.">i</button>
+              </div>
+              <input id="profitValue" type="number" step="0.01" min="0" value="10" />
+            </div>
+          </div>
+
+          <div class="hint">
+            Regra: custos fixos e lucro em R$ somam no custo. Depois, somamos incidências em % (comissão + imposto [+ lucro% se escolhido] + custos%) e calculamos:
+            <strong>Preço = custo ajustado ÷ (1 − incidências)</strong>.
+          </div>
+
+          <div class="toggle">
+            <label class="check">
+              <input id="mlWeightToggle" type="checkbox" />
+              <span>Informar peso (Mercado Livre + SHEIN)</span>
+            </label>
+            <small>Se ativar, usamos a tabela de custos por faixa de peso + faixa de preço.</small>
+          </div>
+
+          <div id="mlWeightBox" class="row2 hidden">
+            <div class="field">
+              <div class="label label-row">
+                <span>Peso</span>
+                <button class="info" type="button" aria-label="Info: Peso" data-tooltip="Peso do produto para cálculo do custo fixo de envio do Mercado Livre. Se não informar, o sistema assume 500g por padrão.">i</button>
+              </div>
+              <input id="mlWeightValue" type="number" step="0.001" min="0" value="0.5" />
+            </div>
+
+            <div class="field">
+              <div class="label label-row">
+                <span>Unidade</span>
+                <button class="info" type="button" aria-label="Info: Unidade" data-tooltip="Escolha gramas (g) ou quilogramas (kg). Ex: 500g = 0,5kg.">i</button>
+              </div>
+              <select id="mlWeightUnit">
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="cardMini">
+            <div class="cardMini__header">
+              <strong>Mercado Livre (comissão editável)</strong>
+              <span class="pill">Clássico e Premium</span>
+            </div>
+
+            <div class="row2">
+              <div class="field">
+                <div class="label label-row">
+                  <span>Clássico (%)</span>
+                  <button class="info" type="button" aria-label="Info: Mercado Livre Clássico (%)" data-tooltip="Por padrão usamos 14%. Você pode editar conforme sua categoria/anúncio.">i</button>
+                </div>
+                <input id="mlClassicPct" type="number" step="0.01" min="0" value="14" />
+              </div>
+
+              <div class="field">
+                <div class="label label-row">
+                  <span>Premium (%)</span>
+                  <button class="info" type="button" aria-label="Info: Mercado Livre Premium (%)" data-tooltip="Por padrão usamos 19%. Você pode editar conforme sua categoria/anúncio.">i</button>
+                </div>
+                <input id="mlPremiumPct" type="number" step="0.01" min="0" value="19" />
+              </div>
+            </div>
+
+            <div class="hint">
+              Use este ajuste se sua categoria estiver fora do padrão 14% / 19%.
+            </div>
+          </div>
+
+          <div class="cardMini">
+            <div class="cardMini__header">
+              <strong>Variáveis avançadas</strong>
+              <span class="pill">Opcional</span>
+            </div>
+              <div class="field">
+                <div class="label label-row">
+                  <span>Categoria SHEIN</span>
+                  <button class="info" type="button" aria-label="Info: Categoria SHEIN" data-tooltip="A comissão da SHEIN varia por categoria: Vestuário feminino 20% e demais categorias 18%.">i</button>
+                </div>
+                <select id="sheinCategory">
+                  <option value="other" selected>Demais categorias (18%)</option>
+                  <option value="female">Vestuário feminino (20%)</option>
+                </select>
+                <small>A SHEIN também aplica uma taxa fixa de intermediação de frete por faixa de peso (calculada pelo peso informado acima; se não informar, assumimos 500g).</small>
+              </div>
+
+
+
+            <div class="toggle">
+              <label class="check">
+                <input id="advToggle" type="checkbox" />
+                <span>Aplicar variáveis avançadas</span>
+              </label>
+              <small>Ads, devolução, custo fixo, DIFAL, PIS, COFINS, outro e afiliados.</small>
+            </div>
+
+            <div id="advBox" class="hidden">
+              <div class="advGrid">
+                <div class="advItem">
+                  <div class="label label-row">
+                    <label class="check">
+                      <input id="adsToggle" type="checkbox" />
+                      <span>Custo de Ads</span>
+                    </label>
+                    <button
+                      class="info"
+                      type="button"
+                      aria-label="Info: Custo de Ads"
+                      data-tooltip="Informe quanto do seu faturamento é gasto em ads (%). Ex: se a cada R$ 100 vendidos você gasta R$ 8 em anúncios, preencha 8%."
+                    >i</button>
+                  </div>
+
+                  <div class="row2">
+                    <select id="adsType">
+                      <option value="pct">Em %</option>
+                      <option value="brl">Em R$</option>
+                    </select>
+                    <input id="adsValue" type="number" step="0.01" min="0" value="0" />
+                  </div>
+                </div>
+
+                <div class="advItem">
+                  <div class="label label-row">
+                    <label class="check">
+                      <input id="returnToggle" type="checkbox" />
+                      <span>Custo de devolução</span>
+                    </label>
+                    <button
+                      class="info"
+                      type="button"
+                      aria-label="Info: Custo de devolução"
+                      data-tooltip="Informe quanto do seu faturamento é gasto com devoluções (%). Considere trocas, reenvios, estornos e logística reversa. Ex: se perde R$ 3 a cada R$ 100 vendidos, preencha 3%."
+                    >i</button>
+                  </div>
+
+                  <div class="row2">
+                    <select id="returnType">
+                      <option value="pct">Em %</option>
+                      <option value="brl">Em R$</option>
+                    </select>
+                    <input id="returnValue" type="number" step="0.01" min="0" value="0" />
+                  </div>
+                </div>
+
+                <div class="advItem">
+                  <div class="label label-row">
+                    <label class="check">
+                      <input id="costFixedToggle" type="checkbox" />
+                      <span>Custo fixo</span>
+                    </label>
+                    <button
+                      class="info"
+                      type="button"
+                      aria-label="Info: Custo fixo"
+                      data-tooltip="Custos fixos que incidem sobre o preço de venda. Pode ser um percentual (%) ou um valor fixo em reais (R$). Ex: 5% de custos operacionais ou R$ 10 por produto."
+                    >i</button>
+                  </div>
+
+                  <div class="row2">
+                    <select id="costFixedType">
+                      <option value="pct">Em %</option>
+                      <option value="brl">Em R$</option>
+                    </select>
+                    <input id="costFixedValue" type="number" step="0.01" min="0" value="0" />
+                  </div>
+                </div>
+
+                <div class="advItem">
+                  <label class="check">
+                    <input id="difalToggle" type="checkbox" />
+                    <span>DIFAL (%)</span>
+                  </label>
+                  <input id="difalValue" type="number" step="0.01" min="0" value="0" />
+                </div>
+
+                <div class="advItem">
+                  <label class="check">
+                    <input id="pisToggle" type="checkbox" />
+                    <span>PIS (%)</span>
+                  </label>
+                  <input id="pisValue" type="number" step="0.01" min="0" value="0" />
+                </div>
+
+                <div class="advItem">
+                  <label class="check">
+                    <input id="cofinsToggle" type="checkbox" />
+                    <span>COFINS (%)</span>
+                  </label>
+                  <input id="cofinsValue" type="number" step="0.01" min="0" value="0" />
+                </div>
+
+                <div class="advItem">
+                  <label class="check">
+                    <input id="otherToggle" type="checkbox" />
+                    <span>Outro</span>
+                  </label>
+                  <div class="row2">
+                    <select id="otherType">
+                      <option value="pct">Em %</option>
+                      <option value="brl">Em R$</option>
+                    </select>
+                    <input id="otherValue" type="number" step="0.01" min="0" value="0" />
+                  </div>
+                </div>
+
+                <div class="advItem advItem--wide">
+                  <label class="check">
+                    <input id="affToggle" type="checkbox" />
+                    <span>Afiliados</span>
+                  </label>
+                  <small>Incide somente na plataforma correspondente.</small>
+
+                  <div id="affBox" class="affGrid hidden">
+                    <div class="field">
+                      <div class="label label-row">
+                        <span>Afiliados Shopee (%)</span>
+                        <button class="info" type="button" aria-label="Info: Afiliados Shopee (%)" data-tooltip="Percentual pago ao afiliado dentro da Shopee. Incide só no cálculo da Shopee.">i</button>
+                      </div>
+                      <input id="affShopee" type="number" step="0.01" min="0" value="0" />
+                    </div>
+
+                    <div class="field">
+                      <div class="label label-row">
+                        <span>Afiliados Mercado Livre (%)</span>
+                        <button class="info" type="button" aria-label="Info: Afiliados Mercado Livre (%)" data-tooltip="Percentual de custo de afiliados/CPA do Mercado Livre. Incide só no cálculo do ML (Clássico e Premium).">i</button>
+                      </div>
+                      <input id="affML" type="number" step="0.01" min="0" value="0" />
+                    </div>
+
+                    <div class="field">
+                      <div class="label label-row">
+                        <span>Afiliados TikTok (%)</span>
+                        <button class="info" type="button" aria-label="Info: Afiliados TikTok (%)" data-tooltip="Percentual pago ao afiliado dentro do TikTok Shop. Incide só no cálculo do TikTok.">i</button>
+                      </div>
+                      <input id="affTikTok" type="number" step="0.01" min="0" value="0" />
+                    </div>
+                  </div>
+
+
+                    <div class="field">
+                      <div class="label label-row">
+                        <span>Afiliados SHEIN (%)</span>
+                        <button class="info" type="button" aria-label="Info: Afiliados SHEIN (%)" data-tooltip="Percentual de custo de afiliados/CPA dentro da SHEIN. Incide só no cálculo da SHEIN.">i</button>
+                      </div>
+                      <input id="affShein" type="number" step="0.01" min="0" value="0" />
+                    </div>
+
+                </div>
+              </div>
+
+              <div class="hint">
+                Regras: itens em R$ entram como custo fixo (somam no custo). Itens em % entram como incidência (somam nas %).
+              </div>
+            </div>
+          </div>
+
+          <button id="recalc" class="btn btn--primary btn--wide" type="button">Recalcular</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__inner">
+          <h2>Resultados</h2>
+          <div id="results" class="resultList"></div>
+
+          <div id="pdfButtonContainer" style="margin-top: 15px;"></div>
+
+          <div class="hr"></div>
+
+          <div class="actions">
+            <a class="btn btn--primary js-cta-whatsapp" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
+            <a class="btn btn--ghost js-cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
+          </div>
+
+          <p class="footnote">Sem spam. Só conteúdo útil para vendedor de marketplace.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq">
+      <h2>Perguntas frequentes</h2>
+
+      <details>
+        <summary>O cálculo já inclui imposto e comissão?</summary>
+        <p>Sim. Você informa custo, imposto e lucro. A comissão é aplicada por marketplace (Shopee por faixa, TikTok fixo, Mercado Livre editável + custo fixo por tabela quando aplicável).</p>
+      </details>
+
+      <details>
+        <summary>Como funciona o lucro em %?</summary>
+        <p>O lucro em % entra como incidência sobre o preço de venda (margem). Ex: lucro 10% significa que a fórmula já considera essa margem no denominador.</p>
+      </details>
+
+      <details>
+        <summary>E se eu não informar o peso do Mercado Livre?</summary>
+        <p>O sistema assume <strong>500g</strong> por padrão para estimar o custo fixo do Mercado Livre. Se você ativar "Informar peso", usamos o valor digitado.</p>
+      </details>
+
+      <details>
+        <summary>Posso usar para qualquer categoria do Mercado Livre?</summary>
+        <p>Sim — ajuste as comissões de Clássico e Premium conforme sua categoria e tipo de anúncio. O custo fixo segue a tabela (com base em peso e faixa de preço).</p>
+      </details>
+    </section>
+
+    <footer class="footer">
+      <div class="footer__inner">
+        <div>
+          <strong>Precificação Marketplaces</strong><br />
+          <small>© <span id="year"></span> • Feito para vendedores de marketplace</small>
+        </div>
+
+        <div class="footer__links">
+          <a class="js-cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Instagram</a>
+          <a class="js-cta-whatsapp" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">WhatsApp</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/pdf-export.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
