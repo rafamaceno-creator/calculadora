@@ -434,7 +434,7 @@ function resultCardHTML(
     </div>
 
     <!-- RESUMO (sem repetir embaixo) -->
-    <div class="grid">
+    <div class="resultGrid">
       <div class="k">VOCÊ RECEBE</div><div class="v">${received}</div>
       <div class="k">LUCRO</div><div class="v">${profitLine}</div>
       <div class="k">TOTAL DE INCIDÊNCIAS</div><div class="v">${incidencesPct}</div>
@@ -446,7 +446,7 @@ function resultCardHTML(
     <div class="cardSectionTitle">Detalhamento das incidências</div>
 
     <!-- DETALHAMENTO (comissão, imposto, afiliados, ads, etc) -->
-    <div class="grid grid--details">
+    <div class="resultGrid resultGrid--details">
       ${itemsHTML}
     </div>
   </div>
