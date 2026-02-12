@@ -618,7 +618,7 @@ details p{
 }
 
 /* Grid: deixa o resumo bonito e “escaneável” */
-.grid {
+.resultGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 14px;
@@ -627,7 +627,7 @@ details p{
 }
 
 /* Labels (coluna esquerda) */
-.grid .k {
+.resultGrid .k {
   opacity: .78;
   font-size: 12px;
   font-weight: 600;
@@ -641,7 +641,7 @@ details p{
 }
 
 /* Valores (coluna direita) */
-.grid .v {
+.resultGrid .v {
   font-size: 14px;
   font-weight: 800;
   text-align: right;
@@ -650,32 +650,32 @@ details p{
 }
 
 /* Separação clara: resumo vs incidências (a partir do 5º item normalmente) */
-.grid .k:nth-child(9),
-.grid .v:nth-child(10) {
+.resultGrid .k:nth-child(9),
+.resultGrid .v:nth-child(10) {
   margin-top: 6px;
   padding-top: 12px;
   border-top: 1px solid rgba(255,255,255,.08);
 }
 
 /* “TOTAL INCIDÊNCIAS” mais destaque */
-.grid .k:nth-child(7) {
+.resultGrid .k:nth-child(7) {
   opacity: .9;
   font-weight: 800;
 }
-.grid .v:nth-child(8) {
+.resultGrid .v:nth-child(8) {
   font-size: 15px;
   font-weight: 900;
 }
 
 /* Melhor legibilidade em telas menores */
 @media (max-width: 520px) {
-  .grid { row-gap: 12px; }
-  .grid .k { font-size: 12px; }
-  .grid .v { font-size: 14px; }
+  .resultGrid { row-gap: 12px; }
+  .resultGrid .k { font-size: 12px; }
+  .resultGrid .v { font-size: 14px; }
 }
 
 /* Opcional: evita que “VOCÊ RECEBE DO MARKETPLACE” fique “quebrado feio” */
-.grid .k {
+.resultGrid .k {
   hyphens: auto;
 }
 /* =========================
@@ -716,15 +716,31 @@ details p{
   opacity: .75;
 }
 
-.grid--details .k {
+.resultGrid--details .k {
   opacity: .72;
   font-weight: 650;
 }
 
-.grid--details .v {
+.resultGrid--details .v {
   font-weight: 850;
 }
 
 
 /* Fallback: esconde qualquer card de "resultado" do hero, caso exista em alguma versão antiga */
 .hero-result, .heroResult, #heroResult, #hero-result { display: none !important; }
+
+
+/* ===== UX/A11y fixes ===== */
+
+/* foco visível para teclado */
+:where(a, button, input, select, summary):focus-visible{
+  outline:2px solid #22c55e;
+  outline-offset:2px;
+}
+
+/* controla largura dos CTAs no topo em telas pequenas */
+@media (max-width: 700px){
+  .topbar__inner{ flex-wrap:wrap; }
+  .topbar__cta{ width:100%; }
+  .topbar__cta .btn{ flex:1 1 220px; }
+}
