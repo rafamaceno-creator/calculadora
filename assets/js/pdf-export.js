@@ -91,9 +91,10 @@ function getReportMarkup() {
 
   return `
     <section class="print-report">
-      <h1>Relatório de Precificação</h1>
+      <h1>Relatório Estratégico de Precificação</h1>
       <div class="date">Gerado em ${escapeHTML(dateTime)}</div>
-      ${buildReportCardsHTML(items)}
+      <div class="meta">Produto: <strong>${escapeHTML(items[0]?.calcName || "Cálculo sem nome")}</strong></div>${buildReportCardsHTML(items)}
+      <footer style="margin-top:16px;font-size:12px;color:#475569">Rafa Maceno • <a href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Instagram</a></footer>
     </section>
   `;
 }
