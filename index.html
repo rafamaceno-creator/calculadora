@@ -11,7 +11,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css" />
+  <script>
+    const APP_VERSION = "20260213-2";
+
+    (function loadVersionedAssets() {
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = `assets/css/styles.css?v=${APP_VERSION}`;
+      document.head.appendChild(css);
+    })();
+  </script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -387,13 +396,18 @@
           <div id="reportRoot" class="reportRoot" aria-live="polite"></div>
 
           <aside id="stickySummary" class="stickySummary" aria-live="polite">
-            <h3>Resumo rápido</h3>
+            <div class="stickySummary__top">
+              <h3>Resumo rápido</h3>
+              <button id="stickyClose" class="stickySummary__close" type="button" aria-label="Fechar resumo">✕</button>
+            </div>
             <div id="stickySummaryContent" class="stickySummary__content">Preencha os dados para ver o resumo principal.</div>
             <div class="stickySummary__actions">
               <button id="stickyExportPDF" class="btn btn--primary" type="button">Exportar PDF</button>
               <button id="stickyShare" class="btn btn--ghost" type="button">Compartilhar</button>
             </div>
           </aside>
+
+          <button id="stickyOpen" class="stickyOpen" type="button">Reabrir resumo</button>
 
           <div id="shareBox" class="shareBox"></div>
           <div id="pdfButtonContainer" style="margin-top: 15px;"></div>
@@ -539,8 +553,24 @@
     </footer>
   </main>
 
-  <script src="assets/js/storage.js"></script>
-  <script src="assets/js/pdf-export.js"></script>
-  <script src="assets/js/main.js"></script>
+  <script>
+    (function loadVersionedScripts() {
+      const scripts = [
+        "assets/js/storage.js",
+        "assets/js/pdf-export.js",
+        "assets/js/main.js"
+      ];
+
+      const loadNext = (index) => {
+        if (index >= scripts.length) return;
+        const script = document.createElement("script");
+        script.src = `${scripts[index]}?v=${APP_VERSION}`;
+        script.onload = () => loadNext(index + 1);
+        document.body.appendChild(script);
+      };
+
+      loadNext(0);
+    })();
+  </script>
 </body>
 </html>

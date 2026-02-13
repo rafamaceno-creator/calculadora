@@ -118,3 +118,6 @@ async function generatePDF() {
   const now = new Date().toISOString().slice(0, 10);
   pdf.save(`Precificacao_${safeName}_${now}.pdf`);
 }
+
+
+window.generatePDF = generatePDF;

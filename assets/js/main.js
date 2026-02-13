@@ -565,6 +565,158 @@ function resultCardHTML(
 
 /* ===== Main calc ===== */
 
+
+function runExportPDF() {
+  recalc();
+  if (typeof window.generatePDF === "function") {
+    window.generatePDF();
+  }
+}
+
+async function shareFallback() {
+  const summaryText = document.querySelector("#stickySummaryContent")?.innerText?.trim() || "Resumo indisponível.";
+  try {
+    await navigator.clipboard.writeText(summaryText);
+    alert("Copiado");
+  } catch {
+    alert("Copiado");
+  }
+}
+
+function runShareAction() {
+  const whatsappBtn = document.querySelector("#shareWhatsapp");
+  if (whatsappBtn) {
+    whatsappBtn.click();
+    return;
+  }
+  shareFallback();
+}
+
+function bindTooltipSystem() {
+  const triggers = Array.from(document.querySelectorAll(".info[data-tooltip]"));
+  if (!triggers.length) return;
+
+  const tooltip = document.createElement("div");
+  tooltip.id = "uiTooltip";
+  tooltip.className = "tooltip";
+  tooltip.setAttribute("role", "tooltip");
+  tooltip.hidden = true;
+  document.body.appendChild(tooltip);
+
+  let activeTrigger = null;
+
+  const placeTooltip = (trigger) => {
+    const rect = trigger.getBoundingClientRect();
+    const margin = 10;
+
+    tooltip.style.left = "0px";
+    tooltip.style.top = "0px";
+    tooltip.hidden = false;
+
+    const tipRect = tooltip.getBoundingClientRect();
+    let left = rect.left + (rect.width / 2) - (tipRect.width / 2);
+    left = Math.max(margin, Math.min(left, window.innerWidth - tipRect.width - margin));
+
+    let top = rect.top - tipRect.height - 8;
+    if (top < margin) {
+      top = rect.bottom + 8;
+    }
+
+    tooltip.style.left = `${Math.round(left)}px`;
+    tooltip.style.top = `${Math.round(top)}px`;
+  };
+
+  const openTooltip = (trigger) => {
+    const text = trigger.getAttribute("data-tooltip") || "";
+    if (!text) return;
+
+    if (activeTrigger && activeTrigger !== trigger) {
+      activeTrigger.removeAttribute("aria-describedby");
+      activeTrigger.setAttribute("aria-expanded", "false");
+    }
+
+    activeTrigger = trigger;
+    tooltip.textContent = text;
+    trigger.setAttribute("aria-describedby", tooltip.id);
+    trigger.setAttribute("aria-expanded", "true");
+    placeTooltip(trigger);
+  };
+
+  const closeTooltip = () => {
+    if (!activeTrigger) return;
+    activeTrigger.removeAttribute("aria-describedby");
+    activeTrigger.setAttribute("aria-expanded", "false");
+    activeTrigger = null;
+    tooltip.hidden = true;
+  };
+
+  triggers.forEach((trigger) => {
+    trigger.setAttribute("aria-haspopup", "true");
+    trigger.setAttribute("aria-expanded", "false");
+
+    trigger.addEventListener("mouseenter", () => openTooltip(trigger));
+    trigger.addEventListener("focus", () => openTooltip(trigger));
+    trigger.addEventListener("mouseleave", () => {
+      if (activeTrigger === trigger) closeTooltip();
+    });
+    trigger.addEventListener("blur", () => {
+      if (activeTrigger === trigger) closeTooltip();
+    });
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (activeTrigger === trigger) {
+        closeTooltip();
+      } else {
+        openTooltip(trigger);
+      }
+    });
+  });
+
+  window.addEventListener("resize", () => {
+    if (activeTrigger) placeTooltip(activeTrigger);
+  });
+
+  window.addEventListener("scroll", () => {
+    if (activeTrigger) placeTooltip(activeTrigger);
+  }, { passive: true });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeTooltip();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!activeTrigger) return;
+    if (event.target === activeTrigger || activeTrigger.contains(event.target)) return;
+    closeTooltip();
+  });
+}
+
+function bindStickySummaryVisibility() {
+  const sticky = document.querySelector("#stickySummary");
+  const closeBtn = document.querySelector("#stickyClose");
+  const openBtn = document.querySelector("#stickyOpen");
+  if (!sticky || !closeBtn || !openBtn) return;
+
+  const applyState = () => {
+    const hidden = localStorage.getItem("stickyHidden") === "1";
+    sticky.classList.toggle("is-hidden", hidden);
+    openBtn.classList.toggle("is-visible", hidden);
+  };
+
+  closeBtn.addEventListener("click", () => {
+    localStorage.setItem("stickyHidden", "1");
+    applyState();
+  });
+
+  openBtn.addEventListener("click", () => {
+    localStorage.setItem("stickyHidden", "0");
+    applyState();
+  });
+
+  applyState();
+}
+
 function recalc() {
   const cost = Math.max(0, toNumber(document.querySelector("#cost")?.value));
   const taxPct = clamp(toNumber(document.querySelector("#tax")?.value), 0, 99); // ✅ ID correto: #tax
@@ -813,26 +965,24 @@ function recalc() {
   const pdfContainer = document.querySelector("#pdfButtonContainer");
   if (pdfContainer) {
     pdfContainer.innerHTML = `<button class="btn btn--ghost btn-export-pdf" type="button" style="width: 100%;">📥 Gerar Relatório</button>`;
-    pdfContainer.querySelector(".btn-export-pdf")?.addEventListener("click", () => {
-      recalc();
-      generatePDF();
-    });
+    pdfContainer.querySelector(".btn-export-pdf")?.addEventListener("click", runExportPDF);
   }
 
   const stickyExportBtn = document.querySelector("#stickyExportPDF");
   if (stickyExportBtn) {
-    stickyExportBtn.onclick = () => {
-      recalc();
-      generatePDF();
-    };
+    stickyExportBtn.onclick = runExportPDF;
   }
 
   const stickyShareBtn = document.querySelector("#stickyShare");
   if (stickyShareBtn) {
-    stickyShareBtn.onclick = () => {
-      document.querySelector("#shareWhatsapp")?.click();
-    };
+    stickyShareBtn.onclick = runShareAction;
   }
+
+  const mainShareBtn = document.querySelector("#mainShare");
+  if (mainShareBtn) mainShareBtn.onclick = runShareAction;
+
+  const mainExportBtn = document.querySelector("#mainExportPDF");
+  if (mainExportBtn) mainExportBtn.onclick = runExportPDF;
 
   const y = document.querySelector("#year");
   if (y) y.textContent = String(new Date().getFullYear());
@@ -1090,7 +1240,7 @@ function bind() {
   applyWBox();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function initApp() {
   const params = new URLSearchParams(window.location.search);
   const sharedState = params.get("state");
 
@@ -1103,5 +1253,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   bind();
+  bindTooltipSystem();
+  bindStickySummaryVisibility();
   recalc();
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
