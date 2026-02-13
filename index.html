@@ -11,14 +11,23 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css" data-asset="true" />
   <script>
-    const APP_VERSION = "20260213-2";
+    const APP_VERSION = "20260213-1530";
 
-    (function loadVersionedAssets() {
-      const css = document.createElement("link");
-      css.rel = "stylesheet";
-      css.href = `assets/css/styles.css?v=${APP_VERSION}`;
-      document.head.appendChild(css);
+    window.versionAssetPath = function versionAssetPath(path) {
+      const url = new URL(path, window.location.href);
+      url.searchParams.set("v", APP_VERSION);
+      return url.pathname + url.search;
+    };
+
+    (function applyAssetVersion() {
+      document.querySelectorAll('[data-asset="true"]').forEach((el) => {
+        const attr = el.tagName === "LINK" ? "href" : "src";
+        const original = el.getAttribute(attr);
+        if (!original) return;
+        el.setAttribute(attr, window.versionAssetPath(original));
+      });
     })();
   </script>
 
@@ -573,7 +582,8 @@
       const loadNext = (index) => {
         if (index >= scripts.length) return;
         const script = document.createElement("script");
-        script.src = `${scripts[index]}?v=${APP_VERSION}`;
+        script.setAttribute("data-asset", "true");
+        script.src = window.versionAssetPath(scripts[index]);
         script.onload = () => loadNext(index + 1);
         document.body.appendChild(script);
       };
