@@ -28,6 +28,14 @@ const INPUT_EVENT_FIELDS = {
 const THEME_KEY = "pricing_theme";
 const SAVED_SIMULATIONS_KEY = "saved_simulations_v2";
 
+const YOUTUBE_VIDEOS = [
+  { id: "7z2lR8mWQmM", title: "Como precificar sem destruir sua margem" },
+  { id: "k3yGf2mZp9A", title: "Erro de comissão que trava seu lucro" },
+  { id: "Q8kLm2nVx1c", title: "Escala com margem real em marketplace" },
+  { id: "m5Pq9rT2uYb", title: "Preço ideal para vender mais e lucrar" },
+  { id: "b4Nw6dX1sZa", title: "Diagnóstico rápido de operação no marketplace" }
+];
+
 function track(eventName, params = {}) {
   if (typeof window.gtag === "function") {
     window.gtag("event", eventName, params);
@@ -610,10 +618,14 @@ function resultCardHTML(
     `
     : "";
 
+  const accordionId = `incidence-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return `
   <div class="card marketplaceCard ${options.marketplaceClass || ""}">
     <div class="cardHeader">
-      <div class="cardTitle">${title}</div>
+      <div class="cardTitleWrap">
+        <span class="cardIcon" aria-hidden="true">${options.marketplaceIcon || "🛒"}</span>
+        <div class="cardTitle">${title}</div>
+      </div>
       <div class="pill">${pill}</div>
     </div>
 
@@ -628,18 +640,20 @@ function resultCardHTML(
     <div class="resultGrid">
       <div class="k">VOCÊ RECEBE</div><div class="v">${received}</div>
       <div class="k">LUCRO</div><div class="v">${profitLine}</div>
-      <div class="k">TOTAL DE INCIDÊNCIAS</div><div class="v">${incidencesPct}</div>
+      <div class="k">TOTAL DE INCIDÊNCIAS</div><div class="v">
+        <button class="incidenceToggle" type="button" aria-expanded="false" aria-controls="${accordionId}">
+          <span>Total de incidências (${incidencesPct})</span>
+          <span class="incidenceToggle__icon">▾</span>
+        </button>
+      </div>
       ${extraHTML}
       ${shopeeInfoHTML}
     </div>
 
-    <!-- DIVISOR + TÍTULO -->
-    <div class="cardDivider"></div>
-    <div class="cardSectionTitle">Detalhamento das incidências</div>
-
-    <!-- DETALHAMENTO (comissão, imposto, afiliados, ads, etc) -->
-    <div class="resultGrid resultGrid--details">
-      ${itemsHTML}
+    <div id="${accordionId}" class="incidencePanel" aria-hidden="true">
+      <div class="resultGrid resultGrid--details">
+        ${itemsHTML}
+      </div>
     </div>
   </div>
   `;
@@ -1055,7 +1069,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.tiktok,
       [],
-      { marketplaceClass: "marketplace-tiktok" }
+      { marketplaceClass: "marketplace-tiktok", marketplaceIcon: "🎵" }
     ),
     resultCardHTML(
       "SHEIN",
@@ -1073,7 +1087,7 @@ function recalc(options = {}) {
         { k: "Intermediação de frete", v: brl(sheinFixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
-      { marketplaceClass: "marketplace-shein" }
+      { marketplaceClass: "marketplace-shein", marketplaceIcon: "💙" }
     ),
     resultCardHTML(
       "Mercado Livre — Clássico",
@@ -1090,7 +1104,7 @@ function recalc(options = {}) {
         { k: "Custo fixo (tabela)", v: brl(mlClassic.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
-      { marketplaceClass: "marketplace-ml" }
+      { marketplaceClass: "marketplace-ml", marketplaceIcon: "🟨" }
     ),
     resultCardHTML(
       "Mercado Livre — Premium",
@@ -1107,7 +1121,7 @@ function recalc(options = {}) {
         { k: "Custo fixo (tabela)", v: brl(mlPremium.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
-      { marketplaceClass: "marketplace-ml" }
+      { marketplaceClass: "marketplace-ml", marketplaceIcon: "🟨" }
     )
   ].join("");
 
@@ -1333,6 +1347,10 @@ function bindActionButtons() {
       if (action === "cta-whatsapp-community") {
         trackGA4Event("join_whatsapp_click", { source: target.closest(".topbar") ? "topbar" : "footer" });
       }
+
+      if (action === "cta-specialist") {
+        trackGA4Event("specialist_click", { source: target.dataset.from || "unknown" });
+      }
     } catch (error) {
       logActionError(`falha em ${action}`, error);
     }
@@ -1454,6 +1472,18 @@ function bind() {
     if (target && target.id === "shopeeAntecipa") recalc({ source: "auto" });
   });
 
+  document.querySelector("#results")?.addEventListener("click", (event) => {
+    const toggle = event.target.closest(".incidenceToggle");
+    if (!toggle) return;
+    const panelId = toggle.getAttribute("aria-controls");
+    const panel = panelId ? document.getElementById(panelId) : null;
+    if (!panel) return;
+    const expanded = toggle.getAttribute("aria-expanded") === "true";
+    toggle.setAttribute("aria-expanded", expanded ? "false" : "true");
+    panel.classList.toggle("is-open", !expanded);
+    panel.setAttribute("aria-hidden", expanded ? "true" : "false");
+  });
+
   document.querySelectorAll("[data-scroll-target]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const targetId = btn.getAttribute("data-scroll-target");
@@ -1461,10 +1491,10 @@ function bind() {
       if (!target) return;
       scrollToWithTopbarOffset(target);
       const sectionMap = {
-        "sec-precificacao": "precificacao",
-        "sec-comparar": "comparar_preco",
-        "sec-lucro-atual": "lucro_atual",
-        "sec-escala": "escala"
+        "precificacao": "precificacao",
+        "comparar": "comparar_preco",
+        "lucro": "lucro_atual",
+        "escala": "escala"
       };
       const section = sectionMap[targetId];
       if (section) trackGA4Event("section_nav_click", { section });
@@ -1502,6 +1532,41 @@ function bind() {
   applyWBox();
 }
 
+
+function bindSegmentMenuActiveState() {
+  const buttons = Array.from(document.querySelectorAll(".segmentMenu__btn[data-scroll-target]"));
+  if (!buttons.length || !('IntersectionObserver' in window)) return;
+
+  const setActive = (id) => {
+    buttons.forEach((btn) => {
+      btn.classList.toggle("is-active", btn.getAttribute("data-scroll-target") === id);
+    });
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (visible?.target?.id) setActive(visible.target.id);
+  }, { rootMargin: "-35% 0px -55% 0px", threshold: [0.2, 0.5, 0.8] });
+
+  buttons.forEach((btn) => {
+    const target = document.getElementById(btn.getAttribute("data-scroll-target"));
+    if (target) observer.observe(target);
+  });
+}
+
+function renderYoutubeRail() {
+  const wrap = document.querySelector("#youtubeRail");
+  if (!wrap) return;
+  wrap.innerHTML = YOUTUBE_VIDEOS.map((video) => `
+    <a class="youtubeCard" href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener">
+      <img src="https://img.youtube.com/vi/${video.id}/hqdefault.jpg" alt="Thumbnail do vídeo ${video.title}">
+      <span>${video.title}</span>
+    </a>
+  `).join("");
+}
+
 function initApp() {
   const params = new URLSearchParams(window.location.search);
   const sharedState = params.get("state");
@@ -1522,6 +1587,8 @@ function initApp() {
   bindInputTracking();
   bindTooltipSystem();
   bindStickySummaryVisibility();
+  bindSegmentMenuActiveState();
+  renderYoutubeRail();
   renderSavedSimulations();
   track("session_ready", { device: getDeviceType() });
   recalc({ source: "auto" });

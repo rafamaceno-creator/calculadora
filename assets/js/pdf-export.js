@@ -13,40 +13,39 @@ function escapeHTML(value) {
 
 function collectReportItems() {
   const cards = Array.from(document.querySelectorAll("#results .card"));
+  const productNameRaw = document.querySelector("#calcName")?.value?.trim() || "";
+  const productName = productNameRaw || "Produto sem nome";
 
   return cards.map((card) => {
-    const calcName = document.querySelector("#calcName")?.value?.trim() || "Cálculo sem nome";
     const marketplace = card.querySelector(".cardTitle")?.textContent?.trim() || "Marketplace";
     const suggestedPrice = card.querySelector(".heroValue")?.textContent?.trim() || "—";
-    const summaryRows = Array.from(card.querySelectorAll(".resultGrid:not(.resultGrid--details) .k"))
-      .map((labelEl) => {
-        const valueEl = labelEl.nextElementSibling;
-        return {
-          label: labelEl.textContent.trim().toUpperCase(),
-          value: valueEl?.textContent?.trim() || "—"
-        };
-      });
 
-    const detailsRows = Array.from(card.querySelectorAll(".resultGrid--details .k"))
-      .map((labelEl) => {
-        const valueEl = labelEl.nextElementSibling;
-        return {
-          label: labelEl.textContent.trim(),
-          value: valueEl?.textContent?.trim() || "—"
-        };
-      });
+    const summaryRows = Array.from(card.querySelectorAll(".resultGrid:not(.resultGrid--details) .k")).map((labelEl) => {
+      const valueEl = labelEl.nextElementSibling;
+      const normalizedLabel = labelEl.textContent.replace(/\s+/g, " ").trim();
+      const valueText = valueEl?.textContent?.replace(/\s+/g, " ").trim() || "—";
+      return { label: normalizedLabel, value: valueText };
+    });
 
-    const findSummary = (key) => summaryRows.find((row) => row.label.includes(key))?.value || "—";
-    const lucroLinha = findSummary("LUCRO");
-    const margemMatch = lucroLinha.match(/\(([^)]+)\)/);
+    const detailsRows = Array.from(card.querySelectorAll(".resultGrid--details .k")).map((labelEl) => {
+      const valueEl = labelEl.nextElementSibling;
+      return {
+        label: labelEl.textContent.trim(),
+        value: valueEl?.textContent?.trim() || "—"
+      };
+    });
+
+    const byLabel = (key) => summaryRows.find((row) => row.label.toUpperCase().includes(key))?.value || "—";
 
     return {
-      calcName,
+      productName,
       marketplace,
       suggestedPrice,
-      received: findSummary("VOCÊ RECEBE"),
-      profit: lucroLinha,
-      margin: margemMatch ? margemMatch[1] : "—",
+      received: byLabel("VOCÊ RECEBE"),
+      profit: byLabel("LUCRO"),
+      incidences: byLabel("TOTAL DE INCIDÊNCIAS"),
+      faixa: byLabel("FAIXA APLICADA"),
+      antecipacao: byLabel("ANTECIPA"),
       detailsRows
     };
   });
@@ -54,21 +53,23 @@ function collectReportItems() {
 
 function buildReportCardsHTML(items) {
   return items.map((item) => `
-    <section class="report-card">
-      <h2>${escapeHTML(item.marketplace)}</h2>
-      <div class="meta">Nome do cálculo: <strong>${escapeHTML(item.calcName)}</strong></div>
-      <div class="row"><span>Marketplace</span><strong>${escapeHTML(item.marketplace)}</strong></div>
-      <div class="row"><span>Preço sugerido</span><strong>${escapeHTML(item.suggestedPrice)}</strong></div>
-      <div class="row"><span>Você recebe</span><strong>${escapeHTML(item.received)}</strong></div>
-      <div class="row"><span>Lucro</span><strong>${escapeHTML(item.profit)}</strong></div>
-      <div class="row"><span>Margem</span><strong>${escapeHTML(item.margin)}</strong></div>
-      <h3>Detalhamento</h3>
-      <table>
+    <section class="report-card" style="margin-top:18px;padding:16px;border:1px solid #d8dee8;border-radius:12px;break-inside:avoid;page-break-inside:avoid;">
+      <h2 style="margin:0 0 10px;font-size:18px;color:#0f172a;">${escapeHTML(item.marketplace)}</h2>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:13px;">
+        <span>Preço ideal</span><strong>${escapeHTML(item.suggestedPrice)}</strong>
+        <span>Você recebe</span><strong>${escapeHTML(item.received)}</strong>
+        <span>Lucro</span><strong>${escapeHTML(item.profit)}</strong>
+        <span>Total de incidências</span><strong>${escapeHTML(item.incidences)}</strong>
+        <span>Faixa aplicada</span><strong>${escapeHTML(item.faixa)}</strong>
+        <span>Antecipação</span><strong>${escapeHTML(item.antecipacao)}</strong>
+      </div>
+      <h3 style="margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#334155;">Detalhamento das incidências</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <tbody>
           ${item.detailsRows.map((detail) => `
             <tr>
-              <td>${escapeHTML(detail.label)}</td>
-              <td>${escapeHTML(detail.value)}</td>
+              <td style="padding:6px;border-top:1px solid #edf1f5;color:#475569;">${escapeHTML(detail.label)}</td>
+              <td style="padding:6px;border-top:1px solid #edf1f5;text-align:right;font-weight:700;color:#0f172a;">${escapeHTML(detail.value)}</td>
             </tr>
           `).join("")}
         </tbody>
@@ -78,23 +79,26 @@ function buildReportCardsHTML(items) {
 }
 
 function getReportMarkup() {
-  const reportRoot = document.querySelector("#reportRoot");
-  if (reportRoot && reportRoot.innerHTML.trim()) {
-    return reportRoot.innerHTML;
-  }
-
   const items = collectReportItems();
   if (!items.length) return "";
 
-  const now = new Date();
-  const dateTime = now.toLocaleString("pt-BR");
+  const productName = items[0]?.productName || "Produto sem nome";
+  const today = new Date().toLocaleDateString("pt-BR");
 
   return `
-    <section class="print-report">
-      <h1>Relatório Estratégico de Precificação</h1>
-      <div class="date">Gerado em ${escapeHTML(dateTime)}</div>
-      <div class="meta">Produto: <strong>${escapeHTML(items[0]?.calcName || "Cálculo sem nome")}</strong></div>${buildReportCardsHTML(items)}
-      <footer style="margin-top:16px;font-size:12px;color:#475569">Rafa Maceno • <a href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Instagram</a></footer>
+    <section class="print-report" style="font-family:Inter,Arial,sans-serif;color:#0f172a;">
+      <header style="border-bottom:2px solid #e2e8f0;padding-bottom:12px;margin-bottom:14px;">
+        <div style="font-size:12px;letter-spacing:.08em;color:#334155;font-weight:700;">RELATÓRIO DE PRECIFICAÇÃO</div>
+        <div style="margin-top:6px;font-size:13px;line-height:1.5;">
+          <div>Produto: <strong>${escapeHTML(productName)}</strong></div>
+          <div>Data: <strong>${escapeHTML(today)}</strong></div>
+          <div>Domínio: <strong>precificacao.rafamaceno.com.br</strong></div>
+        </div>
+      </header>
+
+      <h1 style="margin:0 0 14px;font-size:24px;line-height:1.2;">Relatório de Precificação do Produto "${escapeHTML(productName)}"</h1>
+
+      ${buildReportCardsHTML(items)}
     </section>
   `;
 }
