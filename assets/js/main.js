@@ -647,11 +647,21 @@ function resultCardHTML(
 /* ===== Main calc ===== */
 
 
-function runExportPDF(from = "card") {
+async function runExportPDF(from = "card", triggerButton = null) {
+  const button = triggerButton instanceof HTMLElement ? triggerButton : null;
+  const originalLabel = button ? button.innerHTML : "";
+
+  if (button) {
+    button.disabled = true;
+    button.classList.add("is-loading");
+    button.innerHTML = "Gerando relatório...";
+    button.setAttribute("aria-busy", "true");
+  }
+
   try {
     recalc({ source: "export" });
     if (typeof window.generatePDF === "function") {
-      window.generatePDF();
+      await window.generatePDF();
       trackGA4Event("export_pdf_click", {
         source: from,
         device: window.innerWidth < 768 ? "mobile" : "desktop"
@@ -661,6 +671,13 @@ function runExportPDF(from = "card") {
     logActionError("generatePDF indisponível");
   } catch (error) {
     logActionError("falha ao exportar PDF", error);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.classList.remove("is-loading");
+      button.innerHTML = originalLabel;
+      button.removeAttribute("aria-busy");
+    }
   }
 }
 
@@ -1256,7 +1273,7 @@ function bindActionButtons() {
     try {
       if (action === "export-pdf") {
         event.preventDefault();
-        runExportPDF(target.getAttribute("data-from") || "card");
+        await runExportPDF(target.getAttribute("data-from") || "card", target);
         return;
       }
 
