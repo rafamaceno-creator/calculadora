@@ -52,11 +52,8 @@ function collectReportItems() {
   });
 }
 
-function buildPrintHTML(items) {
-  const now = new Date();
-  const dateTime = now.toLocaleString("pt-BR");
-
-  const cardsHTML = items.map((item) => `
+function buildReportCardsHTML(items) {
+  return items.map((item) => `
     <section class="report-card">
       <h2>${escapeHTML(item.marketplace)}</h2>
       <div class="meta">Nome do cálculo: <strong>${escapeHTML(item.calcName)}</strong></div>
@@ -78,75 +75,60 @@ function buildPrintHTML(items) {
       </table>
     </section>
   `).join("");
-
-  return `<!doctype html>
-  <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Relatório de Precificação</title>
-    <style>
-      body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;padding:24px;margin:0}
-      h1{margin:0 0 8px;font-size:24px}
-      .date{color:#475569;font-size:12px;margin-bottom:18px}
-      .report-card{border:1px solid #cbd5e1;border-radius:12px;padding:14px;margin-bottom:14px;break-inside:avoid}
-      .report-card h2{margin:0 0 8px;font-size:18px}
-      .report-card .meta{font-size:13px;color:#334155;margin-bottom:8px}
-      .row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed #e2e8f0}
-      .row:last-of-type{margin-bottom:8px}
-      .row span{color:#334155}
-      h3{margin:12px 0 6px;font-size:14px}
-      table{width:100%;border-collapse:collapse;font-size:13px}
-      td{border-top:1px solid #e2e8f0;padding:6px 2px;vertical-align:top}
-      td:last-child{text-align:right;font-weight:600}
-      @media print { body{padding:12mm} }
-    </style>
-  </head>
-  <body>
-    <h1>Relatório de Precificação</h1>
-    <div class="date">Gerado em ${escapeHTML(dateTime)}</div>
-    ${cardsHTML}
-  </body>
-  </html>`;
 }
 
-async function generatePDF() {
+function getReportMarkup() {
   const reportRoot = document.querySelector("#reportRoot");
-  if (!reportRoot || !reportRoot.textContent.trim()) {
+  if (reportRoot && reportRoot.innerHTML.trim()) {
+    return reportRoot.innerHTML;
+  }
+
+  const items = collectReportItems();
+  if (!items.length) return "";
+
+  const now = new Date();
+  const dateTime = now.toLocaleString("pt-BR");
+
+  return `
+    <section class="print-report">
+      <h1>Relatório de Precificação</h1>
+      <div class="date">Gerado em ${escapeHTML(dateTime)}</div>
+      ${buildReportCardsHTML(items)}
+    </section>
+  `;
+}
+
+function exportPDF() {
+  const markup = getReportMarkup();
+  if (!markup) {
     alert("Nenhum relatório disponível. Faça o cálculo primeiro.");
     return;
   }
 
-  const items = collectReportItems();
-  if (!items.length) {
-    alert("Nenhum resultado encontrado para exportar.");
-    return;
+  let printRoot = document.querySelector("#printRoot");
+  if (!printRoot) {
+    printRoot = document.createElement("div");
+    printRoot.id = "printRoot";
+    printRoot.className = "printRoot";
+    printRoot.setAttribute("aria-hidden", "true");
+    document.body.appendChild(printRoot);
   }
 
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!printWindow) {
-    throw new Error("Não foi possível abrir a janela de impressão (popup bloqueado).");
-  }
-
-  printWindow.document.open();
-  printWindow.document.write(buildPrintHTML(items));
-  printWindow.document.close();
-
-  printWindow.onload = () => {
-    printWindow.focus();
-    printWindow.print();
+  const cleanup = () => {
+    document.body.classList.remove("is-printing");
+    printRoot.innerHTML = "";
+    window.onafterprint = null;
   };
 
-  printWindow.onafterprint = () => {
-    printWindow.close();
-  };
-
-  setTimeout(() => {
-    if (!printWindow.closed) {
-      printWindow.close();
-    }
-  }, 120000);
+  printRoot.innerHTML = markup;
+  document.body.classList.add("is-printing");
+  window.onafterprint = cleanup;
+  window.print();
 }
 
+function generatePDF() {
+  exportPDF();
+}
 
+window.exportPDF = exportPDF;
 window.generatePDF = generatePDF;

@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css" data-asset="true" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260213-4" data-asset="true" />
   <script>
-    const APP_VERSION = "20260213-2";
+    const APP_VERSION = "20260213-4";
 
     window.versionAssetPath = function versionAssetPath(path) {
       const url = new URL(path, window.location.href);
@@ -569,12 +569,14 @@
     </footer>
   </main>
 
+  <div id="printRoot" class="printRoot" aria-hidden="true"></div>
+
   <script>
     (function loadVersionedScripts() {
       const scripts = [
-        "assets/js/storage.js",
-        "assets/js/pdf-export.js",
-        "assets/js/main.js"
+        "assets/js/storage.js?v=20260213-4",
+        "assets/js/pdf-export.js?v=20260213-4",
+        "assets/js/main.js?v=20260213-4"
       ];
 
       const loadNext = (index) => {
