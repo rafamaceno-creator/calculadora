@@ -430,6 +430,40 @@ function compareCardHTML(title, data) {
   `;
 }
 
+function updateStickySummary(results) {
+  const wrap = document.querySelector("#stickySummaryContent");
+  if (!wrap) return;
+
+  if (!Array.isArray(results) || !results.length) {
+    wrap.textContent = "Preencha os dados para ver o resumo principal.";
+    return;
+  }
+
+  const best = results.reduce((acc, item) => {
+    if (!acc) return item;
+    return (item.profitPctReal || 0) > (acc.profitPctReal || 0) ? item : acc;
+  }, null);
+
+  const status = marginStatus((best?.profitPctReal || 0) * 100);
+  wrap.innerHTML = `
+    <div><strong>${best.title}</strong></div>
+    <div>Líquido: <strong>${brl(best.received)}</strong></div>
+    <div>Lucro: <strong>${brl(best.profitBRL)}</strong></div>
+    <div>Margem: <strong>${((best.profitPctReal || 0) * 100).toFixed(2)}%</strong></div>
+    <div class="compareCard__status ${status.className}">${status.label}</div>
+  `;
+}
+
+function updateReportRoot() {
+  const reportRoot = document.querySelector("#reportRoot");
+  const results = document.querySelector("#results");
+  if (!reportRoot || !results) return;
+  reportRoot.innerHTML = `
+    <div class="cardSectionTitle">Relatório (Modo A: somente resultados)</div>
+    ${results.innerHTML}
+  `;
+}
+
 /* ===== Render ===== */
 
 function resultCardHTML(
@@ -766,16 +800,38 @@ function recalc() {
   renderCurrentPriceAnalysis(state);
   renderScaleSimulation(state);
   renderShareActions();
+  updateStickySummary([
+    { title: "Shopee", received: shopee.received, profitBRL: shopee.profitBRL, profitPctReal: shopee.profitPctReal },
+    { title: "TikTok Shop", received: tiktok.received, profitBRL: tiktok.profitBRL, profitPctReal: tiktok.profitPctReal },
+    { title: "SHEIN", received: shein.received, profitBRL: shein.profitBRL, profitPctReal: shein.profitPctReal },
+    { title: "Mercado Livre — Clássico", received: mlClassic.r.received, profitBRL: mlClassic.r.profitBRL, profitPctReal: mlClassic.r.profitPctReal },
+    { title: "Mercado Livre — Premium", received: mlPremium.r.received, profitBRL: mlPremium.r.profitBRL, profitPctReal: mlPremium.r.profitPctReal }
+  ]);
+  updateReportRoot();
 
   // Mostrar botão de PDF
   const pdfContainer = document.querySelector("#pdfButtonContainer");
   if (pdfContainer) {
-    pdfContainer.innerHTML = `
-      <button class="btn btn--ghost btn-export-pdf" type="button" style="width: 100%;">
-        📥 Exportar PDF
-      </button>
-    `;
-    pdfContainer.querySelector(".btn-export-pdf").addEventListener("click", generatePDF);
+    pdfContainer.innerHTML = `<button class="btn btn--ghost btn-export-pdf" type="button" style="width: 100%;">📥 Gerar Relatório</button>`;
+    pdfContainer.querySelector(".btn-export-pdf")?.addEventListener("click", () => {
+      recalc();
+      generatePDF();
+    });
+  }
+
+  const stickyExportBtn = document.querySelector("#stickyExportPDF");
+  if (stickyExportBtn) {
+    stickyExportBtn.onclick = () => {
+      recalc();
+      generatePDF();
+    };
+  }
+
+  const stickyShareBtn = document.querySelector("#stickyShare");
+  if (stickyShareBtn) {
+    stickyShareBtn.onclick = () => {
+      document.querySelector("#shareWhatsapp")?.click();
+    };
   }
 
   const y = document.querySelector("#year");
@@ -993,6 +1049,14 @@ function bind() {
   document.querySelector("#results")?.addEventListener("change", (event) => {
     const target = event.target;
     if (target && target.id === "shopeeAntecipa") recalc();
+  });
+
+  document.querySelectorAll("[data-scroll-target]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.getAttribute("data-scroll-target");
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   });
 
   // Mostrar/esconder box avançadas
