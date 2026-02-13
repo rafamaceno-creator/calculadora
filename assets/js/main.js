@@ -30,6 +30,10 @@ function track(eventName, params = {}) {
   }
 }
 
+function trackGA4Event(eventName, params = {}) {
+  track(eventName, params);
+}
+
 function setUserProperty(name, value) {
   if (typeof window.gtag === "function") {
     window.gtag("set", "user_properties", {
@@ -513,7 +517,12 @@ function updateStickySummary(results) {
 
   const best = results.reduce((acc, item) => {
     if (!acc) return item;
-    return (item.profitPctReal || 0) > (acc.profitPctReal || 0) ? item : acc;
+    const itemProfit = item?.profitBRL || 0;
+    const accProfit = acc?.profitBRL || 0;
+    if (itemProfit === accProfit) {
+      return (item.profitPctReal || 0) > (acc.profitPctReal || 0) ? item : acc;
+    }
+    return itemProfit > accProfit ? item : acc;
   }, null);
 
   const status = marginStatus((best?.profitPctReal || 0) * 100);
@@ -640,10 +649,11 @@ function resultCardHTML(
 
 function runExportPDF(from = "card") {
   try {
-    recalc();
+    recalc({ source: "export" });
     if (typeof window.generatePDF === "function") {
       window.generatePDF();
-      track("export_pdf", {
+      trackGA4Event("export_pdf_click", {
+        source: from,
         device: window.innerWidth < 768 ? "mobile" : "desktop"
       });
       return;
@@ -658,7 +668,7 @@ async function shareFallback() {
   const summaryText = document.querySelector("#stickySummaryContent")?.innerText?.trim() || "Resumo indisponível.";
   try {
     await navigator.clipboard.writeText(summaryText);
-    track("copy_link");
+    trackGA4Event("copy_link_click", { source: "summary_text" });
     alert("Copiado");
   } catch {
     alert("Copiado");
@@ -780,6 +790,10 @@ function bindStickySummaryVisibility() {
   const openBtn = document.querySelector("#stickyOpen");
   if (!sticky || !closeBtn || !openBtn) return;
 
+  if (window.matchMedia("(max-width: 768px)").matches && localStorage.getItem("stickyHidden") === null) {
+    localStorage.setItem("stickyHidden", "1");
+  }
+
   const applyState = () => {
     const hidden = localStorage.getItem("stickyHidden") === "1";
     sticky.classList.toggle("is-hidden", hidden);
@@ -799,7 +813,8 @@ function bindStickySummaryVisibility() {
   applyState();
 }
 
-function recalc() {
+function recalc(options = {}) {
+  const source = options.source || "auto";
   const cost = Math.max(0, toNumber(document.querySelector("#cost")?.value));
   const taxPct = clamp(toNumber(document.querySelector("#tax")?.value), 0, 99); // ✅ ID correto: #tax
 
@@ -1053,6 +1068,14 @@ function recalc() {
 
   const y = document.querySelector("#year");
   if (y) y.textContent = String(new Date().getFullYear());
+
+  if (window.matchMedia("(max-width: 768px)").matches && source === "manual") {
+    localStorage.setItem("stickyHidden", "0");
+    const sticky = document.querySelector("#stickySummary");
+    const openBtn = document.querySelector("#stickyOpen");
+    sticky?.classList.remove("is-hidden");
+    openBtn?.classList.remove("is-visible");
+  }
 }
 
 
@@ -1209,8 +1232,8 @@ function renderShareActions() {
   shareBox.innerHTML = `
     <div class="shareBox__title">Compartilhar</div>
     <div class="shareBox__actions">
-      <button class="btn btn--ghost" type="button" data-action="share-whatsapp">WhatsApp</button>
-      <button class="btn btn--ghost" type="button" data-action="copy-link">Copiar link</button>
+      <button class="btn btn--ghost" type="button" data-action="share-whatsapp" data-from="results-share-box">WhatsApp</button>
+      <button class="btn btn--ghost" type="button" data-action="copy-link" data-from="results-share-box">Copiar link</button>
     </div>
   `;
 }
@@ -1234,6 +1257,7 @@ function bindActionButtons() {
       if (action === "export-pdf") {
         event.preventDefault();
         runExportPDF(target.getAttribute("data-from") || "card");
+        return;
       }
 
       if (action === "share-whatsapp") {
@@ -1241,7 +1265,8 @@ function bindActionButtons() {
         const link = buildShareLink();
         const text = encodeURIComponent(`Simulei minha precificação aqui: ${link}`);
         window.open(`https://wa.me/?text=${text}`, "_blank", "noopener");
-        track("share_whatsapp");
+        trackGA4Event("share_whatsapp_click", { source: target.id || target.dataset.from || "results" });
+        return;
       }
 
       if (action === "copy-link") {
@@ -1250,18 +1275,20 @@ function bindActionButtons() {
         try {
           await navigator.clipboard.writeText(link);
           alert("Link copiado com sucesso.");
-          track("copy_link");
+          trackGA4Event("copy_link_click", { source: target.dataset.from || "results" });
         } catch {
           prompt("Copie o link:", link);
         }
+        return;
       }
 
       if (action === "cta-instagram") {
-        track("cta_click", { cta: "instagram", destino: target.href || "" });
+        trackGA4Event("follow_instagram_click", { source: target.closest(".topbar") ? "topbar" : "footer" });
+        return;
       }
 
       if (action === "cta-whatsapp-community") {
-        track("cta_click", { cta: "whatsapp", destino: target.href || "" });
+        trackGA4Event("join_whatsapp_click", { source: target.closest(".topbar") ? "topbar" : "footer" });
       }
     } catch (error) {
       logActionError(`falha em ${action}`, error);
@@ -1334,23 +1361,23 @@ function bind() {
   };
 
   $("#recalc")?.addEventListener("click", () => {
-    recalc();
+    recalc({ source: "manual" });
     const mode = document.querySelector("#advToggle")?.checked ? "advanced" : "basic";
     const hasWeight = !!document.querySelector("#mlWeightToggle")?.checked;
     const hasAffiliate = !!(document.querySelector("#advToggle")?.checked && document.querySelector("#affToggle")?.checked);
-    track("recalc", { mode, has_weight: hasWeight, has_affiliate: hasAffiliate });
+    trackGA4Event("recalc_click", { mode, has_weight: hasWeight, has_affiliate: hasAffiliate });
     scrollToResults();
   });
 
   // Auto recalcular em input/change
   document.querySelectorAll("input, select").forEach((el) => {
-    el.addEventListener("input", recalc);
-    el.addEventListener("change", recalc);
+    el.addEventListener("input", () => recalc({ source: "auto" }));
+    el.addEventListener("change", () => recalc({ source: "auto" }));
   });
 
   document.querySelector("#results")?.addEventListener("change", (event) => {
     const target = event.target;
-    if (target && target.id === "shopeeAntecipa") recalc();
+    if (target && target.id === "shopeeAntecipa") recalc({ source: "auto" });
   });
 
   document.querySelectorAll("[data-scroll-target]").forEach((btn) => {
@@ -1366,7 +1393,7 @@ function bind() {
         "sec-escala": "escala"
       };
       const section = sectionMap[targetId];
-      if (section) track("view_section", { section });
+      if (section) trackGA4Event("section_nav_click", { section });
     });
   });
 
@@ -1420,7 +1447,7 @@ function initApp() {
   bindTooltipSystem();
   bindStickySummaryVisibility();
   track("session_ready", { device: getDeviceType() });
-  recalc();
+  recalc({ source: "auto" });
 }
 
 if (document.readyState === "loading") {

@@ -95,22 +95,23 @@ input:hover,select:hover{border-color:#b8c5d7}
 .cardTitle{
   flex:1 1 auto;
   min-width:0;
-  font-size:15px;
-  line-height:1.3;
-  font-weight:700;
+  font-size:17px;
+  line-height:1.25;
+  font-weight:800;
   letter-spacing:-.01em;
+  color:#0b2239;
 }
 .cardHeader .pill{
   flex:0 0 auto;
   white-space:nowrap;
 }
-.heroBox{padding:14px;border-radius:14px;border:1px solid #bcefeb;background:var(--accent-soft);margin-bottom:10px}
-.heroLabel{font-size:11px;letter-spacing:.08em;font-weight:700;color:#0f766e}
-.heroValue{font-size:clamp(28px,4.2vw,38px);font-weight:800;line-height:1.1}
+.heroBox{padding:16px;border-radius:14px;border:1px solid #bcefeb;background:var(--accent-soft);margin-bottom:12px}
+.heroLabel{font-size:11px;letter-spacing:.08em;font-weight:700;color:#0f766e;margin-bottom:4px}
+.heroValue{font-size:clamp(30px,4.2vw,40px);font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}
 .resultGrid{
   display:grid;
-  grid-template-columns:1fr auto;
-  gap:8px;
+  grid-template-columns:minmax(0,1fr) minmax(120px,max-content);
+  gap:9px 12px;
   align-items:baseline;
   font-variant-numeric:tabular-nums;
   font-feature-settings:"tnum" 1,"lnum" 1;
@@ -118,14 +119,14 @@ input:hover,select:hover{border-color:#b8c5d7}
 .resultGrid .k{
   font-size:11px;
   color:var(--muted);
-  font-weight:600;
-  line-height:1.3;
+  font-weight:700;
+  line-height:1.35;
   text-transform:uppercase;
   letter-spacing:.04em;
 }
 .resultGrid .v{
   font-size:14px;
-  font-weight:600;
+  font-weight:700;
   color:var(--text);
   text-align:right;
   line-height:1.3;
@@ -155,7 +156,7 @@ input:hover,select:hover{border-color:#b8c5d7}
 .stickySummary h3{margin:0;font-size:16px}
 .stickySummary__close{width:28px;height:28px;border-radius:999px;border:1px solid var(--stroke);background:#fff;color:#334155;font-size:16px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .stickySummary__close:hover{border-color:#b8c5d7;background:#f8fafc}
-.stickySummary__content{font-size:13px;color:#334155;line-height:1.45}
+.stickySummary__content{font-size:13px;color:#334155;line-height:1.45;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}
 .stickySummary__actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .stickySummary.is-hidden{display:none}
 .stickyOpen{position:fixed;right:24px;bottom:24px;z-index:46;padding:10px 14px;border-radius:999px;border:1px solid #bcefeb;background:var(--accent-soft);color:#0f766e;font-size:12px;font-weight:700;box-shadow:var(--shadow-sm);cursor:pointer;display:none}
@@ -218,9 +219,15 @@ details p{margin:8px 0 0;color:#334155}
   .cardHeader .pill{margin-top:2px}
   .resultGrid .k{font-size:11px}
   .resultGrid .v{font-size:13px}
-  .stickySummary{left:10px;right:10px;bottom:74px;width:auto;max-height:70vh;overflow:hidden;padding:12px;border-radius:14px}
-  .stickySummary__content{max-height:42vh;overflow:auto;padding-right:4px}
-  .stickyOpen{right:10px;bottom:18px}
+  .stickySummary{left:10px;right:10px;bottom:10px;width:auto;max-height:78vh;overflow:hidden;padding:12px 12px calc(12px + env(safe-area-inset-bottom));border-radius:16px 16px 12px 12px}
+  .stickySummary__content{max-height:46vh;overflow:auto;padding-right:4px}
+  .stickyOpen{right:10px;bottom:14px}
+  .stickySummary__top{position:sticky;top:0;background:#fff;padding-bottom:6px;z-index:1}
+  .stickySummary__actions{position:sticky;bottom:0;background:#fff;padding-top:8px}
+  .shareBox{padding:12px}
+  .shareBox .btn,.stickySummary .btn,.actions .btn,#pdfButtonContainer .btn{width:100%}
+  .resultList .card,.marketCompareList .card{overflow:hidden}
+
 }
 
 @media (max-width:720px){
