@@ -15,6 +15,42 @@ const SHOPEE_FAIXAS = [
 
 const TIKTOK = { pct: 0.12, fixed: 4.00 };
 
+
+const INPUT_EVENT_FIELDS = {
+  cost: "cost",
+  tax: "tax",
+  profitValue: "profit_value",
+  samePriceInput: "price",
+  currentPriceInput: "price"
+};
+
+function track(eventName, params = {}) {
+  try {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", eventName, params);
+    }
+  } catch (_) {
+    // fail silently
+  }
+}
+
+function getDeviceType() {
+  return window.matchMedia("(max-width: 768px)").matches ? "mobile" : "desktop";
+}
+
+function logActionError(message, error) {
+  console.error(`[actions] ${message}`, error || "");
+}
+
+function scrollToWithTopbarOffset(target) {
+  if (!target) return;
+  const topbar = document.querySelector(".topbar");
+  const offset = (topbar ? topbar.offsetHeight : 0) + 12;
+  const y = target.getBoundingClientRect().top + window.pageYOffset - offset;
+  window.scrollTo({ top: y, behavior: "smooth" });
+}
+
+
 /* ===== SHEIN =====
    Comissão:
    - Vestuário feminino: 20%
@@ -566,10 +602,17 @@ function resultCardHTML(
 /* ===== Main calc ===== */
 
 
-function runExportPDF() {
-  recalc();
-  if (typeof window.generatePDF === "function") {
-    window.generatePDF();
+function runExportPDF(from = "card") {
+  try {
+    recalc();
+    if (typeof window.generatePDF === "function") {
+      window.generatePDF();
+      track("export_pdf", { from, marketplaces_count: 5 });
+      return;
+    }
+    logActionError("generatePDF indisponível");
+  } catch (error) {
+    logActionError("falha ao exportar PDF", error);
   }
 }
 
@@ -577,6 +620,7 @@ async function shareFallback() {
   const summaryText = document.querySelector("#stickySummaryContent")?.innerText?.trim() || "Resumo indisponível.";
   try {
     await navigator.clipboard.writeText(summaryText);
+    track("copy_link");
     alert("Copiado");
   } catch {
     alert("Copiado");
@@ -584,7 +628,7 @@ async function shareFallback() {
 }
 
 function runShareAction() {
-  const whatsappBtn = document.querySelector("#shareWhatsapp");
+  const whatsappBtn = document.querySelector('[data-action="share-whatsapp"]:not(#stickyShare)');
   if (whatsappBtn) {
     whatsappBtn.click();
     return;
@@ -964,25 +1008,9 @@ function recalc() {
   // Mostrar botão de PDF
   const pdfContainer = document.querySelector("#pdfButtonContainer");
   if (pdfContainer) {
-    pdfContainer.innerHTML = `<button class="btn btn--ghost btn-export-pdf" type="button" style="width: 100%;">📥 Gerar Relatório</button>`;
-    pdfContainer.querySelector(".btn-export-pdf")?.addEventListener("click", runExportPDF);
+    pdfContainer.innerHTML = `<button class="btn btn--ghost btn-export-pdf" data-action="export-pdf" data-from="card" type="button" style="width: 100%;">📥 Gerar Relatório</button>`;
   }
 
-  const stickyExportBtn = document.querySelector("#stickyExportPDF");
-  if (stickyExportBtn) {
-    stickyExportBtn.onclick = runExportPDF;
-  }
-
-  const stickyShareBtn = document.querySelector("#stickyShare");
-  if (stickyShareBtn) {
-    stickyShareBtn.onclick = runShareAction;
-  }
-
-  const mainShareBtn = document.querySelector("#mainShare");
-  if (mainShareBtn) mainShareBtn.onclick = runShareAction;
-
-  const mainExportBtn = document.querySelector("#mainExportPDF");
-  if (mainExportBtn) mainExportBtn.onclick = runExportPDF;
 
   const y = document.querySelector("#year");
   if (y) y.textContent = String(new Date().getFullYear());
@@ -1142,51 +1170,110 @@ function renderShareActions() {
   shareBox.innerHTML = `
     <div class="shareBox__title">Compartilhar</div>
     <div class="shareBox__actions">
-      <button class="btn btn--ghost" type="button" id="shareWhatsapp">WhatsApp</button>
-      <button class="btn btn--ghost" type="button" id="shareCopy">Copiar link</button>
+      <button class="btn btn--ghost" type="button" data-action="share-whatsapp">WhatsApp</button>
+      <button class="btn btn--ghost" type="button" data-action="copy-link">Copiar link</button>
     </div>
   `;
+}
 
-  const buildLink = () => {
-    const encoded = encodeURIComponent(JSON.stringify(getShareableState()));
-    return `${window.location.origin}${window.location.pathname}?state=${encoded}`;
-  };
+/* ===== Bindings ===== */
 
-  document.querySelector("#shareWhatsapp")?.addEventListener("click", () => {
-    const link = buildLink();
-    const text = encodeURIComponent(`Simulei minha precificação aqui: ${link}`);
-    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener");
-  });
 
-  document.querySelector("#shareCopy")?.addEventListener("click", async () => {
-    const link = buildLink();
+function buildShareLink() {
+  const encoded = encodeURIComponent(JSON.stringify(getShareableState()));
+  return `${window.location.origin}${window.location.pathname}?state=${encoded}`;
+}
+
+function bindActionButtons() {
+  document.addEventListener("click", async (event) => {
+    const target = event.target.closest("[data-action]");
+    if (!target) return;
+
+    const action = target.getAttribute("data-action");
+
     try {
-      await navigator.clipboard.writeText(link);
-      alert("Link copiado com sucesso.");
-    } catch {
-      prompt("Copie o link:", link);
+      if (action === "export-pdf") {
+        event.preventDefault();
+        runExportPDF(target.getAttribute("data-from") || "card");
+      }
+
+      if (action === "share-whatsapp") {
+        event.preventDefault();
+        const link = buildShareLink();
+        const text = encodeURIComponent(`Simulei minha precificação aqui: ${link}`);
+        window.open(`https://wa.me/?text=${text}`, "_blank", "noopener");
+        track("share_whatsapp");
+      }
+
+      if (action === "copy-link") {
+        event.preventDefault();
+        const link = buildShareLink();
+        try {
+          await navigator.clipboard.writeText(link);
+          alert("Link copiado com sucesso.");
+          track("copy_link");
+        } catch {
+          prompt("Copie o link:", link);
+        }
+      }
+
+      if (action === "cta-instagram") {
+        track("cta_click", { cta: "instagram" });
+      }
+
+      if (action === "cta-whatsapp-community") {
+        track("cta_click", { cta: "whatsapp_community" });
+      }
+    } catch (error) {
+      logActionError(`falha em ${action}`, error);
     }
   });
 }
 
-/* ===== Bindings ===== */
+function bindMobileMenu() {
+  const toggle = document.querySelector("#mobileMenuToggle");
+  const nav = document.querySelector("#topbarNav");
+  if (!toggle || !nav) return;
+
+  toggle.addEventListener("click", () => {
+    const open = nav.classList.toggle("is-open");
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  nav.addEventListener("click", (event) => {
+    if (event.target.closest("a")) {
+      nav.classList.remove("is-open");
+      toggle.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
+function bindInputTracking() {
+  const timers = new Map();
+  document.addEventListener("input", (event) => {
+    const field = INPUT_EVENT_FIELDS[event.target?.id];
+    if (!field) return;
+    if (timers.has(field)) clearTimeout(timers.get(field));
+    timers.set(field, setTimeout(() => {
+      track("input_change", { field });
+    }, 2000));
+  });
+}
 
 function bind() {
   const $ = (s) => document.querySelector(s);
 
   const scrollToResults = () => {
     const results = $("#results");
-    if (!results) return;
-
-    const topbar = $(".topbar");
-    const offset = (topbar ? topbar.offsetHeight : 0) + 16;
-
-    const y = results.getBoundingClientRect().top + window.pageYOffset - offset;
-    window.scrollTo({ top: y, behavior: "smooth" });
+    scrollToWithTopbarOffset(results);
   };
 
   $("#recalc")?.addEventListener("click", () => {
     recalc();
+    const mode = document.querySelector("#advToggle")?.checked ? "advanced" : "basic";
+    const hasWeight = !!document.querySelector("#mlWeightToggle")?.checked;
+    const hasAffiliate = !!(document.querySelector("#advToggle")?.checked && document.querySelector("#affToggle")?.checked);
+    track("recalc", { mode, has_weight: hasWeight, has_affiliate: hasAffiliate });
     scrollToResults();
   });
 
@@ -1205,7 +1292,16 @@ function bind() {
     btn.addEventListener("click", () => {
       const targetId = btn.getAttribute("data-scroll-target");
       const target = targetId ? document.getElementById(targetId) : null;
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!target) return;
+      scrollToWithTopbarOffset(target);
+      const sectionMap = {
+        "sec-precificacao": "precificacao",
+        "sec-comparar": "comparar_preco",
+        "sec-lucro-atual": "lucro_atual",
+        "sec-escala": "escala"
+      };
+      const section = sectionMap[targetId];
+      if (section) track("view_section", { section });
     });
   });
 
@@ -1253,8 +1349,12 @@ function initApp() {
   }
 
   bind();
+  bindActionButtons();
+  bindMobileMenu();
+  bindInputTracking();
   bindTooltipSystem();
   bindStickySummaryVisibility();
+  track("session_ready", { device: getDeviceType() });
   recalc();
 }
 
