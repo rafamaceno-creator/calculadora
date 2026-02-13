@@ -25,12 +25,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7RHBD29LS5"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7RHBD29L5S"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-7RHBD29LS5');
+    gtag('config', 'G-7RHBD29L5S');
   </script>
 </head>
 
@@ -45,14 +45,20 @@
         </div>
       </div>
 
-      <nav class="nav" aria-label="Navegação">
+      <button id="mobileMenuToggle" class="mobileMenuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="topbarNav">
+        ☰
+      </button>
+
+      <nav id="topbarNav" class="nav" aria-label="Navegação">
         <a href="#sec-precificacao">Calculadora</a>
         <a href="#faq">FAQ</a>
+        <a class="btn btn--primary js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
+        <a class="btn btn--ghost js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
       </nav>
 
       <div class="topbar__cta">
-        <a class="btn btn--ghost js-cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
-        <a class="btn btn--primary js-cta-whatsapp" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
+        <a class="btn btn--ghost js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
+        <a class="btn btn--primary js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
       </div>
     </div>
   </header>
@@ -402,12 +408,12 @@
             </div>
             <div id="stickySummaryContent" class="stickySummary__content">Preencha os dados para ver o resumo principal.</div>
             <div class="stickySummary__actions">
-              <button id="stickyExportPDF" class="btn btn--primary" type="button">Exportar PDF</button>
-              <button id="stickyShare" class="btn btn--ghost" type="button">Compartilhar</button>
+              <button id="stickyExportPDF" class="btn btn--primary" data-action="export-pdf" data-from="sticky" type="button">Exportar PDF</button>
+              <button id="stickyShare" class="btn btn--ghost" data-action="share-whatsapp" type="button">Compartilhar</button>
             </div>
           </aside>
 
-          <button id="stickyOpen" class="stickyOpen" type="button">Reabrir resumo</button>
+          <button id="stickyOpen" class="stickyOpen" type="button">Resumo</button>
 
           <div id="shareBox" class="shareBox"></div>
           <div id="pdfButtonContainer" style="margin-top: 15px;"></div>
@@ -415,8 +421,8 @@
           <div class="hr"></div>
 
           <div class="actions">
-            <a class="btn btn--primary js-cta-whatsapp" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
-            <a class="btn btn--ghost js-cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
+            <a class="btn btn--primary js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
+            <a class="btn btn--ghost js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
           </div>
 
           <p class="footnote">Sem spam. Só conteúdo útil para vendedor de marketplace.</p>
@@ -546,8 +552,8 @@
         </div>
 
         <div class="footer__links">
-          <a class="js-cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Instagram</a>
-          <a class="js-cta-whatsapp" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">WhatsApp</a>
+          <a class="js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Instagram</a>
+          <a class="js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">WhatsApp</a>
         </div>
       </div>
     </footer>
