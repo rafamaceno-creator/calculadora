@@ -51,8 +51,9 @@
   <main class="container">
     <section class="hero">
       <span class="kicker">Simples no início • Completo no avançado</span>
-      <h1>Digite custo, imposto e lucro.<br />Receba o preço sugerido por marketplace.</h1>
-      <p>Comece com custo, imposto e lucro. Depois, se quiser, ative <strong>peso</strong> e <strong>variáveis avançadas</strong>.</p>
+      <h1>Plataforma Oficial de Decisão Financeira para Vendedores de Marketplace</h1>
+      <p>Compare marketplaces, entenda seu lucro real e decida o preço com segurança.</p>
+      <small class="hero__microcopy">100% gratuito. Sem login.</small>
     </section>
 
     <section id="calculadora" class="grid">
@@ -372,6 +373,73 @@
         <div class="card__inner">
           <h2>Resultados</h2>
           <div id="results" class="resultList"></div>
+
+          <div class="cardMini quickMode">
+            <div class="cardMini__header">
+              <strong>Comparar no mesmo preço</strong>
+            </div>
+            <div class="field">
+              <div class="label">Preço de venda fixo (R$)</div>
+              <div class="inputWrap">
+                <span class="inputPrefix">R$</span>
+                <input id="samePriceInput" type="number" step="0.01" min="0" placeholder="Ex: 129,90" />
+              </div>
+            </div>
+            <div id="samePriceResults" class="marketCompareList"></div>
+          </div>
+
+          <div class="cardMini quickMode">
+            <div class="cardMini__header">
+              <strong>Analisar preço atual</strong>
+            </div>
+            <div class="field">
+              <div class="label">Preço que estou vendendo hoje (R$)</div>
+              <div class="inputWrap">
+                <span class="inputPrefix">R$</span>
+                <input id="currentPriceInput" type="number" step="0.01" min="0" placeholder="Ex: 99,90" />
+              </div>
+            </div>
+            <div id="currentPriceResults" class="marketCompareList"></div>
+          </div>
+
+          <div class="cardMini quickMode">
+            <div class="cardMini__header">
+              <strong>Simulador de escala</strong>
+            </div>
+            <div class="field">
+              <div class="label">Marketplace base para o simulador</div>
+              <select id="scaleMarketplace">
+                <option value="shopee">Shopee</option>
+                <option value="tiktok">TikTok Shop</option>
+                <option value="shein">SHEIN</option>
+                <option value="mlClassic">Mercado Livre — Clássico</option>
+                <option value="mlPremium">Mercado Livre — Premium</option>
+              </select>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <div class="label">Cenário A: Preço (R$)</div>
+                <input id="scalePriceA" type="number" step="0.01" min="0" placeholder="Ex: 109,90" />
+              </div>
+              <div class="field">
+                <div class="label">Cenário A: Unidades</div>
+                <input id="scaleUnitsA" type="number" step="1" min="0" placeholder="Ex: 100" />
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <div class="label">Cenário B: Preço (R$)</div>
+                <input id="scalePriceB" type="number" step="0.01" min="0" placeholder="Ex: 99,90" />
+              </div>
+              <div class="field">
+                <div class="label">Cenário B: Unidades</div>
+                <input id="scaleUnitsB" type="number" step="1" min="0" placeholder="Ex: 140" />
+              </div>
+            </div>
+            <div id="scaleResults" class="marketCompareList"></div>
+          </div>
+
+          <div id="shareBox" class="shareBox"></div>
 
           <div id="pdfButtonContainer" style="margin-top: 15px;"></div>
 
