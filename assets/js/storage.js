@@ -11,6 +11,7 @@ const STORAGE_KEY = "precificacao_config";
 function saveConfig() {
   const config = {
     // Dados básicos
+    calcName: document.querySelector("#calcName")?.value || "",
     cost: document.querySelector("#cost")?.value || "",
     tax: document.querySelector("#tax")?.value || "",
     profitType: document.querySelector("#profitType")?.value || "brl",
@@ -111,6 +112,7 @@ function applyConfig(config) {
   };
 
   // Dados básicos
+  set("#calcName", config.calcName);
   set("#cost", config.cost);
   set("#tax", config.tax);
   set("#profitType", config.profitType);
