@@ -71,14 +71,24 @@ async function generatePDF() {
   const calcName = document.querySelector("#calcName")?.value?.trim() || "calculo";
   const safeName = sanitizeFileName(calcName) || "calculo";
 
-  reportRoot.style.display = "block";
+  const exportNode = reportRoot.cloneNode(true);
+  exportNode.style.display = "block";
+  exportNode.style.position = "fixed";
+  exportNode.style.left = "-99999px";
+  exportNode.style.top = "0";
+  exportNode.style.width = "1080px";
+  exportNode.style.padding = "16px";
+  exportNode.style.background = "#ffffff";
+  document.body.appendChild(exportNode);
+
   await waitForRender();
 
-  const canvas = await html2canvas(reportRoot, {
+  const canvas = await html2canvas(exportNode, {
     scale: 3,
     backgroundColor: "#ffffff",
     useCORS: true
   });
+  exportNode.remove();
 
   const imgData = canvas.toDataURL("image/jpeg", 0.98);
   const { jsPDF } = window.jspdf;
