@@ -37,7 +37,7 @@
       </div>
 
       <nav class="nav" aria-label="Navegação">
-        <a href="#calculadora">Calculadora</a>
+        <a href="#sec-precificacao">Calculadora</a>
         <a href="#faq">FAQ</a>
       </nav>
 
@@ -56,7 +56,17 @@
       <small class="hero__microcopy">100% gratuito. Sem login.</small>
     </section>
 
-    <section id="calculadora" class="grid">
+    <nav class="segmentMenu" aria-label="Menu de blocos">
+      <button class="segmentMenu__btn" type="button" data-scroll-target="sec-precificacao">Precificação</button>
+      <button class="segmentMenu__btn" type="button" data-scroll-target="sec-comparar">Comparar preço</button>
+      <button class="segmentMenu__btn" type="button" data-scroll-target="sec-lucro-atual">Lucro atual</button>
+      <button class="segmentMenu__btn" type="button" data-scroll-target="sec-escala">Escala</button>
+    </nav>
+
+    <section id="sec-precificacao" class="sectionCard">
+      <h2>Precificação</h2>
+      <p class="sectionMicrocopy">Preencha seus custos e veja o preço sugerido com lucro real.</p>
+      <div class="grid">
       <div class="card">
         <div class="card__inner">
           <h2>Dados básicos</h2>
@@ -369,11 +379,43 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card stickyResultsCard">
         <div class="card__inner">
           <h2>Resultados</h2>
           <div id="results" class="resultList"></div>
 
+          <div id="reportRoot" class="reportRoot" aria-live="polite"></div>
+
+          <aside id="stickySummary" class="stickySummary" aria-live="polite">
+            <h3>Resumo rápido</h3>
+            <div id="stickySummaryContent" class="stickySummary__content">Preencha os dados para ver o resumo principal.</div>
+            <div class="stickySummary__actions">
+              <button id="stickyExportPDF" class="btn btn--primary" type="button">Exportar PDF</button>
+              <button id="stickyShare" class="btn btn--ghost" type="button">Compartilhar</button>
+            </div>
+          </aside>
+
+          <div id="shareBox" class="shareBox"></div>
+          <div id="pdfButtonContainer" style="margin-top: 15px;"></div>
+
+          <div class="hr"></div>
+
+          <div class="actions">
+            <a class="btn btn--primary js-cta-whatsapp" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
+            <a class="btn btn--ghost js-cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
+          </div>
+
+          <p class="footnote">Sem spam. Só conteúdo útil para vendedor de marketplace.</p>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section id="sec-comparar" class="sectionCard">
+      <h2>Comparar preço</h2>
+      <p class="sectionMicrocopy">Digite um preço de venda e compare o lucro/prejuízo em cada marketplace.</p>
+      <div class="card card--simple">
+        <div class="card__inner">
           <div class="cardMini quickMode">
             <div class="cardMini__header">
               <strong>Comparar no mesmo preço</strong>
@@ -387,7 +429,15 @@
             </div>
             <div id="samePriceResults" class="marketCompareList"></div>
           </div>
+        </div>
+      </div>
+    </section>
 
+    <section id="sec-lucro-atual" class="sectionCard">
+      <h2>Lucro atual</h2>
+      <p class="sectionMicrocopy">Digite o preço que você pratica hoje e descubra sua margem real.</p>
+      <div class="card card--simple">
+        <div class="card__inner">
           <div class="cardMini quickMode">
             <div class="cardMini__header">
               <strong>Analisar preço atual</strong>
@@ -401,7 +451,15 @@
             </div>
             <div id="currentPriceResults" class="marketCompareList"></div>
           </div>
+        </div>
+      </div>
+    </section>
 
+    <section id="sec-escala" class="sectionCard">
+      <h2>Escala</h2>
+      <p class="sectionMicrocopy">Compare dois cenários de preço x volume e veja qual coloca mais dinheiro no bolso.</p>
+      <div class="card card--simple">
+        <div class="card__inner">
           <div class="cardMini quickMode">
             <div class="cardMini__header">
               <strong>Simulador de escala</strong>
@@ -438,19 +496,6 @@
             </div>
             <div id="scaleResults" class="marketCompareList"></div>
           </div>
-
-          <div id="shareBox" class="shareBox"></div>
-
-          <div id="pdfButtonContainer" style="margin-top: 15px;"></div>
-
-          <div class="hr"></div>
-
-          <div class="actions">
-            <a class="btn btn--primary js-cta-whatsapp" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
-            <a class="btn btn--ghost js-cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
-          </div>
-
-          <p class="footnote">Sem spam. Só conteúdo útil para vendedor de marketplace.</p>
         </div>
       </div>
     </section>
