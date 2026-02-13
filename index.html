@@ -11,9 +11,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260213-4" data-asset="true" />
+  <link rel="stylesheet" href="assets/css/styles.css" data-asset="true" />
   <script>
-    const APP_VERSION = "20260213-4";
+    const now = new Date();
+    const APP_VERSION = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
 
     window.versionAssetPath = function versionAssetPath(path) {
       const url = new URL(path, window.location.href);
@@ -35,12 +36,13 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7RHBD29L5S"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-7RHBD29L5S', {
-      send_page_view: true,
-      anonymize_ip: true
-    });
+    window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+    try {
+      window.gtag('js', new Date());
+      window.gtag('config', 'G-7RHBD29L5S', { send_page_view: true, anonymize_ip: true });
+    } catch (e) {
+      console.warn('GA4 indisponível', e);
+    }
   </script>
 </head>
 
@@ -55,24 +57,19 @@
         </div>
       </div>
 
-      <button id="mobileMenuToggle" class="mobileMenuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="topbarNav">
-        ☰
-      </button>
+      <div class="topbar__controls">
+        <button id="themeToggle" class="btn btn--ghost" type="button" aria-label="Alternar tema">🌓 Tema</button>
+        <button id="mobileMenuToggle" class="mobileMenuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="topbarNav">☰</button>
+      </div>
 
       <nav id="topbarNav" class="nav" aria-label="Navegação">
         <a href="#precificacao">Calculadora</a>
         <a href="#faq">FAQ</a>
         <a class="btn btn--primary btn--cta js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
-        <a class="btn btn--outline btn--cta" href="hora-com-o-especialista.html">A Hora com o Especialista</a>
+        <a class="btn btn--outline btn--cta" data-action="cta-specialist" data-from="topbar" href="hora-com-o-especialista.html">A Hora com o Especialista</a>
         <a class="btn btn--ghost btn--cta js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
       </nav>
 
-      <div class="topbar__cta">
-        <button id="themeToggle" class="btn btn--ghost" type="button" aria-label="Alternar tema">🌓 Tema</button>
-        <a class="btn btn--primary btn--cta js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
-        <a class="btn btn--outline btn--cta" href="hora-com-o-especialista.html">A Hora com o Especialista</a>
-        <a class="btn btn--ghost btn--cta js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
-      </div>
     </div>
   </header>
 
@@ -520,12 +517,15 @@
       <h2>Últimos vídeos sobre Marketplace</h2>
       <p class="sectionMicrocopy">Aprenda estratégias práticas de precificação, margem e escala.</p>
       <div id="youtubeRail" class="youtubeRail" aria-live="polite"></div>
+      <div style="margin-top:14px;">
+        <a class="btn btn--outline" href="https://www.youtube.com/@rafamaceno" target="_blank" rel="noopener">Ver mais no YouTube</a>
+      </div>
     </section>
 
     <section class="sectionCard strategicCta">
       <h2>Quer que eu analise sua conta?</h2>
       <p>Se você quer sair da teoria e ter um plano claro para escalar, agende sua hora comigo.</p>
-      <a class="btn btn--primary" href="hora-com-o-especialista.html">Agendar análise estratégica</a>
+      <a class="btn btn--primary" data-action="cta-specialist" data-from="home-cta" href="hora-com-o-especialista.html">Agendar análise estratégica</a>
     </section>
 
     <section id="faq" class="faq">
@@ -572,9 +572,9 @@
   <script>
     (function loadVersionedScripts() {
       const scripts = [
-        "assets/js/storage.js?v=20260213-5",
-        "assets/js/pdf-export.js?v=20260213-4",
-        "assets/js/main.js?v=20260213-4"
+        "assets/js/storage.js",
+        "assets/js/pdf-export.js",
+        "assets/js/main.js"
       ];
 
       const loadNext = (index) => {

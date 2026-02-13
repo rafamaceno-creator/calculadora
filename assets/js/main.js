@@ -29,16 +29,18 @@ const THEME_KEY = "pricing_theme";
 const SAVED_SIMULATIONS_KEY = "saved_simulations_v2";
 
 const YOUTUBE_VIDEOS = [
-  { id: "7z2lR8mWQmM", title: "Como precificar sem destruir sua margem" },
-  { id: "k3yGf2mZp9A", title: "Erro de comissão que trava seu lucro" },
-  { id: "Q8kLm2nVx1c", title: "Escala com margem real em marketplace" },
-  { id: "m5Pq9rT2uYb", title: "Preço ideal para vender mais e lucrar" },
-  { id: "b4Nw6dX1sZa", title: "Diagnóstico rápido de operação no marketplace" }
+  { id: "7z2lR8mWQmM", title: "Como precificar sem destruir sua margem", publishedAt: "2026-01-12" },
+  { id: "k3yGf2mZp9A", title: "Erro de comissão que trava seu lucro", publishedAt: "2026-01-05" },
+  { id: "Q8kLm2nVx1c", title: "Escala com margem real em marketplace", publishedAt: "2025-12-26" },
+  { id: "m5Pq9rT2uYb", title: "Preço ideal para vender mais e lucrar", publishedAt: "2025-12-10" },
+  { id: "b4Nw6dX1sZa", title: "Diagnóstico rápido de operação no marketplace", publishedAt: "2025-11-30" }
 ];
 
 function track(eventName, params = {}) {
-  if (typeof window.gtag === "function") {
-    window.gtag("event", eventName, params);
+  try {
+    if (typeof window.gtag === "function") window.gtag("event", eventName, params);
+  } catch (error) {
+    console.warn("GA4 bloqueado", error);
   }
 }
 
@@ -59,7 +61,7 @@ let __engaged = false;
 function trackEngaged() {
   if (__engaged) return;
   __engaged = true;
-  track("usuario_engajado");
+  track("user_engaged");
 }
 
 function ticketFaixa(v) {
@@ -78,7 +80,7 @@ function trackPerfilTicket(precoSugerido) {
   if (faixa === __lastFaixa) return;
   __lastFaixa = faixa;
 
-  track("perfil_ticket", {
+  track("profile_ticket", {
     faixa: faixa,
     preco_sugerido: Number(precoSugerido) || 0
   });
@@ -337,130 +339,44 @@ function getAdvancedVars() {
 /* ===== Build Incidencies List ===== */
 
 function buildIncidenciesList(taxPct, profitType, profitValue, marketplacePct, marketplaceFixed, affiliatePct, advDetails, price) {
-  const items = [];
+  const groups = [];
+  const add = (group, label, pct = 0, brl = 0, kind = "percent") => {
+    if ((pct || 0) <= 0 && (brl || 0) <= 0) return;
+    let target = groups.find((item) => item.group === group);
+    if (!target) {
+      target = { group, items: [] };
+      groups.push(target);
+    }
+    target.items.push({ label, pct: pct || 0, brl: brl || 0, kind });
+  };
 
   const tax = Math.max(0, taxPct) / 100;
   const profitPct = profitType === "pct" ? Math.max(0, profitValue) / 100 : 0;
 
-  // Comissão
-  if ((marketplacePct || 0) > 0 || (marketplaceFixed || 0) > 0) {
-    const commValue = Number.isFinite(price) ? price * (marketplacePct || 0) : 0;
-    items.push({
-      label: "Comissão",
-      pct: marketplacePct || 0,
-      brl: commValue + (Number.isFinite(marketplaceFixed) ? marketplaceFixed : 0)
-    });
-  }
+  const commValue = Number.isFinite(price) ? price * (marketplacePct || 0) : 0;
+  add("Marketplace", "Comissão", marketplacePct || 0, commValue, "percent");
+  add("Marketplace", "Taxa fixa", 0, Number.isFinite(marketplaceFixed) ? marketplaceFixed : 0, "fixed");
 
-  // Afiliados
-  if ((affiliatePct || 0) > 0) {
-    const affValue = Number.isFinite(price) ? price * affiliatePct : 0;
-    items.push({
-      label: "Afiliados",
-      pct: affiliatePct,
-      brl: affValue
-    });
-  }
+  add("Impostos", "Imposto sobre venda", tax, Number.isFinite(price) ? price * tax : 0, "percent");
+  add("Impostos", "DIFAL", advDetails.difal, Number.isFinite(price) ? price * advDetails.difal : 0, "percent");
+  add("Impostos", "PIS", advDetails.pis, Number.isFinite(price) ? price * advDetails.pis : 0, "percent");
+  add("Impostos", "COFINS", advDetails.cofins, Number.isFinite(price) ? price * advDetails.cofins : 0, "percent");
 
-  // Imposto
-  if (tax > 0) {
-    const impValue = Number.isFinite(price) ? price * tax : 0;
-    items.push({
-      label: "Imposto",
-      pct: tax,
-      brl: impValue
-    });
-  }
+  add("Ads", "Tráfego pago", advDetails.ads.pct, (Number.isFinite(price) ? price * advDetails.ads.pct : 0) + advDetails.ads.brl, advDetails.ads.pct > 0 ? "percent" : "fixed");
+  add("Afiliados", "Comissão de afiliado", affiliatePct, Number.isFinite(price) ? price * affiliatePct : 0, "percent");
+  add("Custos fixos", "Custo fixo", advDetails.costFixed.pct, (Number.isFinite(price) ? price * advDetails.costFixed.pct : 0) + advDetails.costFixed.brl, advDetails.costFixed.pct > 0 ? "percent" : "fixed");
+  add("Outros", "Devolução", advDetails.ret.pct, (Number.isFinite(price) ? price * advDetails.ret.pct : 0) + advDetails.ret.brl, advDetails.ret.pct > 0 ? "percent" : "fixed");
+  add("Outros", "Outros", advDetails.other.pct, (Number.isFinite(price) ? price * advDetails.other.pct : 0) + advDetails.other.brl, advDetails.other.pct > 0 ? "percent" : "fixed");
 
-  // Lucro
   if (profitType === "brl") {
     const lucroValue = Math.max(0, profitValue);
     const lucroPctReal = Number.isFinite(price) && price > 0 ? (lucroValue / price) : 0;
-    items.push({
-      label: "Lucro",
-      pct: lucroPctReal,
-      brl: lucroValue
-    });
+    add("Outros", "Lucro alvo", lucroPctReal, lucroValue, "fixed");
   } else if (profitPct > 0) {
-    const lucroValue = Number.isFinite(price) ? price * profitPct : 0;
-    items.push({
-      label: "Lucro",
-      pct: profitPct,
-      brl: lucroValue
-    });
+    add("Outros", "Lucro alvo", profitPct, Number.isFinite(price) ? price * profitPct : 0, "percent");
   }
 
-  // Ads
-  if (advDetails.ads.pct > 0 || advDetails.ads.brl > 0) {
-    const adsValue = Number.isFinite(price) ? price * advDetails.ads.pct : 0;
-    items.push({
-      label: "Ads",
-      pct: advDetails.ads.pct,
-      brl: adsValue + advDetails.ads.brl
-    });
-  }
-
-  // Devolução
-  if (advDetails.ret.pct > 0 || advDetails.ret.brl > 0) {
-    const retValue = Number.isFinite(price) ? price * advDetails.ret.pct : 0;
-    items.push({
-      label: "Devolução",
-      pct: advDetails.ret.pct,
-      brl: retValue + advDetails.ret.brl
-    });
-  }
-
-  // Custo fixo
-  if (advDetails.costFixed.pct > 0 || advDetails.costFixed.brl > 0) {
-    const cfValue = Number.isFinite(price) ? price * advDetails.costFixed.pct : 0;
-    items.push({
-      label: "Custo fixo",
-      pct: advDetails.costFixed.pct,
-      brl: cfValue + advDetails.costFixed.brl
-    });
-  }
-
-  // DIFAL
-  if (advDetails.difal > 0) {
-    const difalValue = Number.isFinite(price) ? price * advDetails.difal : 0;
-    items.push({
-      label: "DIFAL",
-      pct: advDetails.difal,
-      brl: difalValue
-    });
-  }
-
-  // PIS
-  if (advDetails.pis > 0) {
-    const pisValue = Number.isFinite(price) ? price * advDetails.pis : 0;
-    items.push({
-      label: "PIS",
-      pct: advDetails.pis,
-      brl: pisValue
-    });
-  }
-
-  // COFINS
-  if (advDetails.cofins > 0) {
-    const cofinsValue = Number.isFinite(price) ? price * advDetails.cofins : 0;
-    items.push({
-      label: "COFINS",
-      pct: advDetails.cofins,
-      brl: cofinsValue
-    });
-  }
-
-  // Outro
-  if (advDetails.other.pct > 0 || advDetails.other.brl > 0) {
-    const otherValue = Number.isFinite(price) ? price * advDetails.other.pct : 0;
-    items.push({
-      label: "Outro",
-      pct: advDetails.other.pct,
-      brl: otherValue + advDetails.other.brl
-    });
-  }
-
-  return items;
+  return groups;
 }
 
 
@@ -591,10 +507,16 @@ function resultCardHTML(
 
   const itemsHTML = items.length
     ? items
-        .map(
-          (item) =>
-            `<div class="k">${item.label}</div><div class="v">${(item.pct * 100).toFixed(2)}% (${brl(item.brl)})</div>`
-        )
+        .map((group) => {
+          const rows = group.items
+            .map((item) => {
+              const pctText = item.pct > 0 ? `${(item.pct * 100).toFixed(2)}%` : "—";
+              const kindText = item.kind === "fixed" ? "custo fixo" : "entra no total %";
+              return `<div class="k">${item.label}<small>${kindText}</small></div><div class="v">${pctText} • ${brl(item.brl)}</div>`;
+            })
+            .join("");
+          return `<div class="incidenceGroupTitle">${group.group}</div>${rows}`;
+        })
         .join("")
     : `<div class="k">—</div><div class="v">—</div>`;
 
@@ -679,8 +601,8 @@ function runExportPDF(from = "card", triggerButton = null) {
     if (typeof window.generatePDF === "function") {
       window.generatePDF();
       trackGA4Event("export_pdf", {
-        source: from,
-        device: window.innerWidth < 768 ? "mobile" : "desktop"
+        section: from,
+        value: window.innerWidth < 768 ? "mobile" : "desktop"
       });
       return;
     }
@@ -701,7 +623,7 @@ async function shareFallback() {
   const summaryText = document.querySelector("#stickySummaryContent")?.innerText?.trim() || "Resumo indisponível.";
   try {
     await navigator.clipboard.writeText(summaryText);
-    trackGA4Event("copy_link_click", { source: "summary_text" });
+    trackGA4Event("copy_link", { section: "summary_text" });
     alert("Copiado");
   } catch {
     alert("Copiado");
@@ -1156,6 +1078,7 @@ function recalc(options = {}) {
   ]);
   updateReportRoot();
   trackPerfilTicket(shopee.price);
+  trackGA4Event("recalc", { section: source || "auto", value: Number(shopee.price || 0) });
 
   // Mostrar botão de PDF
   const pdfContainer = document.querySelector("#pdfButtonContainer");
@@ -1322,7 +1245,7 @@ function bindActionButtons() {
         const link = buildShareLink();
         const text = encodeURIComponent(`Simulei minha precificação aqui: ${link}`);
         window.open(`https://wa.me/?text=${text}`, "_blank", "noopener");
-        trackGA4Event("share_clicked", { source: target.id || target.dataset.from || "results", channel: "whatsapp" });
+        trackGA4Event("share_whatsapp", { section: target.id || target.dataset.from || "results", value: "whatsapp" });
         return;
       }
 
@@ -1332,7 +1255,7 @@ function bindActionButtons() {
         try {
           await navigator.clipboard.writeText(link);
           alert("Link copiado com sucesso.");
-          trackGA4Event("share_clicked", { source: target.dataset.from || "results", channel: "copy" });
+          trackGA4Event("copy_link", { section: target.dataset.from || "results" });
         } catch {
           prompt("Copie o link:", link);
         }
@@ -1340,16 +1263,16 @@ function bindActionButtons() {
       }
 
       if (action === "cta-instagram") {
-        trackGA4Event("follow_instagram_click", { source: target.closest(".topbar") ? "topbar" : "footer" });
+        trackGA4Event("click_instagram", { section: target.closest(".topbar") ? "topbar" : "footer" });
         return;
       }
 
       if (action === "cta-whatsapp-community") {
-        trackGA4Event("join_whatsapp_click", { source: target.closest(".topbar") ? "topbar" : "footer" });
+        trackGA4Event("click_whatsapp", { section: target.closest(".topbar") ? "topbar" : "footer" });
       }
 
       if (action === "cta-specialist") {
-        trackGA4Event("specialist_click", { source: target.dataset.from || "unknown" });
+        trackGA4Event("click_specialist", { section: target.dataset.from || "unknown" });
       }
     } catch (error) {
       logActionError(`falha em ${action}`, error);
@@ -1407,7 +1330,7 @@ function bindInputTracking() {
     if (!field) return;
     if (timers.has(field)) clearTimeout(timers.get(field));
     timers.set(field, setTimeout(() => {
-      track("input_change", { field });
+      track("input_change", { section: "inputs", value: field });
     }, 2000));
   });
 }
@@ -1426,7 +1349,7 @@ function bind() {
     const mode = document.querySelector("#advToggle")?.checked ? "advanced" : "basic";
     const hasWeight = !!document.querySelector("#mlWeightToggle")?.checked;
     const hasAffiliate = !!(document.querySelector("#advToggle")?.checked && document.querySelector("#affToggle")?.checked);
-    trackGA4Event("calculate_clicked", { mode, has_weight: hasWeight, has_affiliate: hasAffiliate });
+    trackGA4Event("recalc", { section: "button", value: mode, has_weight: hasWeight, has_affiliate: hasAffiliate });
     scrollToResults();
   });
 
@@ -1445,7 +1368,7 @@ function bind() {
     items.unshift(payload);
     localStorage.setItem(SAVED_SIMULATIONS_KEY, JSON.stringify(items.slice(0, 20)));
     renderSavedSimulations();
-    trackGA4Event("simulation_saved", { total: items.length });
+    trackGA4Event("save_simulation", { total: items.length });
   });
 
   $("#savedSimulations")?.addEventListener("change", (event) => {
@@ -1482,6 +1405,9 @@ function bind() {
     toggle.setAttribute("aria-expanded", expanded ? "false" : "true");
     panel.classList.toggle("is-open", !expanded);
     panel.setAttribute("aria-hidden", expanded ? "true" : "false");
+    const card = toggle.closest(".marketplaceCard");
+    const marketplace = card?.querySelector(".cardTitle")?.textContent?.trim() || "unknown";
+    trackGA4Event(expanded ? "close_incidences" : "open_incidences", { section: "results", marketplace });
   });
 
   document.querySelectorAll("[data-scroll-target]").forEach((btn) => {
@@ -1497,7 +1423,7 @@ function bind() {
         "escala": "escala"
       };
       const section = sectionMap[targetId];
-      if (section) trackGA4Event("section_nav_click", { section });
+      if (section) trackGA4Event("click_tab", { section, value: "menu_top" });
     });
   });
 
@@ -1559,12 +1485,15 @@ function bindSegmentMenuActiveState() {
 function renderYoutubeRail() {
   const wrap = document.querySelector("#youtubeRail");
   if (!wrap) return;
-  wrap.innerHTML = YOUTUBE_VIDEOS.map((video) => `
+  wrap.innerHTML = YOUTUBE_VIDEOS.map((video) => {
+    const dateText = video.publishedAt ? new Date(video.publishedAt + "T12:00:00").toLocaleDateString("pt-BR") : "";
+    return `
     <a class="youtubeCard" href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener">
       <img src="https://img.youtube.com/vi/${video.id}/hqdefault.jpg" alt="Thumbnail do vídeo ${video.title}">
-      <span>${video.title}</span>
-    </a>
-  `).join("");
+      <span>${video.title || "Assista no YouTube"}</span>
+      <small>${dateText}</small>
+    </a>`;
+  }).join("");
 }
 
 function initApp() {
