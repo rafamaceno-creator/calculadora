@@ -647,7 +647,7 @@ function resultCardHTML(
 /* ===== Main calc ===== */
 
 
-async function runExportPDF(from = "card", triggerButton = null) {
+function runExportPDF(from = "card", triggerButton = null) {
   const button = triggerButton instanceof HTMLElement ? triggerButton : null;
   const originalLabel = button ? button.innerHTML : "";
 
@@ -661,7 +661,7 @@ async function runExportPDF(from = "card", triggerButton = null) {
   try {
     recalc({ source: "export" });
     if (typeof window.generatePDF === "function") {
-      await window.generatePDF();
+      window.generatePDF();
       trackGA4Event("export_pdf_click", {
         source: from,
         device: window.innerWidth < 768 ? "mobile" : "desktop"
@@ -1273,7 +1273,7 @@ function bindActionButtons() {
     try {
       if (action === "export-pdf") {
         event.preventDefault();
-        await runExportPDF(target.getAttribute("data-from") || "card", target);
+        runExportPDF(target.getAttribute("data-from") || "card", target);
         return;
       }
 
