@@ -25,13 +25,49 @@ const INPUT_EVENT_FIELDS = {
 };
 
 function track(eventName, params = {}) {
-  try {
-    if (typeof window.gtag === "function") {
-      window.gtag("event", eventName, params);
-    }
-  } catch (_) {
-    // fail silently
+  if (typeof window.gtag === "function") {
+    window.gtag("event", eventName, params);
   }
+}
+
+function setUserProperty(name, value) {
+  if (typeof window.gtag === "function") {
+    window.gtag("set", "user_properties", {
+      [name]: value
+    });
+  }
+}
+
+let __engaged = false;
+
+function trackEngaged() {
+  if (__engaged) return;
+  __engaged = true;
+  track("usuario_engajado");
+}
+
+function ticketFaixa(v) {
+  const n = Number(v) || 0;
+  if (n <= 79.99) return "0-79";
+  if (n <= 99.99) return "80-99";
+  if (n <= 199.99) return "100-199";
+  if (n <= 499.99) return "200-499";
+  return "500+";
+}
+
+let __lastFaixa = null;
+
+function trackPerfilTicket(precoSugerido) {
+  const faixa = ticketFaixa(precoSugerido);
+  if (faixa === __lastFaixa) return;
+  __lastFaixa = faixa;
+
+  track("perfil_ticket", {
+    faixa: faixa,
+    preco_sugerido: Number(precoSugerido) || 0
+  });
+
+  setUserProperty("perfil_ticket", faixa);
 }
 
 function getDeviceType() {
@@ -607,7 +643,9 @@ function runExportPDF(from = "card") {
     recalc();
     if (typeof window.generatePDF === "function") {
       window.generatePDF();
-      track("export_pdf", { from, marketplaces_count: 5 });
+      track("export_pdf", {
+        device: window.innerWidth < 768 ? "mobile" : "desktop"
+      });
       return;
     }
     logActionError("generatePDF indisponível");
@@ -1004,6 +1042,7 @@ function recalc() {
     { title: "Mercado Livre — Premium", received: mlPremium.r.received, profitBRL: mlPremium.r.profitBRL, profitPctReal: mlPremium.r.profitPctReal }
   ]);
   updateReportRoot();
+  trackPerfilTicket(shopee.price);
 
   // Mostrar botão de PDF
   const pdfContainer = document.querySelector("#pdfButtonContainer");
@@ -1218,11 +1257,11 @@ function bindActionButtons() {
       }
 
       if (action === "cta-instagram") {
-        track("cta_click", { cta: "instagram" });
+        track("cta_click", { cta: "instagram", destino: target.href || "" });
       }
 
       if (action === "cta-whatsapp-community") {
-        track("cta_click", { cta: "whatsapp_community" });
+        track("cta_click", { cta: "whatsapp", destino: target.href || "" });
       }
     } catch (error) {
       logActionError(`falha em ${action}`, error);
@@ -1250,6 +1289,31 @@ function bindMobileMenu() {
 
 function bindInputTracking() {
   const timers = new Map();
+  const relevantEngagementIds = new Set([
+    "cost",
+    "tax",
+    "profitType",
+    "profitValue",
+    "mlClassicPct",
+    "mlPremiumPct",
+    "mlWeightToggle",
+    "mlWeightValue",
+    "mlWeightUnit",
+    "sheinCategory",
+    "samePriceInput",
+    "currentPriceInput"
+  ]);
+
+  const handleEngagement = (event) => {
+    const target = event.target;
+    if (!target || !target.id) return;
+    if (!relevantEngagementIds.has(target.id)) return;
+    trackEngaged();
+  };
+
+  document.addEventListener("input", handleEngagement);
+  document.addEventListener("change", handleEngagement);
+
   document.addEventListener("input", (event) => {
     const field = INPUT_EVENT_FIELDS[event.target?.id];
     if (!field) return;
@@ -1259,6 +1323,7 @@ function bindInputTracking() {
     }, 2000));
   });
 }
+
 
 function bind() {
   const $ = (s) => document.querySelector(s);

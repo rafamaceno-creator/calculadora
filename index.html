@@ -24,13 +24,16 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <!-- Google tag (gtag.js) -->
+  <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7RHBD29L5S"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-7RHBD29L5S');
+    gtag('config', 'G-7RHBD29L5S', {
+      send_page_view: true,
+      anonymize_ip: true
+    });
   </script>
 </head>
 
