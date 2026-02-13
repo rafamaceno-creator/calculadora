@@ -1,5 +1,5 @@
 /* =========================
-   Exportação para impressão
+   Exportação para impressão (iframe)
    ========================= */
 
 function escapeHTML(value) {
@@ -12,7 +12,7 @@ function escapeHTML(value) {
 }
 
 function collectReportItems() {
-  const cards = Array.from(document.querySelectorAll("#results .card"));
+  const cards = Array.from(document.querySelectorAll("#results .marketplaceCard"));
   const productNameRaw = document.querySelector("#calcName")?.value?.trim() || "";
   const productName = productNameRaw || "Produto sem nome";
 
@@ -22,16 +22,9 @@ function collectReportItems() {
 
     const summaryRows = Array.from(card.querySelectorAll(".resultGrid:not(.resultGrid--details) .k")).map((labelEl) => {
       const valueEl = labelEl.nextElementSibling;
-      const normalizedLabel = labelEl.textContent.replace(/\s+/g, " ").trim();
-      const valueText = valueEl?.textContent?.replace(/\s+/g, " ").trim() || "—";
-      return { label: normalizedLabel, value: valueText };
-    });
-
-    const detailsRows = Array.from(card.querySelectorAll(".resultGrid--details .k")).map((labelEl) => {
-      const valueEl = labelEl.nextElementSibling;
       return {
-        label: labelEl.textContent.trim(),
-        value: valueEl?.textContent?.trim() || "—"
+        label: labelEl.textContent.replace(/\s+/g, " ").trim(),
+        value: valueEl?.textContent?.replace(/\s+/g, " ").trim() || "—"
       };
     });
 
@@ -43,39 +36,9 @@ function collectReportItems() {
       suggestedPrice,
       received: byLabel("VOCÊ RECEBE"),
       profit: byLabel("LUCRO"),
-      incidences: byLabel("TOTAL DE INCIDÊNCIAS"),
-      faixa: byLabel("FAIXA APLICADA"),
-      antecipacao: byLabel("ANTECIPA"),
-      detailsRows
+      incidences: byLabel("TOTAL DE INCIDÊNCIAS")
     };
   });
-}
-
-function buildReportCardsHTML(items) {
-  return items.map((item) => `
-    <section class="report-card" style="margin-top:18px;padding:16px;border:1px solid #d8dee8;border-radius:12px;break-inside:avoid;page-break-inside:avoid;">
-      <h2 style="margin:0 0 10px;font-size:18px;color:#0f172a;">${escapeHTML(item.marketplace)}</h2>
-      <div style="display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:13px;">
-        <span>Preço ideal</span><strong>${escapeHTML(item.suggestedPrice)}</strong>
-        <span>Você recebe</span><strong>${escapeHTML(item.received)}</strong>
-        <span>Lucro</span><strong>${escapeHTML(item.profit)}</strong>
-        <span>Total de incidências</span><strong>${escapeHTML(item.incidences)}</strong>
-        <span>Faixa aplicada</span><strong>${escapeHTML(item.faixa)}</strong>
-        <span>Antecipação</span><strong>${escapeHTML(item.antecipacao)}</strong>
-      </div>
-      <h3 style="margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#334155;">Detalhamento das incidências</h3>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <tbody>
-          ${item.detailsRows.map((detail) => `
-            <tr>
-              <td style="padding:6px;border-top:1px solid #edf1f5;color:#475569;">${escapeHTML(detail.label)}</td>
-              <td style="padding:6px;border-top:1px solid #edf1f5;text-align:right;font-weight:700;color:#0f172a;">${escapeHTML(detail.value)}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </section>
-  `).join("");
 }
 
 function getReportMarkup() {
@@ -83,22 +46,28 @@ function getReportMarkup() {
   if (!items.length) return "";
 
   const productName = items[0]?.productName || "Produto sem nome";
-  const today = new Date().toLocaleDateString("pt-BR");
+  const dateTime = new Date().toLocaleString("pt-BR");
 
   return `
-    <section class="print-report" style="font-family:Inter,Arial,sans-serif;color:#0f172a;">
-      <header style="border-bottom:2px solid #e2e8f0;padding-bottom:12px;margin-bottom:14px;">
-        <div style="font-size:12px;letter-spacing:.08em;color:#334155;font-weight:700;">RELATÓRIO DE PRECIFICAÇÃO</div>
-        <div style="margin-top:6px;font-size:13px;line-height:1.5;">
-          <div>Produto: <strong>${escapeHTML(productName)}</strong></div>
-          <div>Data: <strong>${escapeHTML(today)}</strong></div>
-          <div>Domínio: <strong>precificacao.rafamaceno.com.br</strong></div>
+    <section class="print-report" style="font-family:Inter,Arial,sans-serif;color:#0f172a;padding:20px;">
+      <header style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border-bottom:2px solid #e2e8f0;padding-bottom:12px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:12px;letter-spacing:.08em;color:#334155;font-weight:700;text-transform:uppercase;">Modo A — Somente resultados</div>
+          <h1 style="margin:6px 0 0;font-size:24px;line-height:1.2;">Relatório de Precificação — ${escapeHTML(productName)}</h1>
         </div>
+        <div style="font-size:12px;color:#475569;white-space:nowrap;">${escapeHTML(dateTime)}</div>
       </header>
-
-      <h1 style="margin:0 0 14px;font-size:24px;line-height:1.2;">Relatório de Precificação do Produto "${escapeHTML(productName)}"</h1>
-
-      ${buildReportCardsHTML(items)}
+      ${items.map((item) => `
+      <section class="report-card" style="margin-top:14px;padding:14px;border:1px solid #d8dee8;border-radius:12px;break-inside:avoid;page-break-inside:avoid;">
+        <h2 style="margin:0 0 10px;font-size:18px;color:#0f172a;">${escapeHTML(item.marketplace)}</h2>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:7px 12px;font-size:13px;">
+          <span>Preço ideal</span><strong>${escapeHTML(item.suggestedPrice)}</strong>
+          <span>Você recebe</span><strong>${escapeHTML(item.received)}</strong>
+          <span>Lucro</span><strong>${escapeHTML(item.profit)}</strong>
+          <span>Total de incidências</span><strong>${escapeHTML(item.incidences)}</strong>
+        </div>
+      </section>
+      `).join("")}
     </section>
   `;
 }
@@ -110,30 +79,51 @@ function exportPDF() {
     return;
   }
 
-  let printRoot = document.querySelector("#printRoot");
-  if (!printRoot) {
-    printRoot = document.createElement("div");
-    printRoot.id = "printRoot";
-    printRoot.className = "printRoot";
-    printRoot.setAttribute("aria-hidden", "true");
-    document.body.appendChild(printRoot);
-  }
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.setAttribute("aria-hidden", "true");
 
   const cleanup = () => {
-    document.body.classList.remove("is-printing");
-    printRoot.innerHTML = "";
-    window.onafterprint = null;
+    setTimeout(() => {
+      iframe.remove();
+    }, 600);
   };
 
-  printRoot.innerHTML = markup;
-  document.body.classList.add("is-printing");
-  window.onafterprint = cleanup;
-  window.print();
-}
+  iframe.onload = () => {
+    const win = iframe.contentWindow;
+    if (!win) return cleanup();
+    win.focus();
+    win.print();
+    cleanup();
+  };
 
-function generatePDF() {
-  exportPDF();
+  document.body.appendChild(iframe);
+  const doc = iframe.contentDocument || iframe.contentWindow?.document;
+  if (!doc) return cleanup();
+
+  doc.open();
+  doc.write(`
+    <!doctype html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8">
+        <title>Relatório de Precificação</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body{margin:0;background:#ffffff;color:#0f172a;font-family:Inter,Arial,sans-serif}
+          @page{size:A4 portrait;margin:12mm}
+        </style>
+      </head>
+      <body>${markup}</body>
+    </html>
+  `);
+  doc.close();
 }
 
 window.exportPDF = exportPDF;
-window.generatePDF = generatePDF;
+window.generatePDF = exportPDF;

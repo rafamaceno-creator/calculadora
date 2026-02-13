@@ -4,72 +4,104 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>A Hora com o Especialista | Precificação Marketplaces</title>
-  <meta name="description" content="Análise estratégica da sua conta para escalar com margem, previsibilidade e plano de ação." />
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260213-4" />
-
-  <!-- Google Analytics 4 -->
+  <meta name="description" content="Sessão estratégica 1:1 para corrigir margem, destravar operação e escalar com plano claro em marketplaces." />
+  <link rel="stylesheet" href="assets/css/styles.css" data-asset="true" />
+  <script>
+    const now = new Date();
+    const APP_VERSION = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
+    window.versionAssetPath = function(path){ const url = new URL(path, window.location.href); url.searchParams.set("v", APP_VERSION); return url.pathname + url.search; };
+    (function(){ document.querySelectorAll('[data-asset="true"]').forEach((el)=>{ const attr = el.tagName === "LINK" ? "href" : "src"; el.setAttribute(attr, window.versionAssetPath(el.getAttribute(attr))); }); })();
+  </script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7RHBD29L5S"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);} 
-    gtag('js', new Date());
-    gtag('config', 'G-7RHBD29L5S', { send_page_view: true, anonymize_ip: true });
+    window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+    try { window.gtag('js', new Date()); window.gtag('config', 'G-7RHBD29L5S', { send_page_view: true, anonymize_ip: true }); } catch(e) { console.warn('GA4 indisponível', e); }
   </script>
 </head>
 <body>
-  <main class="container" style="padding:34px 0 46px;">
-    <section class="sectionCard" style="text-align:center;">
-      <span class="kicker">Atendimento estratégico</span>
-      <h1 style="margin:12px 0 8px;font-size:clamp(30px,5vw,46px);">A Hora com o Especialista</h1>
-      <p style="margin:0 auto;max-width:66ch;color:var(--muted);">Uma análise estratégica da sua conta com direcionamento claro para escalar.</p>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <div class="brand">
+        <span class="brand__dot" aria-hidden="true"></span>
+        <div><strong>Precificação</strong><br /><small>Marketplaces</small></div>
+      </div>
+      <div class="topbar__controls">
+        <a class="btn btn--outline" href="index.html">Voltar para a Calculadora</a>
+        <button id="mobileMenuToggle" class="mobileMenuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="topbarNav">☰</button>
+      </div>
+      <nav id="topbarNav" class="nav" aria-label="Navegação">
+        <a href="index.html">← Calculadora</a>
+        <a class="btn btn--primary btn--cta" data-action="cta-specialist" data-from="hora-nav" href="#agenda">A Hora com o Especialista</a>
+        <a class="btn btn--ghost btn--cta js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container specialistPage">
+    <p class="breadcrumb"><a href="index.html">← Calculadora</a></p>
+
+    <section class="sectionCard specialistHero">
+      <span class="kicker">Sessão estratégica 1:1</span>
+      <h1>A Hora com o Especialista</h1>
+      <p>Por <strong>R$ 497</strong>, você recebe uma análise direta da sua operação para parar de vender no escuro, corrigir margem e construir um plano executável para escalar com segurança.</p>
     </section>
 
     <section class="sectionCard">
-      <h2>O que você recebe</h2>
-      <ul>
-        <li>Análise completa da sua conta</li>
-        <li>Diagnóstico de margem</li>
-        <li>Revisão de anúncios</li>
-        <li>Mini mentoria personalizada</li>
-        <li>Resolução de dúvidas ao vivo</li>
+      <h2>O que você leva na prática</h2>
+      <ul class="specialistList">
+        <li>Diagnóstico completo de margem por canal (taxas, impostos, custos e lucro real).</li>
+        <li>Revisão de precificação com prioridades de ajuste para os próximos 7 dias.</li>
+        <li>Análise dos gargalos que travam crescimento (anúncio, ticket, mix e operação).</li>
+        <li>Plano de ação claro: o que manter, o que cortar e o que acelerar.</li>
       </ul>
     </section>
 
     <section class="sectionCard">
       <h2>Para quem é</h2>
-      <ul>
-        <li>Vendedores travados</li>
-        <li>Quem não entende margem real</li>
-        <li>Quem quer escalar com segurança</li>
+      <ul class="specialistList">
+        <li>Vendedor que fatura, mas não enxerga a margem real.</li>
+        <li>Operação com sensação de “vende muito e sobra pouco”.</li>
+        <li>Quem quer escalar com previsibilidade, sem depender de tentativa e erro.</li>
       </ul>
     </section>
 
-    <section class="sectionCard">
+    <section class="sectionCard" id="agenda">
       <h2>Como funciona</h2>
       <ol>
-        <li>Você agenda</li>
-        <li>Envia dados</li>
-        <li>Recebe análise ao vivo</li>
-        <li>Sai com plano de ação</li>
+        <li>Você agenda e preenche um briefing objetivo.</li>
+        <li>Entramos ao vivo na sessão para destravar os pontos críticos.</li>
+        <li>Você sai com direcionamento estratégico e próximos passos priorizados.</li>
       </ol>
+      <p class="sectionMicrocopy">Clareza de decisão para proteger caixa e crescer com margem.</p>
     </section>
 
-    <section class="sectionCard">
-      <h2>Antes e depois da análise</h2>
-      <div class="grid" style="grid-template-columns:1fr 1fr;">
-        <div class="card"><div class="card__inner"><h3 style="margin-top:0;">Antes</h3><p>Preço no escuro, margem confusa, decisões por tentativa e erro.</p></div></div>
-        <div class="card"><div class="card__inner"><h3 style="margin-top:0;">Depois</h3><p>Plano claro, margem estruturada e prioridades práticas para escalar.</p></div></div>
-      </div>
+    <section class="sectionCard strategicCta" style="margin-bottom:40px;">
+      <h2>Investimento único: R$ 497</h2>
+      <p>Se você quer tratar seu negócio como operação profissional, essa é a conversa certa.</p>
+      <a class="btn btn--primary" href="#" data-action="cta-specialist" data-from="hora-final">Quero agendar minha hora</a>
+      <a class="btn btn--ghost" href="index.html" style="margin-top:10px;">Voltar para a Calculadora</a>
     </section>
-
-    <section class="sectionCard" style="text-align:center;">
-      <h2>Investimento</h2>
-      <p style="font-size:36px;font-weight:800;margin:8px 0 16px;">R$ 497</p>
-      <a class="btn btn--primary" href="#" data-action="cta-specialist" data-from="hora-page" style="max-width:340px;width:100%;">Quero agendar minha hora</a>
-      <p class="sectionMicrocopy" style="margin-top:10px;">Página preparada para futura integração com pagamento.</p>
-    </section>
-
-    <p style="text-align:center;"><a href="index.html">← Voltar para a calculadora</a></p>
   </main>
+
+  <script>
+    (function(){
+      const toggle = document.querySelector('#mobileMenuToggle');
+      const nav = document.querySelector('#topbarNav');
+      if (toggle && nav) {
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('is-open');
+          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      }
+      document.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-action]');
+        if (!target || typeof window.gtag !== 'function') return;
+        const action = target.getAttribute('data-action');
+        if (action === 'cta-specialist') window.gtag('event', 'click_specialist', { section: target.dataset.from || 'hora' });
+        if (action === 'cta-instagram') window.gtag('event', 'click_instagram', { section: 'hora' });
+      });
+    })();
+  </script>
 </body>
 </html>
