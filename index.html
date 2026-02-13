@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260213-4" data-asset="true" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260213-5" data-asset="true" />
   <script>
-    const APP_VERSION = "20260213-4";
+    const APP_VERSION = "20260213-5";
 
     window.versionAssetPath = function versionAssetPath(path) {
       const url = new URL(path, window.location.href);
@@ -67,6 +67,7 @@
       </nav>
 
       <div class="topbar__cta">
+        <button id="themeToggle" class="btn btn--ghost" type="button" aria-label="Alternar tema">🌓 Tema</button>
         <a class="btn btn--ghost js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
         <a class="btn btn--primary js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
       </div>
@@ -401,19 +402,27 @@
           </div>
 
           <button id="recalc" class="btn btn--primary btn--wide" type="button">Recalcular</button>
+
+          <div class="actions actions--stacked">
+            <button id="saveSimulation" class="btn btn--ghost btn--wide" type="button">Salvar Simulação</button>
+            <select id="savedSimulations" aria-label="Simulações salvas">
+              <option value="">Simulações salvas</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <div class="card stickyResultsCard">
         <div class="card__inner">
           <h2>Resultados</h2>
+          <div id="rankingInsights" class="rankingInsights" aria-live="polite"></div>
           <div id="results" class="resultList"></div>
 
           <div id="reportRoot" class="reportRoot" aria-live="polite"></div>
 
           <aside id="stickySummary" class="stickySummary" aria-live="polite">
             <div class="stickySummary__top">
-              <h3>Resumo rápido</h3>
+              <h3>Resumo Estratégico</h3>
               <button id="stickyClose" class="stickySummary__close" type="button" aria-label="Fechar resumo">✕</button>
             </div>
             <div id="stickySummaryContent" class="stickySummary__content">Preencha os dados para ver o resumo principal.</div>
@@ -486,43 +495,17 @@
     </section>
 
     <section id="sec-escala" class="sectionCard">
-      <h2>Escala</h2>
-      <p class="sectionMicrocopy">Compare dois cenários de preço x volume e veja qual coloca mais dinheiro no bolso.</p>
+      <h2>Simulação de Escala</h2>
+      <p class="sectionMicrocopy">Defina o volume de vendas e veja o lucro total em cada marketplace.</p>
       <div class="card card--simple">
         <div class="card__inner">
           <div class="cardMini quickMode">
             <div class="cardMini__header">
-              <strong>Simulador de escala</strong>
+              <strong>Simulação de Escala</strong>
             </div>
             <div class="field">
-              <div class="label">Marketplace base para o simulador</div>
-              <select id="scaleMarketplace">
-                <option value="shopee">Shopee</option>
-                <option value="tiktok">TikTok Shop</option>
-                <option value="shein">SHEIN</option>
-                <option value="mlClassic">Mercado Livre — Clássico</option>
-                <option value="mlPremium">Mercado Livre — Premium</option>
-              </select>
-            </div>
-            <div class="row2">
-              <div class="field">
-                <div class="label">Cenário A: Preço (R$)</div>
-                <input id="scalePriceA" type="number" step="0.01" min="0" placeholder="Ex: 109,90" />
-              </div>
-              <div class="field">
-                <div class="label">Cenário A: Unidades</div>
-                <input id="scaleUnitsA" type="number" step="1" min="0" placeholder="Ex: 100" />
-              </div>
-            </div>
-            <div class="row2">
-              <div class="field">
-                <div class="label">Cenário B: Preço (R$)</div>
-                <input id="scalePriceB" type="number" step="0.01" min="0" placeholder="Ex: 99,90" />
-              </div>
-              <div class="field">
-                <div class="label">Cenário B: Unidades</div>
-                <input id="scaleUnitsB" type="number" step="1" min="0" placeholder="Ex: 140" />
-              </div>
+              <div class="label">Quantidade de vendas</div>
+              <input id="scaleSalesQty" type="number" step="1" min="0" placeholder="Ex: 100" />
             </div>
             <div id="scaleResults" class="marketCompareList"></div>
           </div>
@@ -574,9 +557,9 @@
   <script>
     (function loadVersionedScripts() {
       const scripts = [
-        "assets/js/storage.js?v=20260213-4",
-        "assets/js/pdf-export.js?v=20260213-4",
-        "assets/js/main.js?v=20260213-4"
+        "assets/js/storage.js?v=20260213-5",
+        "assets/js/pdf-export.js?v=20260213-5",
+        "assets/js/main.js?v=20260213-5"
       ];
 
       const loadNext = (index) => {

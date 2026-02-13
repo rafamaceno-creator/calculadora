@@ -21,8 +21,12 @@ const INPUT_EVENT_FIELDS = {
   tax: "tax",
   profitValue: "profit_value",
   samePriceInput: "price",
-  currentPriceInput: "price"
+  currentPriceInput: "price",
+  scaleSalesQty: "sales_qty"
 };
+
+const THEME_KEY = "pricing_theme";
+const SAVED_SIMULATIONS_KEY = "saved_simulations_v2";
 
 function track(eventName, params = {}) {
   if (typeof window.gtag === "function") {
@@ -511,27 +515,25 @@ function updateStickySummary(results) {
   if (!wrap) return;
 
   if (!Array.isArray(results) || !results.length) {
-    wrap.textContent = "Preencha os dados para ver o resumo principal.";
+    wrap.textContent = "Preencha os dados para ver o resumo estratégico.";
     return;
   }
 
-  const best = results.reduce((acc, item) => {
-    if (!acc) return item;
-    const itemProfit = item?.profitBRL || 0;
-    const accProfit = acc?.profitBRL || 0;
-    if (itemProfit === accProfit) {
-      return (item.profitPctReal || 0) > (acc.profitPctReal || 0) ? item : acc;
-    }
-    return itemProfit > accProfit ? item : acc;
-  }, null);
+  const sorted = [...results].sort((a, b) => (b?.profitBRL || 0) - (a?.profitBRL || 0));
+  const first = sorted[0];
+  const second = sorted[1] || sorted[0];
+  const diffPct = (first?.profitBRL || 0) > 0
+    ? (((first?.profitBRL || 0) - (second?.profitBRL || 0)) / (first?.profitBRL || 1)) * 100
+    : 0;
 
-  const status = marginStatus((best?.profitPctReal || 0) * 100);
+  let indicator = "🟡 Apertado";
+  if (diffPct >= 10) indicator = "🟢 Saudável";
+  if (diffPct < 3) indicator = "🔴 Risco";
+
   wrap.innerHTML = `
-    <div><strong>${best.title}</strong></div>
-    <div>Líquido: <strong>${brl(best.received)}</strong></div>
-    <div>Lucro: <strong>${brl(best.profitBRL)}</strong></div>
-    <div>Margem: <strong>${((best.profitPctReal || 0) * 100).toFixed(2)}%</strong></div>
-    <div class="compareCard__status ${status.className}">${status.label}</div>
+    <div><strong>Marketplace mais lucrativo:</strong> ${first.title}</div>
+    <div><strong>Diferença percentual (1º x 2º):</strong> ${diffPct.toFixed(2)}%</div>
+    <div><strong>Indicador:</strong> ${indicator}</div>
   `;
 }
 
@@ -609,7 +611,7 @@ function resultCardHTML(
     : "";
 
   return `
-  <div class="card">
+  <div class="card marketplaceCard ${options.marketplaceClass || ""}">
     <div class="cardHeader">
       <div class="cardTitle">${title}</div>
       <div class="pill">${pill}</div>
@@ -618,7 +620,7 @@ function resultCardHTML(
     ${shopeeToggleHTML}
 
     <div class="heroBox">
-      <div class="heroLabel">PREÇO SUGERIDO</div>
+      <div class="heroLabel">PREÇO IDEAL</div>
       <div class="heroValue">${price}</div>
     </div>
 
@@ -662,7 +664,7 @@ function runExportPDF(from = "card", triggerButton = null) {
     recalc({ source: "export" });
     if (typeof window.generatePDF === "function") {
       window.generatePDF();
-      trackGA4Event("export_pdf_click", {
+      trackGA4Event("export_pdf", {
         source: from,
         device: window.innerWidth < 768 ? "mobile" : "desktop"
       });
@@ -830,6 +832,56 @@ function bindStickySummaryVisibility() {
   applyState();
 }
 
+
+function renderRankingInsights(items) {
+  const el = document.querySelector("#rankingInsights");
+  if (!el || !Array.isArray(items) || !items.length) return;
+
+  const byMargin = [...items].sort((a, b) => (b.marginPct || 0) - (a.marginPct || 0));
+  const byProfit = [...items].sort((a, b) => (b.profitBRL || 0) - (a.profitBRL || 0));
+  const byCost = [...items].sort((a, b) => (b.totalCost || 0) - (a.totalCost || 0));
+
+  el.innerHTML = `
+    <div>🏆 <strong>Melhor margem:</strong> ${byMargin[0].title} (${byMargin[0].marginPct.toFixed(2)}%)</div>
+    <div>💰 <strong>Maior lucro:</strong> ${byProfit[0].title} (${brl(byProfit[0].profitBRL)})</div>
+    <div>⚠ <strong>Maior custo:</strong> ${byCost[0].title} (${brl(byCost[0].totalCost)})</div>
+  `;
+
+  trackGA4Event("marketplace_rank_generated", { best_margin: byMargin[0].key, best_profit: byProfit[0].key });
+}
+
+function getSavedSimulations() {
+  try { return JSON.parse(localStorage.getItem(SAVED_SIMULATIONS_KEY) || "[]"); } catch { return []; }
+}
+
+function renderSavedSimulations() {
+  const select = document.querySelector("#savedSimulations");
+  if (!select) return;
+  const items = getSavedSimulations();
+  select.innerHTML = '<option value="">Simulações salvas</option>' + items.map((item, i) => `<option value="${i}">${item.name}</option>`).join("");
+}
+
+function applySimpleShareParams() {
+  const params = new URLSearchParams(window.location.search);
+  const custo = params.get("custo");
+  const imposto = params.get("imposto");
+  const lucro = params.get("lucro");
+  if (custo !== null) document.querySelector("#cost").value = custo;
+  if (imposto !== null) document.querySelector("#tax").value = imposto;
+  if (lucro !== null) document.querySelector("#profitValue").value = lucro;
+}
+
+function initTheme() {
+  const btn = document.querySelector("#themeToggle");
+  const saved = localStorage.getItem(THEME_KEY) || "light";
+  document.body.classList.toggle("theme-dark", saved === "dark");
+  btn?.addEventListener("click", () => {
+    const dark = !document.body.classList.contains("theme-dark");
+    document.body.classList.toggle("theme-dark", dark);
+    localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
+  });
+}
+
 function recalc(options = {}) {
   const source = options.source || "auto";
   const cost = Math.max(0, toNumber(document.querySelector("#cost")?.value));
@@ -987,7 +1039,8 @@ function recalc(options = {}) {
         antecipaChecked: shopeeAntecipa,
         showAntecipaInfo: true,
         antecipaValue: custoAntecipa,
-        liquidoAposAntecipa: liquidoFinalShopee
+        liquidoAposAntecipa: liquidoFinalShopee,
+        marketplaceClass: "marketplace-shopee"
       }
     ),
     resultCardHTML(
@@ -1000,7 +1053,9 @@ function recalc(options = {}) {
       TIKTOK.pct,
       TIKTOK.fixed,
       adv.details,
-      adv.affiliate.tiktok
+      adv.affiliate.tiktok,
+      [],
+      { marketplaceClass: "marketplace-tiktok" }
     ),
     resultCardHTML(
       "SHEIN",
@@ -1017,7 +1072,8 @@ function recalc(options = {}) {
         { k: "Categoria", v: (sheinCategory === "female" ? "Vestuário feminino" : "Demais categorias") },
         { k: "Intermediação de frete", v: brl(sheinFixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
-      ]
+      ],
+      { marketplaceClass: "marketplace-shein" }
     ),
     resultCardHTML(
       "Mercado Livre — Clássico",
@@ -1033,7 +1089,8 @@ function recalc(options = {}) {
       [
         { k: "Custo fixo (tabela)", v: brl(mlClassic.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
-      ]
+      ],
+      { marketplaceClass: "marketplace-ml" }
     ),
     resultCardHTML(
       "Mercado Livre — Premium",
@@ -1049,7 +1106,8 @@ function recalc(options = {}) {
       [
         { k: "Custo fixo (tabela)", v: brl(mlPremium.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
-      ]
+      ],
+      { marketplaceClass: "marketplace-ml" }
     )
   ].join("");
 
@@ -1061,11 +1119,20 @@ function recalc(options = {}) {
     { key: "mlPremium", title: "Mercado Livre — Premium", marketplacePct: mlPremiumPct, marketplaceFixed: mlPremium.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL }
   ];
 
-  const state = { marketplaces: marketplaceState, cost, taxPct, shopeeAntecipa };
+  const computedResults = [
+    { key: "shopee", title: "Shopee", price: shopee.price, profitBRL: shopee.profitBRL, marginPct: shopee.profitPctReal * 100 },
+    { key: "tiktok", title: "TikTok Shop", price: tiktok.price, profitBRL: tiktok.profitBRL, marginPct: tiktok.profitPctReal * 100 },
+    { key: "shein", title: "SHEIN", price: shein.price, profitBRL: shein.profitBRL, marginPct: shein.profitPctReal * 100 },
+    { key: "mlClassic", title: "Mercado Livre — Clássico", price: mlClassic.r.price, profitBRL: mlClassic.r.profitBRL, marginPct: mlClassic.r.profitPctReal * 100 },
+    { key: "mlPremium", title: "Mercado Livre — Premium", price: mlPremium.r.price, profitBRL: mlPremium.r.profitBRL, marginPct: mlPremium.r.profitPctReal * 100 }
+  ].map((item) => ({ ...item, totalCost: Math.max(0, item.price - item.profitBRL) }));
+
+  const state = { marketplaces: marketplaceState, cost, taxPct, shopeeAntecipa, computedResults };
   renderSamePriceComparison(state);
   renderCurrentPriceAnalysis(state);
   renderScaleSimulation(state);
   renderShareActions();
+  renderRankingInsights(computedResults);
   updateStickySummary([
     { title: "Shopee", received: shopee.received, profitBRL: shopee.profitBRL, profitPctReal: shopee.profitPctReal },
     { title: "TikTok Shop", received: tiktok.received, profitBRL: tiktok.profitBRL, profitPctReal: tiktok.profitPctReal },
@@ -1156,67 +1223,24 @@ function renderScaleSimulation(state) {
   const wrap = document.querySelector("#scaleResults");
   if (!wrap) return;
 
-  const selected = document.querySelector("#scaleMarketplace")?.value || "shopee";
-  const mp = state.marketplaces.find((item) => item.key === selected) || state.marketplaces[0];
-
-  const priceA = Math.max(0, toNumber(document.querySelector("#scalePriceA")?.value));
-  const unitsA = Math.max(0, Math.floor(toNumber(document.querySelector("#scaleUnitsA")?.value)));
-  const priceB = Math.max(0, toNumber(document.querySelector("#scalePriceB")?.value));
-  const unitsB = Math.max(0, Math.floor(toNumber(document.querySelector("#scaleUnitsB")?.value)));
-
-  if (!priceA || !unitsA || !priceB || !unitsB) {
+  const qty = Math.max(0, Math.floor(toNumber(document.querySelector("#scaleSalesQty")?.value)));
+  if (!qty) {
     wrap.innerHTML = "";
     return;
   }
 
-  const scenarioA = calculateMarketplaceAtPrice({
-    price: priceA,
-    cost: state.cost,
-    taxPct: state.taxPct,
-    marketplacePct: mp.marketplacePct,
-    marketplaceFixed: mp.marketplaceFixed,
-    percentCosts: mp.percentCosts,
-    fixedCosts: mp.fixedCosts,
-    applyAntecipa: mp.key === "shopee" ? state.shopeeAntecipa : false
-  });
-  const scenarioB = calculateMarketplaceAtPrice({
-    price: priceB,
-    cost: state.cost,
-    taxPct: state.taxPct,
-    marketplacePct: mp.marketplacePct,
-    marketplaceFixed: mp.marketplaceFixed,
-    percentCosts: mp.percentCosts,
-    fixedCosts: mp.fixedCosts,
-    applyAntecipa: mp.key === "shopee" ? state.shopeeAntecipa : false
-  });
+  trackGA4Event("scale_simulation_used", { qty });
 
-  const faturamentoA = priceA * unitsA;
-  const faturamentoB = priceB * unitsB;
-  const lucroTotalA = scenarioA.lucro * unitsA;
-  const lucroTotalB = scenarioB.lucro * unitsB;
-  const diff = lucroTotalB - lucroTotalA;
-
-  const message = diff > 0
-    ? `🔥 Vendendo mais barato e aumentando volume, você coloca +${brl(diff)} no bolso.`
-    : "⚠️ Nesse caso, baixar preço não compensou no lucro líquido.";
-
-  wrap.innerHTML = `
+  const cards = (state.computedResults || []).map((item) => `
     <article class="compareCard">
-      <div class="compareCard__title">${mp.title} • Cenário A</div>
+      <div class="compareCard__title">${item.title}</div>
       <div class="compareCard__rows">
-        <div class="k">Faturamento bruto</div><div class="v">${brl(faturamentoA)}</div>
-        <div class="k">Lucro líquido total</div><div class="v">${brl(lucroTotalA)}</div>
+        <div class="k">Com ${qty} vendas</div><div class="v">${brl((item.profitBRL || 0) * qty)}</div>
       </div>
     </article>
-    <article class="compareCard">
-      <div class="compareCard__title">${mp.title} • Cenário B</div>
-      <div class="compareCard__rows">
-        <div class="k">Faturamento bruto</div><div class="v">${brl(faturamentoB)}</div>
-        <div class="k">Lucro líquido total</div><div class="v">${brl(lucroTotalB)}</div>
-      </div>
-    </article>
-    <p class="elasticityMsg">${message}</p>
-  `;
+  `);
+
+  wrap.innerHTML = cards.join("");
 }
 
 function getShareableState() {
@@ -1259,8 +1283,10 @@ function renderShareActions() {
 
 
 function buildShareLink() {
-  const encoded = encodeURIComponent(JSON.stringify(getShareableState()));
-  return `${window.location.origin}${window.location.pathname}?state=${encoded}`;
+  const custo = encodeURIComponent(document.querySelector("#cost")?.value || "");
+  const imposto = encodeURIComponent(document.querySelector("#tax")?.value || "");
+  const lucro = encodeURIComponent(document.querySelector("#profitValue")?.value || "");
+  return `${window.location.origin}${window.location.pathname}?custo=${custo}&imposto=${imposto}&lucro=${lucro}`;
 }
 
 function bindActionButtons() {
@@ -1282,7 +1308,7 @@ function bindActionButtons() {
         const link = buildShareLink();
         const text = encodeURIComponent(`Simulei minha precificação aqui: ${link}`);
         window.open(`https://wa.me/?text=${text}`, "_blank", "noopener");
-        trackGA4Event("share_whatsapp_click", { source: target.id || target.dataset.from || "results" });
+        trackGA4Event("share_clicked", { source: target.id || target.dataset.from || "results", channel: "whatsapp" });
         return;
       }
 
@@ -1292,7 +1318,7 @@ function bindActionButtons() {
         try {
           await navigator.clipboard.writeText(link);
           alert("Link copiado com sucesso.");
-          trackGA4Event("copy_link_click", { source: target.dataset.from || "results" });
+          trackGA4Event("share_clicked", { source: target.dataset.from || "results", channel: "copy" });
         } catch {
           prompt("Copie o link:", link);
         }
@@ -1382,8 +1408,39 @@ function bind() {
     const mode = document.querySelector("#advToggle")?.checked ? "advanced" : "basic";
     const hasWeight = !!document.querySelector("#mlWeightToggle")?.checked;
     const hasAffiliate = !!(document.querySelector("#advToggle")?.checked && document.querySelector("#affToggle")?.checked);
-    trackGA4Event("recalc_click", { mode, has_weight: hasWeight, has_affiliate: hasAffiliate });
+    trackGA4Event("calculate_clicked", { mode, has_weight: hasWeight, has_affiliate: hasAffiliate });
     scrollToResults();
+  });
+
+  $("#saveSimulation")?.addEventListener("click", () => {
+    const items = getSavedSimulations();
+    const payload = {
+      name: document.querySelector("#calcName")?.value?.trim() || `Simulação ${new Date().toLocaleString("pt-BR")}`,
+      cost: document.querySelector("#cost")?.value || "",
+      tax: document.querySelector("#tax")?.value || "",
+      profitValue: document.querySelector("#profitValue")?.value || "",
+      incidences: {
+        mlClassicPct: document.querySelector("#mlClassicPct")?.value || "",
+        mlPremiumPct: document.querySelector("#mlPremiumPct")?.value || ""
+      }
+    };
+    items.unshift(payload);
+    localStorage.setItem(SAVED_SIMULATIONS_KEY, JSON.stringify(items.slice(0, 20)));
+    renderSavedSimulations();
+    trackGA4Event("simulation_saved", { total: items.length });
+  });
+
+  $("#savedSimulations")?.addEventListener("change", (event) => {
+    const idx = Number(event.target.value);
+    if (!Number.isFinite(idx) || idx < 0) return;
+    const item = getSavedSimulations()[idx];
+    if (!item) return;
+    document.querySelector("#cost").value = item.cost;
+    document.querySelector("#tax").value = item.tax;
+    document.querySelector("#profitValue").value = item.profitValue;
+    document.querySelector("#mlClassicPct").value = item.incidences?.mlClassicPct || "14";
+    document.querySelector("#mlPremiumPct").value = item.incidences?.mlPremiumPct || "19";
+    recalc({ source: "auto" });
   });
 
   // Auto recalcular em input/change
@@ -1457,12 +1514,15 @@ function initApp() {
     }
   }
 
+  applySimpleShareParams();
+  initTheme();
   bind();
   bindActionButtons();
   bindMobileMenu();
   bindInputTracking();
   bindTooltipSystem();
   bindStickySummaryVisibility();
+  renderSavedSimulations();
   track("session_ready", { device: getDeviceType() });
   recalc({ source: "auto" });
 }
