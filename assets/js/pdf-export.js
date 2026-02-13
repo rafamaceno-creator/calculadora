@@ -1,64 +1,113 @@
 /* =========================
-   PDF Export (Modo A)
+   Exportação para impressão
    ========================= */
 
-function sanitizeFileName(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9-_\s]/g, "")
-    .trim()
-    .replace(/\s+/g, "_")
-    .slice(0, 60);
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
-function waitForRender() {
-  return new Promise(async (resolve) => {
-    requestAnimationFrame(async () => {
-      if (document.fonts?.ready) {
-        try { await document.fonts.ready; } catch (_) {}
-      }
-      requestAnimationFrame(resolve);
-    });
+function collectReportItems() {
+  const cards = Array.from(document.querySelectorAll("#results .card"));
+
+  return cards.map((card) => {
+    const calcName = document.querySelector("#calcName")?.value?.trim() || "Cálculo sem nome";
+    const marketplace = card.querySelector(".cardTitle")?.textContent?.trim() || "Marketplace";
+    const suggestedPrice = card.querySelector(".heroValue")?.textContent?.trim() || "—";
+    const summaryRows = Array.from(card.querySelectorAll(".resultGrid:not(.resultGrid--details) .k"))
+      .map((labelEl) => {
+        const valueEl = labelEl.nextElementSibling;
+        return {
+          label: labelEl.textContent.trim().toUpperCase(),
+          value: valueEl?.textContent?.trim() || "—"
+        };
+      });
+
+    const detailsRows = Array.from(card.querySelectorAll(".resultGrid--details .k"))
+      .map((labelEl) => {
+        const valueEl = labelEl.nextElementSibling;
+        return {
+          label: labelEl.textContent.trim(),
+          value: valueEl?.textContent?.trim() || "—"
+        };
+      });
+
+    const findSummary = (key) => summaryRows.find((row) => row.label.includes(key))?.value || "—";
+    const lucroLinha = findSummary("LUCRO");
+    const margemMatch = lucroLinha.match(/\(([^)]+)\)/);
+
+    return {
+      calcName,
+      marketplace,
+      suggestedPrice,
+      received: findSummary("VOCÊ RECEBE"),
+      profit: lucroLinha,
+      margin: margemMatch ? margemMatch[1] : "—",
+      detailsRows
+    };
   });
 }
 
-function drawInstagramIcon(pdf, x, y, size) {
-  const radius = 0.8;
-  pdf.roundedRect(x, y, size, size, radius, radius, "S");
-  pdf.circle(x + size * 0.5, y + size * 0.5, size * 0.22, "S");
-  pdf.circle(x + size * 0.78, y + size * 0.22, size * 0.05, "F");
-}
+function buildPrintHTML(items) {
+  const now = new Date();
+  const dateTime = now.toLocaleString("pt-BR");
 
-function addWatermark(pdf, pageWidth, pageHeight) {
-  const lines = ["precificacao.rafamaceno.com.br", "@macenorafa"];
-  const angle = -30;
-  const spacingX = 80;
-  const spacingY = 55;
+  const cardsHTML = items.map((item) => `
+    <section class="report-card">
+      <h2>${escapeHTML(item.marketplace)}</h2>
+      <div class="meta">Nome do cálculo: <strong>${escapeHTML(item.calcName)}</strong></div>
+      <div class="row"><span>Marketplace</span><strong>${escapeHTML(item.marketplace)}</strong></div>
+      <div class="row"><span>Preço sugerido</span><strong>${escapeHTML(item.suggestedPrice)}</strong></div>
+      <div class="row"><span>Você recebe</span><strong>${escapeHTML(item.received)}</strong></div>
+      <div class="row"><span>Lucro</span><strong>${escapeHTML(item.profit)}</strong></div>
+      <div class="row"><span>Margem</span><strong>${escapeHTML(item.margin)}</strong></div>
+      <h3>Detalhamento</h3>
+      <table>
+        <tbody>
+          ${item.detailsRows.map((detail) => `
+            <tr>
+              <td>${escapeHTML(detail.label)}</td>
+              <td>${escapeHTML(detail.value)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </section>
+  `).join("");
 
-  pdf.setTextColor(100, 116, 139);
-  pdf.setDrawColor(100, 116, 139);
-  pdf.setGState?.(new pdf.GState({ opacity: 0.08 }));
-
-  const instaUrl = "https://www.instagram.com/macenorafa/";
-
-  for (let y = -20; y < pageHeight + 40; y += spacingY) {
-    for (let x = -20; x < pageWidth + 40; x += spacingX) {
-      pdf.setFontSize(16);
-      pdf.text(lines[0], x, y, { angle });
-
-      const textY = y + 10;
-      const iconSize = 5;
-      drawInstagramIcon(pdf, x, textY - 4, iconSize);
-      pdf.text(lines[1], x + iconSize + 2, textY, { angle });
-
-      pdf.link(x - 2, textY - 8, 38, 10, { url: instaUrl });
-    }
-  }
-
-  pdf.setGState?.(new pdf.GState({ opacity: 1 }));
-  pdf.setTextColor(15, 23, 42);
-  pdf.setDrawColor(15, 23, 42);
+  return `<!doctype html>
+  <html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Relatório de Precificação</title>
+    <style>
+      body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;padding:24px;margin:0}
+      h1{margin:0 0 8px;font-size:24px}
+      .date{color:#475569;font-size:12px;margin-bottom:18px}
+      .report-card{border:1px solid #cbd5e1;border-radius:12px;padding:14px;margin-bottom:14px;break-inside:avoid}
+      .report-card h2{margin:0 0 8px;font-size:18px}
+      .report-card .meta{font-size:13px;color:#334155;margin-bottom:8px}
+      .row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed #e2e8f0}
+      .row:last-of-type{margin-bottom:8px}
+      .row span{color:#334155}
+      h3{margin:12px 0 6px;font-size:14px}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      td{border-top:1px solid #e2e8f0;padding:6px 2px;vertical-align:top}
+      td:last-child{text-align:right;font-weight:600}
+      @media print { body{padding:12mm} }
+    </style>
+  </head>
+  <body>
+    <h1>Relatório de Precificação</h1>
+    <div class="date">Gerado em ${escapeHTML(dateTime)}</div>
+    ${cardsHTML}
+  </body>
+  </html>`;
 }
 
 async function generatePDF() {
@@ -68,55 +117,35 @@ async function generatePDF() {
     return;
   }
 
-  const calcName = document.querySelector("#calcName")?.value?.trim() || "calculo";
-  const safeName = sanitizeFileName(calcName) || "calculo";
-
-  const exportNode = reportRoot.cloneNode(true);
-  exportNode.style.display = "block";
-  exportNode.style.position = "fixed";
-  exportNode.style.left = "-99999px";
-  exportNode.style.top = "0";
-  exportNode.style.width = "1080px";
-  exportNode.style.padding = "16px";
-  exportNode.style.background = "#ffffff";
-  document.body.appendChild(exportNode);
-
-  await waitForRender();
-
-  const canvas = await html2canvas(exportNode, {
-    scale: 3,
-    backgroundColor: "#ffffff",
-    useCORS: true
-  });
-  exportNode.remove();
-
-  const imgData = canvas.toDataURL("image/jpeg", 0.98);
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 8;
-  const usableWidth = pageWidth - margin * 2;
-  const imgHeight = (canvas.height * usableWidth) / canvas.width;
-
-  let heightLeft = imgHeight;
-  let position = margin;
-
-  addWatermark(pdf, pageWidth, pageHeight);
-  pdf.addImage(imgData, "JPEG", margin, position, usableWidth, imgHeight);
-  heightLeft -= (pageHeight - margin * 2);
-
-  while (heightLeft > 0) {
-    pdf.addPage();
-    addWatermark(pdf, pageWidth, pageHeight);
-    position = margin - (imgHeight - heightLeft);
-    pdf.addImage(imgData, "JPEG", margin, position, usableWidth, imgHeight);
-    heightLeft -= (pageHeight - margin * 2);
+  const items = collectReportItems();
+  if (!items.length) {
+    alert("Nenhum resultado encontrado para exportar.");
+    return;
   }
 
-  const now = new Date().toISOString().slice(0, 10);
-  pdf.save(`Precificacao_${safeName}_${now}.pdf`);
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  if (!printWindow) {
+    throw new Error("Não foi possível abrir a janela de impressão (popup bloqueado).");
+  }
+
+  printWindow.document.open();
+  printWindow.document.write(buildPrintHTML(items));
+  printWindow.document.close();
+
+  printWindow.onload = () => {
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  printWindow.onafterprint = () => {
+    printWindow.close();
+  };
+
+  setTimeout(() => {
+    if (!printWindow.closed) {
+      printWindow.close();
+    }
+  }, 120000);
 }
 
 
