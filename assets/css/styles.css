@@ -744,3 +744,55 @@ details p{
   .topbar__cta{ width:100%; }
   .topbar__cta .btn{ flex:1 1 220px; }
 }
+
+.hero__microcopy{
+  display:block;
+  margin-top:10px;
+  color: var(--muted2);
+  font-weight:600;
+}
+
+.quickMode{ margin-top: 14px; }
+.check--inline{ margin-bottom: 10px; }
+
+.marketCompareList{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+}
+
+.compareCard{
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.02);
+  padding:10px;
+}
+
+.compareCard__title{ font-weight:800; margin-bottom:6px; }
+.compareCard__status{ font-size:12px; font-weight:700; margin-bottom:8px; }
+.statusHealthy{ color:#4ade80; }
+.statusTight{ color:#facc15; }
+.statusLoss{ color:#fb7185; }
+
+.compareCard__rows{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap:6px 10px;
+}
+
+.compareCard__rows .k{ color:var(--muted); font-size:12px; }
+.compareCard__rows .v{ font-weight:800; font-size:13px; }
+
+.elasticityMsg{ margin:4px 0 0; color:var(--muted); font-size:13px; }
+
+.shareBox{
+  margin-top:14px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  padding:12px;
+  background: rgba(255,255,255,.02);
+}
+
+.shareBox__title{ font-weight:800; margin-bottom:8px; }
+.shareBox__actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.shareBox__actions .btn{ flex:1 1 150px; border-radius:12px; }
