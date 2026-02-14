@@ -317,23 +317,134 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
 .incidencePanel{max-height:0;overflow:hidden;transition:max-height .28s ease,opacity .28s ease;opacity:0}
 .incidencePanel.is-open{max-height:480px;opacity:1;margin-top:10px;padding-top:10px;border-top:1px solid var(--stroke)}
 
-.sectionCard--youtube{background:linear-gradient(180deg,#f8fbff,#f2f8ff)}
-.yt-section{overflow:hidden}
-.yt-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:14px}
-.yt-more{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:12px;border:1px solid #0f172a;color:#0f172a;font-weight:700;text-decoration:none;transition:all .2s ease;white-space:nowrap}
-.yt-more:hover{background:#0f172a;color:#fff}
-.yt-more:focus-visible,.yt-card:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 60%,#fff);outline-offset:3px}
-.yt-rail{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:2px 14px 12px 2px;margin:0 -2px;scrollbar-width:none;overscroll-behavior-x:contain;mask-image:linear-gradient(to right,transparent 0,#000 24px,#000 calc(100% - 24px),transparent 100%)}
-.yt-rail::-webkit-scrollbar{display:none}
-.yt-card{flex:0 0 78%;max-width:320px;scroll-snap-align:start;display:flex;flex-direction:column;gap:10px;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:10px;text-decoration:none;box-shadow:0 10px 24px -18px rgba(15,23,42,.45);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
-.yt-card:hover{transform:translateY(-3px);box-shadow:0 16px 30px -20px rgba(15,23,42,.45);border-color:#cbd5e1}
-.yt-thumbWrap{position:relative;border-radius:14px;overflow:hidden}
-.yt-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
-.yt-badge{position:absolute;top:10px;left:10px;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.85);border:1px solid rgba(148,163,184,.45);backdrop-filter:blur(4px);font-size:11px;font-weight:700;color:#0f172a}
-.yt-meta{display:flex;flex-direction:column;gap:10px;padding:2px}
-.yt-title{font-weight:700;line-height:1.35;color:#0f172a;min-height:2.7em;text-wrap:balance}
-.yt-cta{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 12px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;transition:background .2s ease}
-.yt-card:hover .yt-cta{background:#0b8f72}
+.yt-section {
+  margin-top: 80px;
+}
+
+.yt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.yt-header h2 {
+  font-size: 26px;
+  margin: 0;
+}
+
+.yt-header p {
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+.yt-view-more {
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid rgba(0,0,0,0.1);
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: 0.2s ease;
+}
+
+.yt-view-more:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+/* RAIL */
+
+.yt-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* CARD */
+
+.yt-card {
+  text-decoration: none;
+  color: inherit;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.yt-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+}
+
+.yt-thumb-wrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.yt-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.yt-play {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  background: rgba(255,0,0,0.9);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.yt-content {
+  padding: 16px;
+}
+
+.yt-content h3 {
+  font-size: 16px;
+  margin: 0 0 10px 0;
+}
+
+.yt-cta {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+/* MOBILE NETFLIX STYLE */
+
+@media (max-width: 768px) {
+  .yt-header {
+    align-items: flex-start;
+  }
+
+  .yt-view-more {
+    width: 100%;
+    text-align: center;
+  }
+
+  .yt-rail {
+    display: flex;
+    overflow-x: auto;
+    gap: 16px;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 10px;
+  }
+
+  .yt-card {
+    flex: 0 0 80%;
+    scroll-snap-align: start;
+  }
+
+  .yt-rail::-webkit-scrollbar {
+    display: none;
+  }
+}
 
 .strategicCta{text-align:center;padding:34px 24px}
 .strategicCta p{margin:10px auto 18px;max-width:60ch;color:var(--muted)}
@@ -349,12 +460,3 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
 .specialistHero h1{margin:10px 0;font-size:clamp(28px,5vw,44px)}
 .specialistList{display:grid;gap:8px;padding-left:18px;color:#334155}
 
-@media (min-width:768px){
-  .yt-rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));overflow:visible;padding:2px;mask-image:none}
-  .yt-card{flex:1 1 auto;max-width:none;height:100%}
-}
-
-@media (max-width:767px){
-  .yt-head{flex-direction:column;align-items:flex-start}
-  .yt-more{width:100%}
-}
