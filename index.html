@@ -13,8 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css" data-asset="true" />
   <script>
-    const now = new Date();
-    const APP_VERSION = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    const APP_VERSION = "20260213-2";
 
     window.versionAssetPath = function versionAssetPath(path) {
       const url = new URL(path, window.location.href);
@@ -513,12 +512,59 @@
     </section>
 
 
-    <section id="youtube" class="sectionCard sectionCard--youtube">
-      <h2>Últimos vídeos sobre Marketplace</h2>
-      <p class="sectionMicrocopy">Aprenda estratégias práticas de precificação, margem e escala.</p>
-      <div id="youtubeRail" class="youtubeRail" aria-live="polite"></div>
-      <div style="margin-top:14px;">
-        <a class="btn btn--outline" href="https://www.youtube.com/@rafamaceno" target="_blank" rel="noopener">Ver mais no YouTube</a>
+    <section id="youtube" class="sectionCard sectionCard--youtube yt-section">
+      <div class="yt-head">
+        <div>
+          <h2>Últimos vídeos sobre Marketplace</h2>
+          <p class="sectionMicrocopy">Aprenda estratégias práticas de precificação, margem e escala.</p>
+        </div>
+        <a class="yt-more" href="https://www.youtube.com/@rafamaceno" target="_blank" rel="noopener">Ver mais no YouTube</a>
+      </div>
+
+      <div class="yt-rail" aria-label="Vídeos do YouTube">
+        <a class="yt-card" href="https://www.youtube.com/watch?v=WG9UqrU4Nos" target="_blank" rel="noopener">
+          <div class="yt-thumbWrap">
+            <img class="yt-thumb" src="https://i.ytimg.com/vi/WG9UqrU4Nos/hqdefault.jpg" alt="Como precificar sem destruir sua margem">
+            <span class="yt-badge">YouTube</span>
+          </div>
+          <div class="yt-meta">
+            <div class="yt-title">Como precificar sem destruir sua margem</div>
+            <div class="yt-cta">Assistir agora</div>
+          </div>
+        </a>
+
+        <a class="yt-card" href="https://www.youtube.com/watch?v=MD0HOadjZso" target="_blank" rel="noopener">
+          <div class="yt-thumbWrap">
+            <img class="yt-thumb" src="https://i.ytimg.com/vi/MD0HOadjZso/hqdefault.jpg" alt="Erro de comissão que trava seu lucro">
+            <span class="yt-badge">YouTube</span>
+          </div>
+          <div class="yt-meta">
+            <div class="yt-title">Erro de comissão que trava seu lucro</div>
+            <div class="yt-cta">Assistir agora</div>
+          </div>
+        </a>
+
+        <a class="yt-card" href="https://www.youtube.com/watch?v=gsk92dLOhK8" target="_blank" rel="noopener">
+          <div class="yt-thumbWrap">
+            <img class="yt-thumb" src="https://i.ytimg.com/vi/gsk92dLOhK8/hqdefault.jpg" alt="Escala com margem real em marketplace">
+            <span class="yt-badge">YouTube</span>
+          </div>
+          <div class="yt-meta">
+            <div class="yt-title">Escala com margem real em marketplace</div>
+            <div class="yt-cta">Assistir agora</div>
+          </div>
+        </a>
+
+        <a class="yt-card" href="https://www.youtube.com/watch?v=2tS-sINkmdc" target="_blank" rel="noopener">
+          <div class="yt-thumbWrap">
+            <img class="yt-thumb" src="https://i.ytimg.com/vi/2tS-sINkmdc/hqdefault.jpg" alt="Preço ideal para vender mais e lucrar">
+            <span class="yt-badge">YouTube</span>
+          </div>
+          <div class="yt-meta">
+            <div class="yt-title">Preço ideal para vender mais e lucrar</div>
+            <div class="yt-cta">Assistir agora</div>
+          </div>
+        </a>
       </div>
     </section>
 
