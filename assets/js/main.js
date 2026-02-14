@@ -28,13 +28,6 @@ const INPUT_EVENT_FIELDS = {
 const THEME_KEY = "pricing_theme";
 const SAVED_SIMULATIONS_KEY = "saved_simulations_v2";
 
-const YOUTUBE_VIDEOS = [
-  { id: "7z2lR8mWQmM", title: "Como precificar sem destruir sua margem", publishedAt: "2026-01-12" },
-  { id: "k3yGf2mZp9A", title: "Erro de comissão que trava seu lucro", publishedAt: "2026-01-05" },
-  { id: "Q8kLm2nVx1c", title: "Escala com margem real em marketplace", publishedAt: "2025-12-26" },
-  { id: "m5Pq9rT2uYb", title: "Preço ideal para vender mais e lucrar", publishedAt: "2025-12-10" },
-  { id: "b4Nw6dX1sZa", title: "Diagnóstico rápido de operação no marketplace", publishedAt: "2025-11-30" }
-];
 
 function track(eventName, params = {}) {
   try {
@@ -1482,20 +1475,6 @@ function bindSegmentMenuActiveState() {
   });
 }
 
-function renderYoutubeRail() {
-  const wrap = document.querySelector("#youtubeRail");
-  if (!wrap) return;
-  wrap.innerHTML = YOUTUBE_VIDEOS.map((video) => {
-    const dateText = video.publishedAt ? new Date(video.publishedAt + "T12:00:00").toLocaleDateString("pt-BR") : "";
-    return `
-    <a class="youtubeCard" href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener">
-      <img src="https://img.youtube.com/vi/${video.id}/hqdefault.jpg" alt="Thumbnail do vídeo ${video.title}">
-      <span>${video.title || "Assista no YouTube"}</span>
-      <small>${dateText}</small>
-    </a>`;
-  }).join("");
-}
-
 function initApp() {
   const params = new URLSearchParams(window.location.search);
   const sharedState = params.get("state");
@@ -1517,7 +1496,6 @@ function initApp() {
   bindTooltipSystem();
   bindStickySummaryVisibility();
   bindSegmentMenuActiveState();
-  renderYoutubeRail();
   renderSavedSimulations();
   track("session_ready", { device: getDeviceType() });
   recalc({ source: "auto" });
