@@ -76,6 +76,7 @@
     <section class="hero">
       <span class="kicker">Simples no início • Completo no avançado</span>
       <h1>Plataforma Oficial de Decisão Financeira para Vendedores de Marketplace</h1>
+      <button id="startTour" class="btn btn--ghost heroTourBtn" type="button">Fazer tour</button>
       <p>Compare marketplaces, entenda seu lucro real e decida o preço com segurança.</p>
       <small class="hero__microcopy">100% gratuito. Sem login.</small>
     </section>
@@ -85,6 +86,7 @@
       <button class="segmentMenu__btn" type="button" data-target="#sec-comparar">Comparar preço</button>
       <button class="segmentMenu__btn" type="button" data-target="#sec-lucro">Lucro atual</button>
       <button class="segmentMenu__btn" type="button" data-target="#sec-escala">Escala</button>
+      <button class="segmentMenu__btn" type="button" data-target="#sec-bulk">Massa</button>
     </nav>
 
     <section id="sec-precificacao" class="sectionCard">
@@ -579,6 +581,42 @@
       </div>
     </section>
 
+
+
+    <section id="sec-bulk" class="sectionCard">
+      <h2>Cálculo em Massa</h2>
+      <p class="sectionMicrocopy">Calcule múltiplos produtos de uma vez usando as configurações globais atuais.</p>
+      <div class="card card--simple">
+        <div class="card__inner">
+          <div class="bulkToolbar">
+            <button id="bulkAddRow" class="btn btn--ghost" type="button">Adicionar linha</button>
+            <label class="btn btn--ghost bulkUploadBtn" for="bulkCsvInput">Importar CSV</label>
+            <input id="bulkCsvInput" type="file" accept=".csv,text/csv" />
+            <button id="bulkCalculate" class="btn btn--primary" type="button">Calcular em massa</button>
+            <button id="bulkExport" class="btn btn--ghost" type="button" disabled>Baixar CSV com resultados</button>
+          </div>
+          <p class="bulkHint">Formato CSV: nome,custo (com ou sem cabeçalho, vírgula ou ponto-e-vírgula).</p>
+
+          <div class="bulkEditorWrap">
+            <table class="bulkEditor" aria-label="Tabela de produtos para cálculo massivo">
+              <thead>
+                <tr><th>Nome</th><th>Custo (R$)</th></tr>
+              </thead>
+              <tbody id="bulkRows"></tbody>
+            </table>
+          </div>
+
+          <div id="bulkResultsWrap" class="bulkResultsWrap is-hidden">
+            <div class="bulkResultsScroll">
+              <table class="bulkResults" aria-label="Resultados do cálculo em massa">
+                <thead id="bulkResultsHead"></thead>
+                <tbody id="bulkResultsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section class="yt-section" id="videos">
       <div class="yt-header">
