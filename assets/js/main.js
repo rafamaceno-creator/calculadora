@@ -125,8 +125,6 @@ const SHEIN = {
 };
 
 
-const AMAZON_DBA_DEFAULT_WEIGHT_KG = 0.5;
-
 const AMAZON_DBA = {
   below_79: [
     { min: 0, max: 30, fee: 4.5, key: "0_30" },
@@ -190,6 +188,20 @@ function normalizeWeightKg(value, unit) {
   const v = Math.max(0, toNumber(value));
   if (unit === "g") return v / 1000;
   return v;
+}
+
+function resolveMarketplaceWeight({ enabled, rawValue, unit }) {
+  if (!enabled) {
+    return { kg: 0.5, assumed: true };
+  }
+
+  const valueText = String(rawValue ?? "").trim();
+  const normalizedKg = normalizeWeightKg(valueText, unit);
+  if (!valueText || !Number.isFinite(normalizedKg) || normalizedKg <= 0) {
+    return { kg: 0.5, assumed: true };
+  }
+
+  return { kg: normalizedKg, assumed: false };
 }
 
 function sheinFixedByWeight(weightKg) {
@@ -618,6 +630,10 @@ function resultCardHTML(
     `
     : "";
 
+  const assumedWeightNoteHTML = options.showAssumedWeightNote && options.assumedWeight
+    ? `<div class="footnote">Peso não informado: assumimos 0,5 kg.</div>`
+    : "";
+
   const accordionId = `incidence-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return `
   <div class="card marketplaceCard resultCard ${options.marketplaceClass || ""}">
@@ -655,6 +671,8 @@ function resultCardHTML(
         ${itemsHTML}
       </div>
     </div>
+
+    ${assumedWeightNoteHTML}
   </div>
   `;
 }
@@ -910,14 +928,19 @@ function recalc(options = {}) {
   const adv = getAdvancedVars();
 
   const weightToggle = document.querySelector("#mlWeightToggle")?.checked;
-  const weightValue = toNumber(document.querySelector("#mlWeightValue")?.value);
+  const weightValueRaw = document.querySelector("#mlWeightValue")?.value;
   const weightUnit = document.querySelector("#mlWeightUnit")?.value || "kg";
-  const weightKg = weightToggle ? normalizeWeightKg(weightValue, weightUnit) : 0.5;
+  const weightData = resolveMarketplaceWeight({
+    enabled: weightToggle,
+    rawValue: weightValueRaw,
+    unit: weightUnit
+  });
+  const weightKg = weightData.kg;
 
   const amazonDbaEnabled = document.querySelector("#amazonDbaToggle")?.checked || false;
   const amazonPct = Math.max(0, toNumber(document.querySelector("#amazonPct")?.value)) / 100;
   const amazonOriginGroup = document.querySelector("#amazonOriginGroup")?.value || "sp_capital";
-  const amazonWeightKg = weightToggle ? weightKg : AMAZON_DBA_DEFAULT_WEIGHT_KG;
+  const amazonWeightKg = weightData.kg;
 
   /* ===== TIKTOK SHOP ===== */
   const tiktok = solvePrice({
@@ -1061,8 +1084,7 @@ function recalc(options = {}) {
           result,
           fee: nextFee,
           priceBand: getAmazonPriceBand(nextPrice),
-          weightBand: getAmazonWeightBand(amazonWeightKg),
-          usedDefaultWeight: !weightToggle
+          weightBand: getAmazonWeightBand(amazonWeightKg)
         };
       }
 
@@ -1086,8 +1108,7 @@ function recalc(options = {}) {
       result: finalResult,
       fee,
       priceBand: getAmazonPriceBand(finalResult.price),
-      weightBand: getAmazonWeightBand(amazonWeightKg),
-      usedDefaultWeight: !weightToggle
+      weightBand: getAmazonWeightBand(amazonWeightKg)
     };
   }
 
@@ -1154,7 +1175,7 @@ function recalc(options = {}) {
         { k: "Intermediação de frete", v: brl(sheinFixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
-      { marketplaceClass: "mp-shein", marketplaceIcon: "💙" }
+      { marketplaceClass: "mp-shein", marketplaceIcon: "💙", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
     ),
     ...(amazonDbaEnabled && amazonData ? [
       resultCardHTML(
@@ -1171,10 +1192,10 @@ function recalc(options = {}) {
         [
           { k: "Bloco de preço DBA", v: amazonData.priceBand === "below_79" ? "Até R$ 78,99" : (amazonData.priceBand === "79_199" ? "R$ 79 a R$ 199,99" : "Acima de R$ 200") },
           { k: "Faixa de peso DBA", v: amazonData.weightBand },
-          { k: "Peso usado", v: `${amazonWeightKg.toFixed(3)} kg${amazonData.usedDefaultWeight ? " (padrão)" : ""}` },
+          { k: "Peso usado", v: `${amazonWeightKg.toFixed(3)} kg` },
           ...(amazonData.priceBand === "above_200" ? [{ k: "Origem", v: document.querySelector("#amazonOriginGroup")?.selectedOptions?.[0]?.textContent || "SP Capital" }] : [])
         ],
-        { marketplaceClass: "mp-amazon", marketplaceIcon: "📦" }
+        { marketplaceClass: "mp-amazon", marketplaceIcon: "📦", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
       )
     ] : []),
     resultCardHTML(
@@ -1192,7 +1213,7 @@ function recalc(options = {}) {
         { k: "Custo fixo (tabela)", v: brl(mlClassic.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
-      { marketplaceClass: "mp-ml", marketplaceIcon: "🟨" }
+      { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
     ),
     resultCardHTML(
       "Mercado Livre — Premium",
@@ -1209,7 +1230,7 @@ function recalc(options = {}) {
         { k: "Custo fixo (tabela)", v: brl(mlPremium.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
-      { marketplaceClass: "mp-ml", marketplaceIcon: "🟨" }
+      { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
     )
   ].join("");
 
