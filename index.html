@@ -89,16 +89,14 @@
 
     <section id="sec-precificacao" class="sectionCard">
       <h2>Precificação</h2>
-      <p class="sectionMicrocopy">Preencha seus custos e veja o preço sugerido com lucro real.</p>
+      <p class="sectionMicrocopy">Preencha os dados principais para descobrir o preço ideal com lucro real.</p>
       <div class="grid">
-      <div class="card">
+      <div class="card pricingCard">
         <div class="card__inner">
-          <h2>Precificação do produto</h2>
-
           <section class="formBlock">
             <div class="formBlock__head">
               <h3>Dados do produto</h3>
-              <p>Preencha apenas os dados essenciais para começar.</p>
+              <p>Use apenas os dados essenciais para iniciar.</p>
             </div>
 
             <div class="field">
@@ -109,7 +107,7 @@
               <input id="calcName" type="text" maxlength="80" placeholder="Ex: Camiseta Dry Fit Preta" />
             </div>
 
-            <div class="row2">
+            <div class="formRow row2">
               <div class="field">
                 <div class="label label-row">
                   <span>Custo total (R$)</span>
@@ -139,7 +137,7 @@
           <section class="formBlock">
             <div class="formBlock__head">
               <h3>Meta de lucro</h3>
-              <p>Escolha o modo e informe sua meta.</p>
+              <p>Defina sua meta em valor fixo ou em percentual.</p>
             </div>
 
             <div class="field">
@@ -147,7 +145,7 @@
                 <span>Modo da meta</span>
                 <button class="info" type="button" aria-label="Info: Modo da meta" data-tooltip="Escolha se o lucro desejado será um valor fixo em reais (R$) ou uma margem em % sobre o preço de venda.">i</button>
               </div>
-              <div class="segmented" role="radiogroup" aria-label="Modo da meta de lucro">
+              <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo da meta de lucro">
                 <label class="segmented__option">
                   <input type="radio" name="profitMode" value="brl" checked />
                   <span>Em R$</span>
@@ -192,7 +190,7 @@
           <section class="formBlock formBlock--actions">
             <button id="recalc" class="btn btn--primary btn--wide" type="button">Calcular</button>
 
-            <div class="actions actions--stacked">
+            <div class="actions actions--stacked formActionsSecondary">
               <button id="saveSimulation" class="btn btn--ghost btn--wide" type="button">Salvar simulação</button>
               <select id="savedSimulations" aria-label="Simulações salvas">
                 <option value="">Simulações salvas</option>
