@@ -389,7 +389,6 @@ function getAdvancedVars() {
     shopee: affOn ? Math.max(0, toNumber(document.querySelector("#affShopee")?.value)) / 100 : 0,
     ml: affOn ? Math.max(0, toNumber(document.querySelector("#affML")?.value)) / 100 : 0,
     tiktok: affOn ? Math.max(0, toNumber(document.querySelector("#affTikTok")?.value)) / 100 : 0,
-    shein: affOn ? Math.max(0, toNumber(document.querySelector("#affShein")?.value)) / 100 : 0,
     amazon: 0
   };
 
@@ -621,7 +620,7 @@ function resultCardHTML(
 
   const accordionId = `incidence-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return `
-  <div class="card marketplaceCard ${options.marketplaceClass || ""}">
+  <div class="card marketplaceCard resultCard ${options.marketplaceClass || ""}">
     <div class="cardHeader">
       <div class="cardTitleWrap">
         <span class="cardIcon" aria-hidden="true">${options.marketplaceIcon || "🛒"}</span>
@@ -945,7 +944,7 @@ function recalc(options = {}) {
     marketplacePct: sheinPct,
     marketplaceFixed: sheinFixed,
     fixedCosts: adv.fixedBRL,
-    percentCosts: adv.pctExtra + adv.affiliate.shein
+    percentCosts: adv.pctExtra
   });
 
   /* ===== SHOPEE (iterativo) ===== */
@@ -1122,7 +1121,7 @@ function recalc(options = {}) {
         showAntecipaInfo: true,
         antecipaValue: custoAntecipa,
         liquidoAposAntecipa: liquidoFinalShopee,
-        marketplaceClass: "marketplace-shopee"
+        marketplaceClass: "mp-shopee"
       }
     ),
     resultCardHTML(
@@ -1137,7 +1136,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.tiktok,
       [],
-      { marketplaceClass: "marketplace-tiktok", marketplaceIcon: "🎵" }
+      { marketplaceClass: "mp-tiktok", marketplaceIcon: "🎵" }
     ),
     resultCardHTML(
       "SHEIN",
@@ -1149,13 +1148,13 @@ function recalc(options = {}) {
       sheinPct,
       sheinFixed,
       adv.details,
-      adv.affiliate.shein,
+      0,
       [
         { k: "Categoria", v: (sheinCategory === "female" ? "Vestuário feminino" : "Demais categorias") },
         { k: "Intermediação de frete", v: brl(sheinFixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
-      { marketplaceClass: "marketplace-shein", marketplaceIcon: "💙" }
+      { marketplaceClass: "mp-shein", marketplaceIcon: "💙" }
     ),
     ...(amazonDbaEnabled && amazonData ? [
       resultCardHTML(
@@ -1175,7 +1174,7 @@ function recalc(options = {}) {
           { k: "Peso usado", v: `${amazonWeightKg.toFixed(3)} kg${amazonData.usedDefaultWeight ? " (padrão)" : ""}` },
           ...(amazonData.priceBand === "above_200" ? [{ k: "Origem", v: document.querySelector("#amazonOriginGroup")?.selectedOptions?.[0]?.textContent || "SP Capital" }] : [])
         ],
-        { marketplaceClass: "marketplace-amazon", marketplaceIcon: "📦" }
+        { marketplaceClass: "mp-amazon", marketplaceIcon: "📦" }
       )
     ] : []),
     resultCardHTML(
@@ -1193,7 +1192,7 @@ function recalc(options = {}) {
         { k: "Custo fixo (tabela)", v: brl(mlClassic.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
-      { marketplaceClass: "marketplace-ml", marketplaceIcon: "🟨" }
+      { marketplaceClass: "mp-ml", marketplaceIcon: "🟨" }
     ),
     resultCardHTML(
       "Mercado Livre — Premium",
@@ -1210,14 +1209,14 @@ function recalc(options = {}) {
         { k: "Custo fixo (tabela)", v: brl(mlPremium.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
-      { marketplaceClass: "marketplace-ml", marketplaceIcon: "🟨" }
+      { marketplaceClass: "mp-ml", marketplaceIcon: "🟨" }
     )
   ].join("");
 
   const marketplaceState = [
     { key: "shopee", title: "Shopee", marketplacePct: shFee.pct, marketplaceFixed: shFee.fixed, percentCosts: adv.pctExtra + adv.affiliate.shopee, fixedCosts: adv.fixedBRL },
     { key: "tiktok", title: "TikTok Shop", marketplacePct: TIKTOK.pct, marketplaceFixed: TIKTOK.fixed, percentCosts: adv.pctExtra + adv.affiliate.tiktok, fixedCosts: adv.fixedBRL },
-    { key: "shein", title: "SHEIN", marketplacePct: sheinPct, marketplaceFixed: sheinFixed, percentCosts: adv.pctExtra + adv.affiliate.shein, fixedCosts: adv.fixedBRL },
+    { key: "shein", title: "SHEIN", marketplacePct: sheinPct, marketplaceFixed: sheinFixed, percentCosts: adv.pctExtra, fixedCosts: adv.fixedBRL },
     ...(amazonDbaEnabled && amazonData ? [{ key: "amazon", title: "Amazon (DBA)", marketplacePct: amazonPct, marketplaceFixed: amazonData.fee, percentCosts: adv.pctExtra + adv.affiliate.amazon, fixedCosts: adv.fixedBRL }] : []),
     { key: "mlClassic", title: "Mercado Livre — Clássico", marketplacePct: mlClassicPct, marketplaceFixed: mlClassic.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL },
     { key: "mlPremium", title: "Mercado Livre — Premium", marketplacePct: mlPremiumPct, marketplaceFixed: mlPremium.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL }
@@ -1583,23 +1582,6 @@ function bind() {
     trackGA4Event(expanded ? "close_incidences" : "open_incidences", { section: "results", marketplace });
   });
 
-  document.querySelectorAll("[data-scroll-target]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const targetId = btn.getAttribute("data-scroll-target");
-      const target = targetId ? document.getElementById(targetId) : null;
-      if (!target) return;
-      scrollToWithTopbarOffset(target);
-      const sectionMap = {
-        "precificacao": "precificacao",
-        "comparar": "comparar_preco",
-        "lucro": "lucro_atual",
-        "escala": "escala"
-      };
-      const section = sectionMap[targetId];
-      if (section) trackGA4Event("click_tab", { section, value: "menu_top" });
-    });
-  });
-
   // Mostrar/esconder box avançadas
   const advToggle = $("#advToggle");
   const advBox = $("#advBox");
@@ -1654,12 +1636,12 @@ function bind() {
 
 
 function bindSegmentMenuActiveState() {
-  const buttons = Array.from(document.querySelectorAll(".segmentMenu__btn[data-scroll-target]"));
+  const buttons = Array.from(document.querySelectorAll(".segmentMenu__btn[data-scroll]"));
   if (!buttons.length || !('IntersectionObserver' in window)) return;
 
   const setActive = (id) => {
     buttons.forEach((btn) => {
-      btn.classList.toggle("is-active", btn.getAttribute("data-scroll-target") === id);
+      btn.classList.toggle("is-active", btn.getAttribute("data-scroll") === `#${id}`);
     });
   };
 
@@ -1671,8 +1653,37 @@ function bindSegmentMenuActiveState() {
   }, { rootMargin: "-35% 0px -55% 0px", threshold: [0.2, 0.5, 0.8] });
 
   buttons.forEach((btn) => {
-    const target = document.getElementById(btn.getAttribute("data-scroll-target"));
+    const targetSelector = btn.getAttribute("data-scroll");
+    const target = targetSelector ? document.querySelector(targetSelector) : null;
     if (target) observer.observe(target);
+  });
+}
+
+
+function bindSmoothScroll() {
+  const sectionMap = {
+    "#sec-precificacao": "precificacao",
+    "#sec-comparar": "comparar_preco",
+    "#sec-lucro-atual": "lucro_atual",
+    "#sec-escala": "escala"
+  };
+
+  document.querySelectorAll("[data-scroll]").forEach((trigger) => {
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      const selector = trigger.getAttribute("data-scroll");
+      if (!selector) return;
+      const target = document.querySelector(selector);
+      if (!target) return;
+      scrollToWithTopbarOffset(target);
+      if (typeof window.history?.replaceState === "function") {
+        window.history.replaceState(null, "", selector);
+      }
+      const section = sectionMap[selector];
+      if (section && trigger.classList.contains("segmentMenu__btn")) {
+        trackGA4Event("click_tab", { section, value: "menu_top" });
+      }
+    });
   });
 }
 
@@ -1696,6 +1707,7 @@ function initApp() {
   bindInputTracking();
   bindTooltipSystem();
   bindStickySummaryVisibility();
+  bindSmoothScroll();
   bindSegmentMenuActiveState();
   renderSavedSimulations();
   track("session_ready", { device: getDeviceType() });
