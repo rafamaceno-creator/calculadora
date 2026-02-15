@@ -506,4 +506,4 @@ body.theme-dark .resultCard .pill{
   color:#e5e7eb;
 }
 
-[id^="sec-"]{scroll-margin-top:96px}
+#sec-precificacao,#sec-comparar,#sec-lucro,#sec-escala{scroll-margin-top:96px}

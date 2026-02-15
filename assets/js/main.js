@@ -1656,26 +1656,40 @@ function bind() {
 }
 
 
-function bindSegmentMenuActiveState() {
-  const buttons = Array.from(document.querySelectorAll(".segmentMenu__btn[data-scroll]"));
-  if (!buttons.length || !('IntersectionObserver' in window)) return;
+function getTriggerSelector(trigger) {
+  return trigger?.getAttribute("data-target")
+    || trigger?.getAttribute("data-scroll")
+    || trigger?.getAttribute("href");
+}
 
-  const setActive = (id) => {
-    buttons.forEach((btn) => {
-      btn.classList.toggle("is-active", btn.getAttribute("data-scroll") === `#${id}`);
-    });
-  };
+function getSegmentMenuButtons() {
+  return Array.from(document.querySelectorAll('.segmentMenu__btn[data-target], .segmentMenu__btn[data-scroll]'));
+}
+
+function setActiveSegmentButton(selector) {
+  if (!selector) return;
+  getSegmentMenuButtons().forEach((button) => {
+    button.classList.toggle("is-active", getTriggerSelector(button) === selector);
+  });
+}
+
+function bindSegmentMenuActiveState() {
+  const buttons = getSegmentMenuButtons();
+  if (!buttons.length || !("IntersectionObserver" in window)) return;
 
   const observer = new IntersectionObserver((entries) => {
     const visible = entries
       .filter((entry) => entry.isIntersecting)
       .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (visible?.target?.id) setActive(visible.target.id);
+
+    if (visible?.target?.id) {
+      setActiveSegmentButton(`#${visible.target.id}`);
+    }
   }, { rootMargin: "-35% 0px -55% 0px", threshold: [0.2, 0.5, 0.8] });
 
-  buttons.forEach((btn) => {
-    const targetSelector = btn.getAttribute("data-scroll");
-    const target = targetSelector ? document.querySelector(targetSelector) : null;
+  buttons.forEach((button) => {
+    const selector = getTriggerSelector(button);
+    const target = selector ? document.querySelector(selector) : null;
     if (target) observer.observe(target);
   });
 }
@@ -1685,28 +1699,50 @@ function bindSmoothScroll() {
   const sectionMap = {
     "#sec-precificacao": "precificacao",
     "#sec-comparar": "comparar_preco",
-    "#sec-lucro-atual": "lucro_atual",
+    "#sec-lucro": "lucro_atual",
     "#sec-escala": "escala"
   };
 
-  document.querySelectorAll("[data-scroll]").forEach((trigger) => {
+  const resolveAndScroll = (selector, { updateHash = true } = {}) => {
+    if (!selector || !selector.startsWith("#")) return;
+    const target = document.querySelector(selector);
+    if (!target) return;
+
+    scrollToWithTopbarOffset(target);
+    if (updateHash && typeof window.history?.replaceState === "function") {
+      window.history.replaceState(null, "", selector);
+    }
+    setActiveSegmentButton(selector);
+  };
+
+  document.querySelectorAll('a[href^="#sec-"], [data-target^="#sec-"], [data-scroll^="#sec-"]').forEach((trigger) => {
     trigger.addEventListener("click", (event) => {
-      event.preventDefault();
-      const selector = trigger.getAttribute("data-scroll");
-      if (!selector) return;
+      const selector = getTriggerSelector(trigger);
+      if (!selector || !selector.startsWith("#")) return;
+
       const target = document.querySelector(selector);
       if (!target) return;
-      scrollToWithTopbarOffset(target);
-      if (typeof window.history?.replaceState === "function") {
-        window.history.replaceState(null, "", selector);
-      }
+
+      event.preventDefault();
+      resolveAndScroll(selector, { updateHash: true });
+
       const section = sectionMap[selector];
       if (section && trigger.classList.contains("segmentMenu__btn")) {
         trackGA4Event("click_tab", { section, value: "menu_top" });
       }
     });
   });
+
+  if (window.location.hash?.startsWith("#sec-")) {
+    window.requestAnimationFrame(() => resolveAndScroll(window.location.hash, { updateHash: false }));
+  }
+
+  window.addEventListener("hashchange", () => {
+    if (!window.location.hash?.startsWith("#sec-")) return;
+    resolveAndScroll(window.location.hash, { updateHash: false });
+  });
 }
+
 
 function initApp() {
   const params = new URLSearchParams(window.location.search);
