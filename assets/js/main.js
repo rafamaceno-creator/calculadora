@@ -124,6 +124,50 @@ const SHEIN = {
   ]
 };
 
+
+const AMAZON_DBA_DEFAULT_WEIGHT_KG = 0.5;
+
+const AMAZON_DBA = {
+  below_79: [
+    { min: 0, max: 30, fee: 4.5, key: "0_30" },
+    { min: 30.01, max: 49.99, fee: 6.5, key: "30_49" },
+    { min: 50, max: 78.99, fee: 6.75, key: "50_78" }
+  ],
+  weightBands: [
+    { key: "0_250", maxKg: 0.25, label: "0–250g" },
+    { key: "250_500", maxKg: 0.5, label: "250–500g" },
+    { key: "500_1", maxKg: 1, label: "500g–1kg" },
+    { key: "1_2", maxKg: 2, label: "1–2kg" },
+    { key: "2_3", maxKg: 3, label: "2–3kg" },
+    { key: "3_4", maxKg: 4, label: "3–4kg" },
+    { key: "4_5", maxKg: 5, label: "4–5kg" },
+    { key: "5_9", maxKg: 9, label: "5–9kg" },
+    { key: "9_13", maxKg: 13, label: "9–13kg" },
+    { key: "13_17", maxKg: 17, label: "13–17kg" },
+    { key: "17_22", maxKg: 22, label: "17–22kg" }
+  ],
+  subPriceBands79_199: [
+    { key: "79_99", min: 79, max: 99.99 },
+    { key: "100_119", min: 100, max: 119.99 },
+    { key: "120_149", min: 120, max: 149.99 },
+    { key: "150_199", min: 150, max: 199.99 }
+  ],
+  from_79_to_199: {
+    // TODO completar conforme tabela oficial DBA completa.
+    "79_99": { "0_250": 9.5, "250_500": 10.5, "500_1": 12, "1_2": 14, "2_3": 16, "3_4": 18, "4_5": 20, "5_9": 26, "9_13": 36, "13_17": 46, "17_22": 56 },
+    "100_119": { "0_250": 10, "250_500": 11, "500_1": 12.5, "1_2": 14.5, "2_3": 16.5, "3_4": 18.5, "4_5": 20.5, "5_9": 26.5, "9_13": 36.5, "13_17": 46.5, "17_22": 56.5 },
+    "120_149": { "0_250": 11, "250_500": 12, "500_1": 13.5, "1_2": 15.5, "2_3": 17.5, "3_4": 19.5, "4_5": 21.5, "5_9": 27.5, "9_13": 37.5, "13_17": 47.5, "17_22": 57.5 },
+    "150_199": { "0_250": 12, "250_500": 13, "500_1": 14.5, "1_2": 16.5, "2_3": 18.5, "3_4": 20.5, "4_5": 22.5, "5_9": 28.5, "9_13": 38.5, "13_17": 48.5, "17_22": 58.5 }
+  },
+  above_200: {
+    // TODO completar conforme tabela oficial DBA completa por origem.
+    sp_capital: { "0_250": 15, "250_500": 16, "500_1": 18, "1_2": 21, "2_3": 24, "3_4": 27, "4_5": 30, "5_9": 38, "9_13": 48, "13_17": 58, "17_22": 68 },
+    sul_sudeste_capitais: { "0_250": 16, "250_500": 17, "500_1": 19, "1_2": 22, "2_3": 25, "3_4": 28, "4_5": 31, "5_9": 39, "9_13": 49, "13_17": 59, "17_22": 69 },
+    sul_sudeste_interior: { "0_250": 17, "250_500": 18, "500_1": 20, "1_2": 23, "2_3": 26, "3_4": 29, "4_5": 32, "5_9": 40, "9_13": 50, "13_17": 60, "17_22": 70 },
+    co_ne_no: { "0_250": 18, "250_500": 19, "500_1": 21, "1_2": 24, "2_3": 27, "3_4": 30, "4_5": 33, "5_9": 41, "9_13": 51, "13_17": 61, "17_22": 71 }
+  }
+};
+
 /* ===== Helpers ===== */
 
 function toNumber(v) {
@@ -154,6 +198,47 @@ function sheinFixedByWeight(weightKg) {
     if (w <= row.max) return row.fixed;
   }
   return SHEIN.weightFixedTable[SHEIN.weightFixedTable.length - 1].fixed;
+}
+
+
+function getAmazonPriceBand(price) {
+  const p = Math.max(0, toNumber(price));
+  if (p <= 78.99) return "below_79";
+  if (p <= 199.99) return "79_199";
+  return "above_200";
+}
+
+function getAmazonWeightBand(weightKg) {
+  const w = clamp(toNumber(weightKg), 0, 22);
+  const band = AMAZON_DBA.weightBands.find((item) => w <= item.maxKg);
+  return band?.key || "17_22";
+}
+
+function getAmazonSubPriceBand(price) {
+  const p = Math.max(0, toNumber(price));
+  const band = AMAZON_DBA.subPriceBands79_199.find((item) => p >= item.min && p <= item.max);
+  return band?.key || "79_99";
+}
+
+function amazonDbaFee({ price, weightKg, originGroup }) {
+  const priceBand = getAmazonPriceBand(price);
+
+  if (priceBand === "below_79") {
+    const row = AMAZON_DBA.below_79.find((item) => price >= item.min && price <= item.max) || AMAZON_DBA.below_79[0];
+    return toNumber(row?.fee);
+  }
+
+  const weightBand = getAmazonWeightBand(weightKg);
+
+  if (priceBand === "79_199") {
+    const subPriceBand = getAmazonSubPriceBand(price);
+    const row = AMAZON_DBA.from_79_to_199[subPriceBand] || AMAZON_DBA.from_79_to_199["79_99"];
+    return toNumber(row?.[weightBand]);
+  }
+
+  const originKey = originGroup || "sp_capital";
+  const originRow = AMAZON_DBA.above_200[originKey] || AMAZON_DBA.above_200.sp_capital;
+  return toNumber(originRow?.[weightBand]);
 }
 
 /* ===== Mercado Livre: tabela de custo fixo ===== */
@@ -304,7 +389,8 @@ function getAdvancedVars() {
     shopee: affOn ? Math.max(0, toNumber(document.querySelector("#affShopee")?.value)) / 100 : 0,
     ml: affOn ? Math.max(0, toNumber(document.querySelector("#affML")?.value)) / 100 : 0,
     tiktok: affOn ? Math.max(0, toNumber(document.querySelector("#affTikTok")?.value)) / 100 : 0,
-    shein: affOn ? Math.max(0, toNumber(document.querySelector("#affShein")?.value)) / 100 : 0
+    shein: affOn ? Math.max(0, toNumber(document.querySelector("#affShein")?.value)) / 100 : 0,
+    amazon: 0
   };
 
   const pctExtra = clamp(
@@ -829,6 +915,11 @@ function recalc(options = {}) {
   const weightUnit = document.querySelector("#mlWeightUnit")?.value || "kg";
   const weightKg = weightToggle ? normalizeWeightKg(weightValue, weightUnit) : 0.5;
 
+  const amazonDbaEnabled = document.querySelector("#amazonDbaToggle")?.checked || false;
+  const amazonPct = Math.max(0, toNumber(document.querySelector("#amazonPct")?.value)) / 100;
+  const amazonOriginGroup = document.querySelector("#amazonOriginGroup")?.value || "sp_capital";
+  const amazonWeightKg = weightToggle ? weightKg : AMAZON_DBA_DEFAULT_WEIGHT_KG;
+
   /* ===== TIKTOK SHOP ===== */
   const tiktok = solvePrice({
     cost,
@@ -947,6 +1038,68 @@ function recalc(options = {}) {
   const mlClassic = solveML(mlClassicPct);
   const mlPremium = solveML(mlPremiumPct);
 
+  function solveAmazon() {
+    let estimatedPrice = Math.max(0, cost + adv.fixedBRL + (profitType === "brl" ? profitValue : 0));
+    let fee = amazonDbaFee({ price: estimatedPrice, weightKg: amazonWeightKg, originGroup: amazonOriginGroup });
+    let iterations = 0;
+
+    while (iterations < 6) {
+      const result = solvePrice({
+        cost,
+        taxPct,
+        profitType,
+        profitValue,
+        marketplacePct: amazonPct,
+        marketplaceFixed: fee,
+        fixedCosts: adv.fixedBRL,
+        percentCosts: adv.pctExtra + adv.affiliate.amazon
+      });
+
+      const nextPrice = Number.isFinite(result.price) ? result.price : 0;
+      const nextFee = amazonDbaFee({ price: nextPrice, weightKg: amazonWeightKg, originGroup: amazonOriginGroup });
+      if (Math.abs(nextFee - fee) < 0.0001) {
+        return {
+          result,
+          fee: nextFee,
+          priceBand: getAmazonPriceBand(nextPrice),
+          weightBand: getAmazonWeightBand(amazonWeightKg),
+          usedDefaultWeight: !weightToggle
+        };
+      }
+
+      estimatedPrice = nextPrice;
+      fee = nextFee;
+      iterations += 1;
+    }
+
+    const finalResult = solvePrice({
+      cost,
+      taxPct,
+      profitType,
+      profitValue,
+      marketplacePct: amazonPct,
+      marketplaceFixed: fee,
+      fixedCosts: adv.fixedBRL,
+      percentCosts: adv.pctExtra + adv.affiliate.amazon
+    });
+
+    return {
+      result: finalResult,
+      fee,
+      priceBand: getAmazonPriceBand(finalResult.price),
+      weightBand: getAmazonWeightBand(amazonWeightKg),
+      usedDefaultWeight: !weightToggle
+    };
+  }
+
+  const amazonData = amazonDbaEnabled ? solveAmazon() : null;
+
+  const amazonOriginWrap = document.querySelector("#amazonOriginWrap");
+  if (amazonOriginWrap) {
+    const shouldShowOrigin = amazonDbaEnabled && amazonData?.priceBand === "above_200";
+    amazonOriginWrap.classList.toggle("hidden", !shouldShowOrigin);
+  }
+
   const resultsEl = document.querySelector("#results");
   if (!resultsEl) return;
 
@@ -1004,6 +1157,27 @@ function recalc(options = {}) {
       ],
       { marketplaceClass: "marketplace-shein", marketplaceIcon: "💙" }
     ),
+    ...(amazonDbaEnabled && amazonData ? [
+      resultCardHTML(
+        "Amazon (DBA)",
+        `${(amazonPct * 100).toFixed(2)}% + ${brl(amazonData.fee)} (DBA)`,
+        amazonData.result,
+        taxPct,
+        profitType,
+        profitValue,
+        amazonPct,
+        amazonData.fee,
+        adv.details,
+        adv.affiliate.amazon,
+        [
+          { k: "Bloco de preço DBA", v: amazonData.priceBand === "below_79" ? "Até R$ 78,99" : (amazonData.priceBand === "79_199" ? "R$ 79 a R$ 199,99" : "Acima de R$ 200") },
+          { k: "Faixa de peso DBA", v: amazonData.weightBand },
+          { k: "Peso usado", v: `${amazonWeightKg.toFixed(3)} kg${amazonData.usedDefaultWeight ? " (padrão)" : ""}` },
+          ...(amazonData.priceBand === "above_200" ? [{ k: "Origem", v: document.querySelector("#amazonOriginGroup")?.selectedOptions?.[0]?.textContent || "SP Capital" }] : [])
+        ],
+        { marketplaceClass: "marketplace-amazon", marketplaceIcon: "📦" }
+      )
+    ] : []),
     resultCardHTML(
       "Mercado Livre — Clássico",
       `${(mlClassicPct * 100).toFixed(2)}%`,
@@ -1044,6 +1218,7 @@ function recalc(options = {}) {
     { key: "shopee", title: "Shopee", marketplacePct: shFee.pct, marketplaceFixed: shFee.fixed, percentCosts: adv.pctExtra + adv.affiliate.shopee, fixedCosts: adv.fixedBRL },
     { key: "tiktok", title: "TikTok Shop", marketplacePct: TIKTOK.pct, marketplaceFixed: TIKTOK.fixed, percentCosts: adv.pctExtra + adv.affiliate.tiktok, fixedCosts: adv.fixedBRL },
     { key: "shein", title: "SHEIN", marketplacePct: sheinPct, marketplaceFixed: sheinFixed, percentCosts: adv.pctExtra + adv.affiliate.shein, fixedCosts: adv.fixedBRL },
+    ...(amazonDbaEnabled && amazonData ? [{ key: "amazon", title: "Amazon (DBA)", marketplacePct: amazonPct, marketplaceFixed: amazonData.fee, percentCosts: adv.pctExtra + adv.affiliate.amazon, fixedCosts: adv.fixedBRL }] : []),
     { key: "mlClassic", title: "Mercado Livre — Clássico", marketplacePct: mlClassicPct, marketplaceFixed: mlClassic.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL },
     { key: "mlPremium", title: "Mercado Livre — Premium", marketplacePct: mlPremiumPct, marketplaceFixed: mlPremium.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL }
   ];
@@ -1052,6 +1227,7 @@ function recalc(options = {}) {
     { key: "shopee", title: "Shopee", price: shopee.price, profitBRL: shopee.profitBRL, marginPct: shopee.profitPctReal * 100 },
     { key: "tiktok", title: "TikTok Shop", price: tiktok.price, profitBRL: tiktok.profitBRL, marginPct: tiktok.profitPctReal * 100 },
     { key: "shein", title: "SHEIN", price: shein.price, profitBRL: shein.profitBRL, marginPct: shein.profitPctReal * 100 },
+    ...(amazonDbaEnabled && amazonData ? [{ key: "amazon", title: "Amazon (DBA)", price: amazonData.result.price, profitBRL: amazonData.result.profitBRL, marginPct: amazonData.result.profitPctReal * 100 }] : []),
     { key: "mlClassic", title: "Mercado Livre — Clássico", price: mlClassic.r.price, profitBRL: mlClassic.r.profitBRL, marginPct: mlClassic.r.profitPctReal * 100 },
     { key: "mlPremium", title: "Mercado Livre — Premium", price: mlPremium.r.price, profitBRL: mlPremium.r.profitBRL, marginPct: mlPremium.r.profitPctReal * 100 }
   ].map((item) => ({ ...item, totalCost: Math.max(0, item.price - item.profitBRL) }));
@@ -1066,6 +1242,7 @@ function recalc(options = {}) {
     { title: "Shopee", received: shopee.received, profitBRL: shopee.profitBRL, profitPctReal: shopee.profitPctReal },
     { title: "TikTok Shop", received: tiktok.received, profitBRL: tiktok.profitBRL, profitPctReal: tiktok.profitPctReal },
     { title: "SHEIN", received: shein.received, profitBRL: shein.profitBRL, profitPctReal: shein.profitPctReal },
+    ...(amazonDbaEnabled && amazonData ? [{ title: "Amazon (DBA)", received: amazonData.result.received, profitBRL: amazonData.result.profitBRL, profitPctReal: amazonData.result.profitPctReal }] : []),
     { title: "Mercado Livre — Clássico", received: mlClassic.r.received, profitBRL: mlClassic.r.profitBRL, profitPctReal: mlClassic.r.profitPctReal },
     { title: "Mercado Livre — Premium", received: mlPremium.r.received, profitBRL: mlPremium.r.profitBRL, profitPctReal: mlPremium.r.profitPctReal }
   ]);
@@ -1304,6 +1481,9 @@ function bindInputTracking() {
     "mlWeightValue",
     "mlWeightUnit",
     "sheinCategory",
+    "amazonDbaToggle",
+    "amazonPct",
+    "amazonOriginGroup",
     "samePriceInput",
     "currentPriceInput"
   ]);
@@ -1449,6 +1629,27 @@ function bind() {
   };
   wToggle?.addEventListener("change", applyWBox);
   applyWBox();
+
+  const amazonToggle = $("#amazonDbaToggle");
+  const amazonBox = $("#amazonDbaBox");
+  const applyAmazonBox = () => {
+    if (!amazonToggle || !amazonBox) return;
+    amazonBox.classList.toggle("hidden", !amazonToggle.checked);
+  };
+  amazonToggle?.addEventListener("change", () => {
+    applyAmazonBox();
+    trackGA4Event(amazonToggle.checked ? "amazon_toggle_on" : "amazon_toggle_off", { section: "inputs" });
+  });
+
+  $("#amazonOriginGroup")?.addEventListener("change", (event) => {
+    trackGA4Event("amazon_origin_selected", { value: event.target.value || "sp_capital" });
+  });
+
+  $("#amazonPct")?.addEventListener("change", (event) => {
+    trackGA4Event("amazon_pct_changed", { value: toNumber(event.target.value) || 0 });
+  });
+
+  applyAmazonBox();
 }
 
 

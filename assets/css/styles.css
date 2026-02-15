@@ -231,6 +231,7 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
 .marketplaceCard.marketplace-tiktok .cardHeader{background:rgba(0,0,0,.06)}
 .marketplaceCard.marketplace-ml .cardHeader{background:rgba(255,221,0,.15)}
 .marketplaceCard.marketplace-shein .cardHeader{background:rgba(30,64,175,.10)}
+.marketplaceCard.marketplace-amazon .cardHeader{background:rgba(255,153,0,.14)}
 
 .heroBox{padding:20px 16px;margin-bottom:16px}
 .heroLabel{font-size:11px;letter-spacing:.14em}
