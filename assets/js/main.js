@@ -1696,6 +1696,7 @@ function bindSegmentMenuActiveState() {
 
 
 function bindSmoothScroll() {
+  const allowedSections = new Set(["#sec-precificacao", "#sec-comparar", "#sec-lucro", "#sec-escala"]);
   const sectionMap = {
     "#sec-precificacao": "precificacao",
     "#sec-comparar": "comparar_preco",
@@ -1704,13 +1705,13 @@ function bindSmoothScroll() {
   };
 
   const resolveAndScroll = (selector, { updateHash = true } = {}) => {
-    if (!selector || !selector.startsWith("#")) return;
+    if (!allowedSections.has(selector)) return;
     const target = document.querySelector(selector);
     if (!target) return;
 
     scrollToWithTopbarOffset(target);
-    if (updateHash && typeof window.history?.replaceState === "function") {
-      window.history.replaceState(null, "", selector);
+    if (updateHash && window.location.hash !== selector && typeof window.history?.pushState === "function") {
+      window.history.pushState(null, "", selector);
     }
     setActiveSegmentButton(selector);
   };
@@ -1718,7 +1719,7 @@ function bindSmoothScroll() {
   document.querySelectorAll('a[href^="#sec-"], [data-target^="#sec-"], [data-scroll^="#sec-"]').forEach((trigger) => {
     trigger.addEventListener("click", (event) => {
       const selector = getTriggerSelector(trigger);
-      if (!selector || !selector.startsWith("#")) return;
+      if (!allowedSections.has(selector)) return;
 
       const target = document.querySelector(selector);
       if (!target) return;
@@ -1733,12 +1734,14 @@ function bindSmoothScroll() {
     });
   });
 
-  if (window.location.hash?.startsWith("#sec-")) {
+  if (allowedSections.has(window.location.hash)) {
     window.requestAnimationFrame(() => resolveAndScroll(window.location.hash, { updateHash: false }));
+  } else {
+    setActiveSegmentButton("#sec-precificacao");
   }
 
-  window.addEventListener("hashchange", () => {
-    if (!window.location.hash?.startsWith("#sec-")) return;
+  window.addEventListener("popstate", () => {
+    if (!allowedSections.has(window.location.hash)) return;
     resolveAndScroll(window.location.hash, { updateHash: false });
   });
 }
