@@ -922,8 +922,9 @@ function recalc(options = {}) {
   const profitType = document.querySelector("#profitType")?.value || "brl";
   const profitValue = Math.max(0, toNumber(document.querySelector("#profitValue")?.value));
 
-  const mlClassicPct = toNumber(document.querySelector("#mlClassicPct")?.value) / 100;
-  const mlPremiumPct = toNumber(document.querySelector("#mlPremiumPct")?.value) / 100;
+  const mlCommissionEnabled = document.querySelector("#mlCommissionToggle")?.checked;
+  const mlClassicPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
+  const mlPremiumPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
 
   const adv = getAdvancedVars();
 
@@ -955,7 +956,10 @@ function recalc(options = {}) {
   });
 
   /* ===== SHEIN ===== */
-  const sheinCategory = document.querySelector("#sheinCategory")?.value || "other";
+  const sheinCommissionEnabled = document.querySelector("#sheinCommissionToggle")?.checked;
+  const sheinCategory = sheinCommissionEnabled
+    ? (document.querySelector("#sheinCategory")?.value || "other")
+    : "other";
   const sheinPct = sheinCategory === "female" ? SHEIN.pctFemale : SHEIN.pctOther;
   const sheinFixed = sheinFixedByWeight(weightKg);
 
@@ -1117,7 +1121,7 @@ function recalc(options = {}) {
   const amazonOriginWrap = document.querySelector("#amazonOriginWrap");
   if (amazonOriginWrap) {
     const shouldShowOrigin = amazonDbaEnabled && amazonData?.priceBand === "above_200";
-    amazonOriginWrap.classList.toggle("hidden", !shouldShowOrigin);
+    amazonOriginWrap.classList.toggle("is-hidden", !shouldShowOrigin);
   }
 
   const resultsEl = document.querySelector("#results");
@@ -1603,12 +1607,68 @@ function bind() {
     trackGA4Event(expanded ? "close_incidences" : "open_incidences", { section: "results", marketplace });
   });
 
+  const profitType = $("#profitType");
+  const profitValue = $("#profitValue");
+  const profitValueBRL = $("#profitValueBRL");
+  const profitValuePct = $("#profitValuePct");
+  const profitFieldBRL = $("#profitFieldBRL");
+  const profitFieldPCT = $("#profitFieldPCT");
+
+  const syncProfitValue = () => {
+    if (!profitType || !profitValue) return;
+    const selected = document.querySelector('input[name="profitMode"]:checked')?.value || "brl";
+    profitType.value = selected;
+    if (selected === "pct") {
+      if (profitValuePct && profitValue) profitValuePct.value = profitValue.value || profitValuePct.value;
+      if (profitFieldBRL) profitFieldBRL.classList.add("is-hidden");
+      if (profitFieldPCT) profitFieldPCT.classList.remove("is-hidden");
+      if (profitValuePct) profitValue.value = profitValuePct.value;
+      return;
+    }
+    if (profitValueBRL && profitValue) profitValueBRL.value = profitValue.value || profitValueBRL.value;
+    if (profitFieldPCT) profitFieldPCT.classList.add("is-hidden");
+    if (profitFieldBRL) profitFieldBRL.classList.remove("is-hidden");
+    if (profitValueBRL) profitValue.value = profitValueBRL.value;
+  };
+
+  document.querySelectorAll('input[name="profitMode"]').forEach((input) => {
+    input.addEventListener("change", syncProfitValue);
+  });
+
+  profitValueBRL?.addEventListener("input", () => {
+    if (profitType?.value === "brl" && profitValue) profitValue.value = profitValueBRL.value;
+  });
+
+  profitValuePct?.addEventListener("input", () => {
+    if (profitType?.value === "pct" && profitValue) profitValue.value = profitValuePct.value;
+  });
+
+  syncProfitValue();
+
+  const mlCommissionToggle = $("#mlCommissionToggle");
+  const mlCommissionBox = $("#mlCommissionBox");
+  const applyMlCommissionBox = () => {
+    if (!mlCommissionToggle || !mlCommissionBox) return;
+    mlCommissionBox.classList.toggle("is-hidden", !mlCommissionToggle.checked);
+  };
+  mlCommissionToggle?.addEventListener("change", applyMlCommissionBox);
+  applyMlCommissionBox();
+
+  const sheinCommissionToggle = $("#sheinCommissionToggle");
+  const sheinCommissionBox = $("#sheinCommissionBox");
+  const applySheinCommissionBox = () => {
+    if (!sheinCommissionToggle || !sheinCommissionBox) return;
+    sheinCommissionBox.classList.toggle("is-hidden", !sheinCommissionToggle.checked);
+  };
+  sheinCommissionToggle?.addEventListener("change", applySheinCommissionBox);
+  applySheinCommissionBox();
+
   // Mostrar/esconder box avançadas
   const advToggle = $("#advToggle");
   const advBox = $("#advBox");
   const applyAdvBox = () => {
     if (!advToggle || !advBox) return;
-    advBox.classList.toggle("hidden", !advToggle.checked);
+    advBox.classList.toggle("is-hidden", !advToggle.checked);
   };
   advToggle?.addEventListener("change", applyAdvBox);
   applyAdvBox();
@@ -1618,7 +1678,7 @@ function bind() {
   const affBox = $("#affBox");
   const applyAffBox = () => {
     if (!affToggle || !affBox) return;
-    affBox.classList.toggle("hidden", !affToggle.checked);
+    affBox.classList.toggle("is-hidden", !affToggle.checked);
   };
   affToggle?.addEventListener("change", applyAffBox);
   applyAffBox();
@@ -1628,7 +1688,7 @@ function bind() {
   const wBox = $("#mlWeightBox");
   const applyWBox = () => {
     if (!wToggle || !wBox) return;
-    wBox.classList.toggle("hidden", !wToggle.checked);
+    wBox.classList.toggle("is-hidden", !wToggle.checked);
   };
   wToggle?.addEventListener("change", applyWBox);
   applyWBox();
@@ -1637,7 +1697,7 @@ function bind() {
   const amazonBox = $("#amazonDbaBox");
   const applyAmazonBox = () => {
     if (!amazonToggle || !amazonBox) return;
-    amazonBox.classList.toggle("hidden", !amazonToggle.checked);
+    amazonBox.classList.toggle("is-hidden", !amazonToggle.checked);
   };
   amazonToggle?.addEventListener("change", () => {
     applyAmazonBox();
