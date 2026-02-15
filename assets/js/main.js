@@ -470,33 +470,69 @@ function buildIncidenciesList(taxPct, profitType, profitValue, marketplacePct, m
   return groups;
 }
 
-function buildComposition(priceIdeal, costTotal, incidencesGroups, profitBRL) {
+function buildComposition({
+  priceIdeal,
+  baseCost,
+  marketplacePct,
+  marketplaceFixed,
+  taxPct,
+  advDetails,
+  affiliatePct,
+  profitBRL
+}) {
   const safePrice = Math.max(0, toNumber(priceIdeal));
-  const groups = Array.isArray(incidencesGroups) ? incidencesGroups : [];
-  const sumGroup = (name) => {
-    const group = groups.find((item) => item.group === name);
-    return (group?.items || []).reduce((acc, item) => acc + (toNumber(item.brl) || 0), 0);
-  };
+  const safeBaseCost = Math.max(0, toNumber(baseCost));
+  const percentMarketplace = Math.max(0, marketplacePct || 0);
+  const percentTax = Math.max(0, toNumber(taxPct)) / 100;
+  const percentTaxExtra = Math.max(0, advDetails?.difal || 0) + Math.max(0, advDetails?.pis || 0) + Math.max(0, advDetails?.cofins || 0);
+  const percentOps = Math.max(0, advDetails?.ads?.pct || 0) + Math.max(0, advDetails?.ret?.pct || 0) + Math.max(0, advDetails?.other?.pct || 0) + Math.max(0, advDetails?.costFixed?.pct || 0) + Math.max(0, affiliatePct || 0);
 
-  const composition = {
-    cost: Math.max(0, toNumber(costTotal)),
-    fees: Math.max(0, sumGroup("Marketplace")),
-    tax: Math.max(0, sumGroup("Impostos")),
+  const fixedCostExtra = Math.max(0, advDetails?.ads?.brl || 0) + Math.max(0, advDetails?.ret?.brl || 0) + Math.max(0, advDetails?.other?.brl || 0) + Math.max(0, advDetails?.costFixed?.brl || 0);
+
+  const parts = {
+    cost: safeBaseCost + fixedCostExtra,
+    fees: safePrice * (percentMarketplace + percentOps) + Math.max(0, toNumber(marketplaceFixed)),
+    tax: safePrice * (percentTax + percentTaxExtra),
     profit: Math.max(0, toNumber(profitBRL))
   };
 
-  const composed = composition.cost + composition.fees + composition.tax + composition.profit;
-  const delta = safePrice - composed;
-  composition.profit = Math.max(0, composition.profit + delta);
+  const toCents = (value) => Math.round(Math.max(0, value) * 100);
+  const cents = {
+    cost: toCents(parts.cost),
+    fees: toCents(parts.fees),
+    tax: toCents(parts.tax),
+    profit: toCents(parts.profit)
+  };
+  const totalCents = toCents(safePrice);
+  const delta = totalCents - (cents.cost + cents.fees + cents.tax + cents.profit);
+  cents.profit = Math.max(0, cents.profit + delta);
 
-  const toPct = (value) => (safePrice > 0 ? clamp((value / safePrice) * 100, 0, 100) : 0);
+  const amount = {
+    cost: cents.cost / 100,
+    fees: cents.fees / 100,
+    tax: cents.tax / 100,
+    profit: cents.profit / 100
+  };
+
+  const basePct = safePrice > 0 ? {
+    cost: (amount.cost / safePrice) * 100,
+    fees: (amount.fees / safePrice) * 100,
+    tax: (amount.tax / safePrice) * 100
+  } : { cost: 0, fees: 0, tax: 0 };
+  const pctCost = clamp(basePct.cost, 0, 100);
+  const pctFees = clamp(basePct.fees, 0, 100);
+  const pctTax = clamp(basePct.tax, 0, 100);
+  const pctProfit = clamp(100 - pctCost - pctFees - pctTax, 0, 100);
 
   return {
-    ...composition,
-    pctCost: toPct(composition.cost),
-    pctFees: toPct(composition.fees),
-    pctTax: toPct(composition.tax),
-    pctProfit: toPct(composition.profit)
+    cost: amount.cost,
+    fees: amount.fees,
+    tax: amount.tax,
+    profit: amount.profit,
+    pctCost,
+    pctFees,
+    pctTax,
+    pctProfit
   };
 }
 
@@ -598,6 +634,7 @@ function resultCardHTML(
   title,
   pill,
   r,
+  baseCost,
   taxPct,
   profitType,
   profitValue,
@@ -626,12 +663,16 @@ function resultCardHTML(
     Number.isFinite(r.price) ? r.price : 0
   );
 
-  const composition = buildComposition(
-    r.price,
-    (Number.isFinite(r.totalFixedCosts) ? r.totalFixedCosts : 0) - (Number.isFinite(marketplaceFixed) ? marketplaceFixed : 0),
-    items,
-    r.profitBRL
-  );
+  const composition = buildComposition({
+    priceIdeal: r.price,
+    baseCost,
+    marketplacePct,
+    marketplaceFixed,
+    taxPct,
+    advDetails,
+    affiliatePct,
+    profitBRL: r.profitBRL
+  });
   const compositionLabel = `Composição do preço: custo ${brl(composition.cost)}, taxas ${brl(composition.fees)}, impostos ${brl(composition.tax)}, lucro ${brl(composition.profit)}`;
   const compositionTip = [
     `Custo: ${brl(composition.cost)} (${composition.pctCost.toFixed(1)}%)`,
@@ -1203,12 +1244,12 @@ const Bulk = {
         shein: data.shein,
         amazon: data.amazonData?.result
       };
-      let best = { key: "—", profit: -Infinity };
+      let bestProfit = -Infinity;
       marketplaces.forEach((key) => {
         const p = map[key]?.profitBRL;
-        if (Number.isFinite(p) && p > best.profit) best = { key, profit: p };
+        if (Number.isFinite(p) && p > bestProfit) bestProfit = p;
       });
-      out.push({ name: row.name || `Produto ${i + 1}`, cost, map, bestMarketplace: best.key, bestProfit: best.profit });
+      out.push({ name: row.name || `Produto ${i + 1}`, cost, map, bestProfit });
     }
     return out;
   },
@@ -1218,7 +1259,7 @@ const Bulk = {
     const wrap = document.querySelector("#bulkResultsWrap");
     if (!head || !body || !wrap) return;
     const hasAmazon = results.some((item) => item.map.amazon);
-    const cols = ["Nome", "Custo", "Shopee", "ML Clássico", "ML Premium", "TikTok", "SHEIN", ...(hasAmazon ? ["Amazon"] : []), "Melhor marketplace", "Melhor lucro"];
+    const cols = ["Nome", "Custo", "Shopee", "ML Clássico", "ML Premium", "TikTok", "SHEIN", ...(hasAmazon ? ["Amazon"] : []), "Melhor lucro"];
     head.innerHTML = `<tr>${cols.map((col) => `<th>${col}</th>`).join("")}</tr>`;
     body.innerHTML = results.map((item) => `
       <tr>
@@ -1230,7 +1271,6 @@ const Bulk = {
         <td>${brl(item.map.tiktok?.price || 0)}</td>
         <td>${brl(item.map.shein?.price || 0)}</td>
         ${hasAmazon ? `<td>${brl(item.map.amazon?.price || 0)}</td>` : ""}
-        <td>${item.bestMarketplace}</td>
         <td>${brl(item.bestProfit || 0)}</td>
       </tr>
     `).join("");
@@ -1240,8 +1280,8 @@ const Bulk = {
   },
   exportBulkCSV(results) {
     const hasAmazon = results.some((item) => item.map.amazon);
-    const header = ["nome", "custo", "shopee", "ml_classico", "ml_premium", "tiktok", "shein", ...(hasAmazon ? ["amazon"] : []), "melhor_marketplace", "melhor_lucro"];
-    const rows = results.map((item) => [item.name, item.cost.toFixed(2), (item.map.shopee?.price || 0).toFixed(2), (item.map.mlClassic?.price || 0).toFixed(2), (item.map.mlPremium?.price || 0).toFixed(2), (item.map.tiktok?.price || 0).toFixed(2), (item.map.shein?.price || 0).toFixed(2), ...(hasAmazon ? [(item.map.amazon?.price || 0).toFixed(2)] : []), item.bestMarketplace, (item.bestProfit || 0).toFixed(2)]);
+    const header = ["nome", "custo", "shopee", "ml_classico", "ml_premium", "tiktok", "shein", ...(hasAmazon ? ["amazon"] : []), "melhor_lucro"];
+    const rows = results.map((item) => [item.name, item.cost.toFixed(2), (item.map.shopee?.price || 0).toFixed(2), (item.map.mlClassic?.price || 0).toFixed(2), (item.map.mlPremium?.price || 0).toFixed(2), (item.map.tiktok?.price || 0).toFixed(2), (item.map.shein?.price || 0).toFixed(2), ...(hasAmazon ? [(item.map.amazon?.price || 0).toFixed(2)] : []), (item.bestProfit || 0).toFixed(2)]);
     const csv = [header.join(";"), ...rows.map((row) => row.join(";"))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -1514,6 +1554,7 @@ function recalc(options = {}) {
       "Shopee",
       `${(shFee.pct * 100).toFixed(0)}% + ${brl(shFee.fixed)}`,
       shopee,
+      cost,
       taxPct,
       profitType,
       profitValue,
@@ -1535,6 +1576,7 @@ function recalc(options = {}) {
       "TikTok Shop",
       `12% + ${brl(4)}`,
       tiktok,
+      cost,
       taxPct,
       profitType,
       profitValue,
@@ -1549,6 +1591,7 @@ function recalc(options = {}) {
       "SHEIN",
       `${(sheinPct * 100).toFixed(0)}% + ${brl(sheinFixed)} (frete)`,
       shein,
+      cost,
       taxPct,
       profitType,
       profitValue,
@@ -1568,6 +1611,7 @@ function recalc(options = {}) {
         "Amazon (DBA)",
         `${(amazonPct * 100).toFixed(2)}% + ${brl(amazonData.fee)} (DBA)`,
         amazonData.result,
+        cost,
         taxPct,
         profitType,
         profitValue,
@@ -1588,6 +1632,7 @@ function recalc(options = {}) {
       "Mercado Livre — Clássico",
       `${(mlClassicPct * 100).toFixed(2)}%`,
       mlClassic.r,
+      cost,
       taxPct,
       profitType,
       profitValue,
@@ -1605,6 +1650,7 @@ function recalc(options = {}) {
       "Mercado Livre — Premium",
       `${(mlPremiumPct * 100).toFixed(2)}%`,
       mlPremium.r,
+      cost,
       taxPct,
       profitType,
       profitValue,
