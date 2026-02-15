@@ -461,3 +461,49 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
 .specialistHero h1{margin:10px 0;font-size:clamp(28px,5vw,44px)}
 .specialistList{display:grid;gap:8px;padding-left:18px;color:#334155}
 
+
+/* Marketplace palette system */
+.resultCard{
+  position:relative;
+  border:1px solid color-mix(in srgb, var(--mp-accent, #0ea5a4) 34%, transparent);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--mp-accent, #0ea5a4) 8%, #ffffff 92%) 0%, #fff 80%);
+  transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.resultCard::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:3px;
+  border-radius:16px 16px 0 0;
+  background:linear-gradient(90deg, var(--mp-accent, #0ea5a4), var(--mp-accent2, var(--mp-accent, #0ea5a4)));
+}
+.resultCard:hover{
+  border-color:color-mix(in srgb, var(--mp-accent, #0ea5a4) 55%, transparent);
+  box-shadow:0 10px 24px color-mix(in srgb, var(--mp-accent, #0ea5a4) 20%, transparent);
+}
+.resultCard .cardIcon,
+.resultCard .pill{
+  border-color:color-mix(in srgb, var(--mp-accent, #0ea5a4) 45%, transparent);
+  color:color-mix(in srgb, var(--mp-accent, #0ea5a4) 88%, #111827 12%);
+  background:color-mix(in srgb, var(--mp-accent, #0ea5a4) 16%, transparent);
+}
+.resultCard .incidenceGroupTitle{color:color-mix(in srgb, var(--mp-accent, #0ea5a4) 75%, #0f172a 25%)}
+
+.mp-shopee{--mp-accent:#EE4D2D;--mp-accent2:#F97316}
+.mp-ml{--mp-accent:#FFE600;--mp-accent2:#FACC15}
+.mp-tiktok{--mp-accent:#25F4EE;--mp-accent2:#FE2C55}
+.mp-shein{--mp-accent:#9CA3AF;--mp-accent2:#E5E7EB}
+.mp-amazon{--mp-accent:#FF9900;--mp-accent2:#F59E0B}
+
+body.theme-dark .resultCard{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--mp-accent, #0ea5a4) 11%, #111827 89%) 0%, #1e293b 90%);
+}
+body.theme-dark .resultCard .cardIcon,
+body.theme-dark .resultCard .pill{
+  background:color-mix(in srgb, var(--mp-accent, #0ea5a4) 22%, transparent);
+  color:#e5e7eb;
+}
+
+[id^="sec-"]{scroll-margin-top:96px}

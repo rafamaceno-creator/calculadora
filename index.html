@@ -62,7 +62,7 @@
       </div>
 
       <nav id="topbarNav" class="nav" aria-label="Navegação">
-        <a href="#precificacao">Calculadora</a>
+        <a href="#sec-precificacao">Calculadora</a>
         <a href="#faq">FAQ</a>
         <a class="btn btn--primary btn--cta js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
         <a class="btn btn--outline btn--cta" data-action="cta-specialist" data-from="topbar" href="hora-com-o-especialista.html">A Hora com o Especialista</a>
@@ -81,13 +81,13 @@
     </section>
 
     <nav class="segmentMenu" aria-label="Menu de blocos">
-      <button class="segmentMenu__btn is-active" type="button" data-scroll-target="precificacao">Precificação</button>
-      <button class="segmentMenu__btn" type="button" data-scroll-target="comparar">Comparar preço</button>
-      <button class="segmentMenu__btn" type="button" data-scroll-target="lucro">Lucro atual</button>
-      <button class="segmentMenu__btn" type="button" data-scroll-target="escala">Escala</button>
+      <button class="segmentMenu__btn is-active" type="button" data-scroll="#sec-precificacao">Precificação</button>
+      <button class="segmentMenu__btn" type="button" data-scroll="#sec-comparar">Comparar preço</button>
+      <button class="segmentMenu__btn" type="button" data-scroll="#sec-lucro-atual">Lucro atual</button>
+      <button class="segmentMenu__btn" type="button" data-scroll="#sec-escala">Escala</button>
     </nav>
 
-    <section id="precificacao" class="sectionCard">
+    <section id="sec-precificacao" class="sectionCard">
       <h2>Precificação</h2>
       <p class="sectionMicrocopy">Preencha seus custos e veja o preço sugerido com lucro real.</p>
       <div class="grid">
@@ -392,7 +392,7 @@
                     <input id="affToggle" type="checkbox" />
                     <span>Afiliados</span>
                   </label>
-                  <small>Incide somente na plataforma correspondente.</small>
+                  <small>Incide somente na plataforma correspondente (Shopee, Mercado Livre e TikTok).</small>
 
                   <div id="affBox" class="affGrid hidden">
                     <div class="field">
@@ -419,15 +419,6 @@
                       <input id="affTikTok" type="number" step="0.01" min="0" value="0" />
                     </div>
                   </div>
-
-
-                    <div class="field">
-                      <div class="label label-row">
-                        <span>Afiliados SHEIN (%)</span>
-                        <button class="info" type="button" aria-label="Info: Afiliados SHEIN (%)" data-tooltip="Percentual de custo de afiliados/CPA dentro da SHEIN. Incide só no cálculo da SHEIN.">i</button>
-                      </div>
-                      <input id="affShein" type="number" step="0.01" min="0" value="0" />
-                    </div>
 
                 </div>
               </div>
@@ -487,7 +478,7 @@
       </div>
     </section>
 
-    <section id="comparar" class="sectionCard">
+    <section id="sec-comparar" class="sectionCard">
       <h2>Comparar preço</h2>
       <p class="sectionMicrocopy">Digite um preço de venda e compare o lucro/prejuízo em cada marketplace.</p>
       <div class="card card--simple">
@@ -509,7 +500,7 @@
       </div>
     </section>
 
-    <section id="lucro" class="sectionCard">
+    <section id="sec-lucro-atual" class="sectionCard">
       <h2>Lucro atual</h2>
       <p class="sectionMicrocopy">Digite o preço que você pratica hoje e descubra sua margem real.</p>
       <div class="card card--simple">
@@ -531,7 +522,7 @@
       </div>
     </section>
 
-    <section id="escala" class="sectionCard">
+    <section id="sec-escala" class="sectionCard">
       <h2>Simulação de Escala</h2>
       <p class="sectionMicrocopy">Defina o volume de vendas e veja o lucro total em cada marketplace.</p>
       <div class="card card--simple">
