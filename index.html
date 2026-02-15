@@ -183,6 +183,45 @@
             </div>
           </div>
 
+          <div class="toggle">
+            <label class="check">
+              <input id="amazonDbaToggle" type="checkbox" />
+              <span>Incluir Amazon (DBA) no cálculo?</span>
+            </label>
+            <small>Ative para aplicar comissão e tarifa logística DBA por unidade.</small>
+          </div>
+
+          <div id="amazonDbaBox" class="cardMini hidden">
+            <div class="cardMini__header">
+              <strong>Amazon (DBA)</strong>
+              <span class="pill">Opcional</span>
+            </div>
+
+            <div class="field">
+              <div class="label label-row">
+                <span>Comissão Amazon (%)</span>
+                <button class="info" type="button" aria-label="Info: Comissão Amazon (%)" data-tooltip="A comissão padrão da Amazon foi definida em 15%, mas você pode ajustar conforme sua categoria.">i</button>
+              </div>
+              <input id="amazonPct" type="number" step="0.01" min="0" value="15" />
+            </div>
+
+            <small>DBA usa o maior entre peso real e cúbico. Aqui usamos o peso informado.</small>
+            <small>Se o peso não estiver ativo, calculamos com padrão de 0,5 kg.</small>
+
+            <div id="amazonOriginWrap" class="field hidden">
+              <div class="label label-row">
+                <span>Origem do envio (DBA)</span>
+                <button class="info" type="button" aria-label="Info: Origem do envio (DBA)" data-tooltip="A origem é exigida no bloco de produtos acima de R$ 200 na tabela DBA da Amazon.">i</button>
+              </div>
+              <select id="amazonOriginGroup">
+                <option value="sp_capital">SP Capital</option>
+                <option value="sul_sudeste_capitais">Outras capitais do Sul e Sudeste</option>
+                <option value="sul_sudeste_interior">Interior do Sul e Sudeste</option>
+                <option value="co_ne_no">Centro-Oeste, Norte e Nordeste</option>
+              </select>
+            </div>
+          </div>
+
           <div class="cardMini">
             <div class="cardMini__header">
               <strong>Mercado Livre (comissão editável)</strong>
