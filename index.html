@@ -145,15 +145,11 @@
                 <span>Modo da meta</span>
                 <button class="info" type="button" aria-label="Info: Modo da meta" data-tooltip="Escolha se o lucro desejado será um valor fixo em reais (R$) ou uma margem em % sobre o preço de venda.">i</button>
               </div>
-              <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo da meta de lucro">
-                <label class="segmented__option">
-                  <input type="radio" name="profitMode" value="brl" checked />
-                  <span>Em R$</span>
-                </label>
-                <label class="segmented__option">
-                  <input type="radio" name="profitMode" value="pct" />
-                  <span>Em %</span>
-                </label>
+              <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo da meta">
+                <input id="meta_reais" type="radio" name="profitMode" value="brl" checked />
+                <label for="meta_reais">Em R$</label>
+                <input id="meta_percent" type="radio" name="profitMode" value="pct" />
+                <label for="meta_percent">Em %</label>
               </div>
               <select id="profitType" class="is-hidden" aria-hidden="true" tabindex="-1">
                 <option value="brl" selected>Em R$ (lucro em reais)</option>
