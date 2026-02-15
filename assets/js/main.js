@@ -27,6 +27,7 @@ const INPUT_EVENT_FIELDS = {
 
 const THEME_KEY = "pricing_theme";
 const SAVED_SIMULATIONS_KEY = "saved_simulations_v2";
+const COMPOSITION_VIEW_KEY = "composition_view_tracked";
 
 
 function track(eventName, params = {}) {
@@ -469,6 +470,72 @@ function buildIncidenciesList(taxPct, profitType, profitValue, marketplacePct, m
   return groups;
 }
 
+function buildComposition({
+  priceIdeal,
+  baseCost,
+  marketplacePct,
+  marketplaceFixed,
+  taxPct,
+  advDetails,
+  affiliatePct,
+  profitBRL
+}) {
+  const safePrice = Math.max(0, toNumber(priceIdeal));
+  const safeBaseCost = Math.max(0, toNumber(baseCost));
+  const percentMarketplace = Math.max(0, marketplacePct || 0);
+  const percentTax = Math.max(0, toNumber(taxPct)) / 100;
+  const percentTaxExtra = Math.max(0, advDetails?.difal || 0) + Math.max(0, advDetails?.pis || 0) + Math.max(0, advDetails?.cofins || 0);
+  const percentOps = Math.max(0, advDetails?.ads?.pct || 0) + Math.max(0, advDetails?.ret?.pct || 0) + Math.max(0, advDetails?.other?.pct || 0) + Math.max(0, advDetails?.costFixed?.pct || 0) + Math.max(0, affiliatePct || 0);
+
+  const fixedCostExtra = Math.max(0, advDetails?.ads?.brl || 0) + Math.max(0, advDetails?.ret?.brl || 0) + Math.max(0, advDetails?.other?.brl || 0) + Math.max(0, advDetails?.costFixed?.brl || 0);
+
+  const parts = {
+    cost: safeBaseCost + fixedCostExtra,
+    fees: safePrice * (percentMarketplace + percentOps) + Math.max(0, toNumber(marketplaceFixed)),
+    tax: safePrice * (percentTax + percentTaxExtra),
+    profit: Math.max(0, toNumber(profitBRL))
+  };
+
+  const toCents = (value) => Math.round(Math.max(0, value) * 100);
+  const cents = {
+    cost: toCents(parts.cost),
+    fees: toCents(parts.fees),
+    tax: toCents(parts.tax),
+    profit: toCents(parts.profit)
+  };
+  const totalCents = toCents(safePrice);
+  const delta = totalCents - (cents.cost + cents.fees + cents.tax + cents.profit);
+  cents.profit = Math.max(0, cents.profit + delta);
+
+  const amount = {
+    cost: cents.cost / 100,
+    fees: cents.fees / 100,
+    tax: cents.tax / 100,
+    profit: cents.profit / 100
+  };
+
+  const basePct = safePrice > 0 ? {
+    cost: (amount.cost / safePrice) * 100,
+    fees: (amount.fees / safePrice) * 100,
+    tax: (amount.tax / safePrice) * 100
+  } : { cost: 0, fees: 0, tax: 0 };
+  const pctCost = clamp(basePct.cost, 0, 100);
+  const pctFees = clamp(basePct.fees, 0, 100);
+  const pctTax = clamp(basePct.tax, 0, 100);
+  const pctProfit = clamp(100 - pctCost - pctFees - pctTax, 0, 100);
+
+  return {
+    cost: amount.cost,
+    fees: amount.fees,
+    tax: amount.tax,
+    profit: amount.profit,
+    pctCost,
+    pctFees,
+    pctTax,
+    pctProfit
+  };
+}
+
 
 function marginStatus(marginPct) {
   if (marginPct >= 8) return { label: "🟢 Saudável", className: "statusHealthy" };
@@ -567,6 +634,7 @@ function resultCardHTML(
   title,
   pill,
   r,
+  baseCost,
   taxPct,
   profitType,
   profitValue,
@@ -594,6 +662,24 @@ function resultCardHTML(
     advDetails,
     Number.isFinite(r.price) ? r.price : 0
   );
+
+  const composition = buildComposition({
+    priceIdeal: r.price,
+    baseCost,
+    marketplacePct,
+    marketplaceFixed,
+    taxPct,
+    advDetails,
+    affiliatePct,
+    profitBRL: r.profitBRL
+  });
+  const compositionLabel = `Composição do preço: custo ${brl(composition.cost)}, taxas ${brl(composition.fees)}, impostos ${brl(composition.tax)}, lucro ${brl(composition.profit)}`;
+  const compositionTip = [
+    `Custo: ${brl(composition.cost)} (${composition.pctCost.toFixed(1)}%)`,
+    `Taxas: ${brl(composition.fees)} (${composition.pctFees.toFixed(1)}%)`,
+    `Impostos: ${brl(composition.tax)} (${composition.pctTax.toFixed(1)}%)`,
+    `Lucro: ${brl(composition.profit)} (${composition.pctProfit.toFixed(1)}%)`
+  ].join(" | ");
 
   const itemsHTML = items.length
     ? items
@@ -664,6 +750,17 @@ function resultCardHTML(
       </div>
       ${extraHTML}
       ${shopeeInfoHTML}
+    </div>
+
+    <div class="comp">
+      <button class="comp-bar" type="button" role="img" aria-label="${compositionLabel}" data-composition-tip="${compositionTip}">
+        <span class="seg seg-cost" style="width:${composition.pctCost.toFixed(2)}%"></span>
+        <span class="seg seg-fees" style="width:${composition.pctFees.toFixed(2)}%"></span>
+        <span class="seg seg-tax" style="width:${composition.pctTax.toFixed(2)}%"></span>
+        <span class="seg seg-profit" style="width:${composition.pctProfit.toFixed(2)}%"></span>
+      </button>
+      <div class="comp-legend">Custo • Taxas • Impostos • Lucro</div>
+      <div class="comp-tip" aria-live="polite" hidden></div>
     </div>
 
     <div id="${accordionId}" class="incidencePanel" aria-hidden="true">
@@ -914,6 +1011,331 @@ function initTheme() {
   });
 }
 
+
+function getCalculationConfig() {
+  const taxPct = clamp(toNumber(document.querySelector("#tax")?.value), 0, 99);
+  const profitType = document.querySelector("#profitType")?.value || "brl";
+  const profitValue = Math.max(0, toNumber(document.querySelector("#profitValue")?.value));
+
+  const mlCommissionEnabled = document.querySelector("#mlCommissionToggle")?.checked;
+  const mlClassicPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
+  const mlPremiumPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
+
+  const adv = getAdvancedVars();
+
+  const weightToggle = document.querySelector("#mlWeightToggle")?.checked;
+  const weightValueRaw = document.querySelector("#mlWeightValue")?.value;
+  const weightUnit = document.querySelector("#mlWeightUnit")?.value || "kg";
+  const weightData = resolveMarketplaceWeight({ enabled: weightToggle, rawValue: weightValueRaw, unit: weightUnit });
+
+  const sheinCommissionEnabled = document.querySelector("#sheinCommissionToggle")?.checked;
+  const sheinCategory = sheinCommissionEnabled ? (document.querySelector("#sheinCategory")?.value || "other") : "other";
+
+  const amazonDbaEnabled = document.querySelector("#amazonDbaToggle")?.checked || false;
+  const amazonPct = Math.max(0, toNumber(document.querySelector("#amazonPct")?.value)) / 100;
+  const amazonOriginGroup = document.querySelector("#amazonOriginGroup")?.value || "sp_capital";
+
+  return { taxPct, profitType, profitValue, mlClassicPct, mlPremiumPct, adv, weightData, sheinCategory, amazonDbaEnabled, amazonPct, amazonOriginGroup };
+}
+
+function computeForAllMarketplaces(inputState) {
+  const cost = Math.max(0, toNumber(inputState?.cost));
+  const cfg = inputState?.config || getCalculationConfig();
+  const { taxPct, profitType, profitValue, mlClassicPct, mlPremiumPct, adv, weightData, sheinCategory, amazonDbaEnabled, amazonPct, amazonOriginGroup } = cfg;
+  const weightKg = weightData.kg;
+
+  const tiktok = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: TIKTOK.pct, marketplaceFixed: TIKTOK.fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.tiktok });
+
+  const sheinPct = sheinCategory === "female" ? SHEIN.pctFemale : SHEIN.pctOther;
+  const sheinFixed = sheinFixedByWeight(weightKg);
+  const shein = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: sheinPct, marketplaceFixed: sheinFixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra });
+
+  let currentFaixa = SHOPEE_FAIXAS[0];
+  let iterations = 0;
+  let shopeeRaw = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.shopee });
+  while (iterations < 6) {
+    const faixa = SHOPEE_FAIXAS.find((f) => shopeeRaw.price >= f.min && shopeeRaw.price <= f.max) || currentFaixa;
+    if (faixa === currentFaixa) break;
+    currentFaixa = faixa;
+    shopeeRaw = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.shopee });
+    iterations += 1;
+  }
+
+  const solveML = (mlPct) => {
+    let r = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: mlPct, marketplaceFixed: 0, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.ml });
+    const fixed = Number.isFinite(r.price) ? mlFixedByTable(r.price, weightKg) : 0;
+    r = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: mlPct, marketplaceFixed: fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.ml });
+    return { r, fixed };
+  };
+
+  const mlClassic = solveML(mlClassicPct);
+  const mlPremium = solveML(mlPremiumPct);
+
+  let amazonData = null;
+  if (amazonDbaEnabled) {
+    let estimatedPrice = Math.max(0, cost + adv.fixedBRL + (profitType === "brl" ? profitValue : 0));
+    let fee = amazonDbaFee({ price: estimatedPrice, weightKg, originGroup: amazonOriginGroup });
+    let i = 0;
+    while (i < 6) {
+      const result = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: amazonPct, marketplaceFixed: fee, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.amazon });
+      const nextFee = amazonDbaFee({ price: result.price, weightKg, originGroup: amazonOriginGroup });
+      if (Math.abs(nextFee - fee) < 0.0001) {
+        amazonData = { result, fee: nextFee, priceBand: getAmazonPriceBand(result.price), weightBand: getAmazonWeightBand(weightKg) };
+        break;
+      }
+      fee = nextFee;
+      estimatedPrice = result.price;
+      i += 1;
+    }
+    if (!amazonData) {
+      const result = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: amazonPct, marketplaceFixed: fee, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.amazon });
+      amazonData = { result, fee, priceBand: getAmazonPriceBand(result.price), weightBand: getAmazonWeightBand(weightKg) };
+    }
+  }
+
+  return { cfg, cost, tiktok, shein, sheinPct, sheinFixed, shopeeRaw, shopeeFaixa: currentFaixa, mlClassic, mlPremium, amazonData };
+}
+
+const Tour = {
+  steps: [
+    { selector: "#calcName", title: "Nome do cálculo", body: "Dê um nome para identificar este produto e reutilizar depois.", placement: "bottom" },
+    { selector: "#cost", title: "Custo total", body: "Informe o custo real do produto com os custos fixos que você já considera.", placement: "bottom" },
+    { selector: "#tax", title: "Imposto + lucro", body: "Defina imposto e meta de lucro para obter o preço ideal com margem real.", placement: "bottom" },
+    { selector: "#advancedAccordion", title: "Ajustes avançados", body: "Ative variáveis avançadas quando quiser uma simulação mais detalhada.", placement: "bottom" },
+    { selector: "#results", title: "Resultados", body: "Aqui você vê o preço ideal, você recebe e o detalhamento por marketplace.", placement: "left" },
+    { selector: "#pdfButtonContainer", title: "Exportar e compartilhar", body: "Gere relatório em PDF e compartilhe sua simulação.", placement: "left" }
+  ],
+  index: 0,
+  source: "button",
+  active: false,
+  start(source = "button") {
+    this.source = source;
+    this.index = 0;
+    this.active = true;
+    this.ensureDOM();
+    this.overlay.hidden = false;
+    document.body.classList.add("tour-active");
+    trackGA4Event("tour_start", { source });
+    this.render();
+  },
+  ensureDOM() {
+    if (this.overlay) return;
+    const overlay = document.createElement("div");
+    overlay.className = "tourOverlay";
+    overlay.hidden = true;
+    overlay.innerHTML = `<div class="tourPopover" role="dialog" aria-modal="true" aria-live="polite"><h3 class="tourTitle"></h3><p class="tourBody"></p><div class="tourActions"><button type="button" class="btn btn--ghost" data-tour="prev">Voltar</button><button type="button" class="btn btn--ghost" data-tour="skip">Pular</button><button type="button" class="btn btn--primary" data-tour="next">Próximo</button></div></div>`;
+    document.body.appendChild(overlay);
+    this.overlay = overlay;
+    this.popover = overlay.querySelector(".tourPopover");
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) this.stop();
+      const action = event.target.closest("[data-tour]")?.getAttribute("data-tour");
+      if (!action) return;
+      if (action === "next") this.next();
+      if (action === "prev") this.prev();
+      if (action === "skip") this.stop(true);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && this.active) this.stop();
+    });
+  },
+  render() {
+    const step = this.steps[this.index];
+    if (!step) return this.complete();
+    const target = document.querySelector(step.selector);
+    if (!target) return this.next();
+
+    document.querySelectorAll(".tourTarget").forEach((el) => el.classList.remove("tourTarget"));
+    target.classList.add("tourTarget");
+    this.popover.querySelector(".tourTitle").textContent = step.title;
+    this.popover.querySelector(".tourBody").textContent = step.body;
+
+    const nextBtn = this.popover.querySelector('[data-tour="next"]');
+    nextBtn.textContent = this.index === this.steps.length - 1 ? "Concluir" : "Próximo";
+    this.popover.querySelector('[data-tour="prev"]').disabled = this.index === 0;
+
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      this.popover.style.left = "10px";
+      this.popover.style.right = "10px";
+      this.popover.style.top = "auto";
+      this.popover.style.bottom = "10px";
+    } else {
+      const rect = target.getBoundingClientRect();
+      const top = Math.min(window.innerHeight - 240, Math.max(12, rect.bottom + 12));
+      const left = Math.min(window.innerWidth - 360, Math.max(12, rect.left));
+      this.popover.style.top = `${top}px`;
+      this.popover.style.left = `${left}px`;
+      this.popover.style.right = "auto";
+      this.popover.style.bottom = "auto";
+    }
+
+    scrollToWithTopbarOffset(target);
+    trackGA4Event("tour_step", { step_index: this.index + 1, step_title: step.title });
+  },
+  next() {
+    if (this.index >= this.steps.length - 1) return this.complete();
+    this.index += 1;
+    this.render();
+  },
+  prev() {
+    if (this.index <= 0) return;
+    this.index -= 1;
+    this.render();
+  },
+  stop(skipped = false) {
+    this.active = false;
+    this.overlay.hidden = true;
+    document.body.classList.remove("tour-active");
+    document.querySelectorAll(".tourTarget").forEach((el) => el.classList.remove("tourTarget"));
+    if (skipped) {
+      localStorage.setItem("TOUR_SKIPPED", "1");
+      trackGA4Event("tour_skip");
+    }
+  },
+  complete() {
+    this.stop(false);
+    localStorage.setItem("TOUR_DONE", "1");
+    trackGA4Event("tour_complete");
+  }
+};
+
+const Bulk = {
+  rows: [],
+  results: [],
+  init() {
+    this.rows = Array.from({ length: 10 }, () => ({ name: "", cost: "" }));
+    this.renderBulkRows();
+  },
+  renderBulkRows() {
+    const body = document.querySelector("#bulkRows");
+    if (!body) return;
+    body.innerHTML = this.rows.map((row, index) => `<tr><td><input data-bulk="name" data-index="${index}" type="text" placeholder="Produto ${index + 1}" value="${row.name || ""}"></td><td><input data-bulk="cost" data-index="${index}" type="text" inputmode="decimal" placeholder="0,00" value="${row.cost || ""}"></td></tr>`).join("");
+  },
+  addRow() {
+    this.rows.push({ name: "", cost: "" });
+    this.renderBulkRows();
+    trackGA4Event("bulk_add_row");
+  },
+  parseMoney(value) {
+    return toNumber(String(value || "").replace(/R\$/gi, "").replace(/\./g, "").replace(",", "."));
+  },
+  parseCSV(text) {
+    const lines = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!lines.length) return [];
+    const sep = lines[0].includes(";") ? ";" : ",";
+    const parsed = lines.map((line) => line.split(sep).map((cell) => cell.trim()));
+    const hasHeader = /nome/i.test(parsed[0]?.[0] || "") && /custo/i.test(parsed[0]?.[1] || "");
+    const rows = (hasHeader ? parsed.slice(1) : parsed).map((cols) => ({ name: cols[0] || "Produto", cost: this.parseMoney(cols[1]) })).filter((row) => row.name || row.cost > 0);
+    return rows;
+  },
+  bulkCalculate(rows) {
+    const config = getCalculationConfig();
+    const marketplaces = ["shopee", "mlClassic", "mlPremium", "tiktok", "shein", "amazon"];
+    const out = [];
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i];
+      const cost = Math.max(0, this.parseMoney(row.cost));
+      const data = computeForAllMarketplaces({ cost, config });
+      const map = {
+        shopee: data.shopeeRaw,
+        mlClassic: data.mlClassic.r,
+        mlPremium: data.mlPremium.r,
+        tiktok: data.tiktok,
+        shein: data.shein,
+        amazon: data.amazonData?.result
+      };
+      let bestProfit = -Infinity;
+      marketplaces.forEach((key) => {
+        const p = map[key]?.profitBRL;
+        if (Number.isFinite(p) && p > bestProfit) bestProfit = p;
+      });
+      out.push({ name: row.name || `Produto ${i + 1}`, cost, map, bestProfit });
+    }
+    return out;
+  },
+  renderResults(results) {
+    const head = document.querySelector("#bulkResultsHead");
+    const body = document.querySelector("#bulkResultsBody");
+    const wrap = document.querySelector("#bulkResultsWrap");
+    if (!head || !body || !wrap) return;
+    const hasAmazon = results.some((item) => item.map.amazon);
+    const cols = ["Nome", "Custo", "Shopee", "ML Clássico", "ML Premium", "TikTok", "SHEIN", ...(hasAmazon ? ["Amazon"] : []), "Melhor lucro"];
+    head.innerHTML = `<tr>${cols.map((col) => `<th>${col}</th>`).join("")}</tr>`;
+    body.innerHTML = results.map((item) => `
+      <tr>
+        <td>${item.name}</td>
+        <td>${brl(item.cost)}</td>
+        <td>${brl(item.map.shopee?.price || 0)}</td>
+        <td>${brl(item.map.mlClassic?.price || 0)}</td>
+        <td>${brl(item.map.mlPremium?.price || 0)}</td>
+        <td>${brl(item.map.tiktok?.price || 0)}</td>
+        <td>${brl(item.map.shein?.price || 0)}</td>
+        ${hasAmazon ? `<td>${brl(item.map.amazon?.price || 0)}</td>` : ""}
+        <td>${brl(item.bestProfit || 0)}</td>
+      </tr>
+    `).join("");
+    wrap.classList.remove("is-hidden");
+    const exportBtn = document.querySelector("#bulkExport");
+    if (exportBtn) exportBtn.disabled = !results.length;
+  },
+  exportBulkCSV(results) {
+    const hasAmazon = results.some((item) => item.map.amazon);
+    const header = ["nome", "custo", "shopee", "ml_classico", "ml_premium", "tiktok", "shein", ...(hasAmazon ? ["amazon"] : []), "melhor_lucro"];
+    const rows = results.map((item) => [item.name, item.cost.toFixed(2), (item.map.shopee?.price || 0).toFixed(2), (item.map.mlClassic?.price || 0).toFixed(2), (item.map.mlPremium?.price || 0).toFixed(2), (item.map.tiktok?.price || 0).toFixed(2), (item.map.shein?.price || 0).toFixed(2), ...(hasAmazon ? [(item.map.amazon?.price || 0).toFixed(2)] : []), (item.bestProfit || 0).toFixed(2)]);
+    const csv = [header.join(";"), ...rows.map((row) => row.join(";"))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `calculo-massa-${Date.now()}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+};
+
+
+function bindTourAndBulk() {
+  document.querySelector("#startTour")?.addEventListener("click", () => Tour.start("button"));
+  if (!localStorage.getItem("TOUR_DONE")) {
+    window.setTimeout(() => Tour.start("auto"), 900);
+  }
+
+  Bulk.init();
+
+  document.querySelector("#bulkAddRow")?.addEventListener("click", () => Bulk.addRow());
+  document.querySelector("#bulkRows")?.addEventListener("input", (event) => {
+    const index = Number(event.target.getAttribute("data-index"));
+    const field = event.target.getAttribute("data-bulk");
+    if (!Number.isFinite(index) || !field) return;
+    Bulk.rows[index][field] = event.target.value;
+  });
+
+  document.querySelector("#bulkCsvInput")?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const parsed = Bulk.parseCSV(text);
+    if (parsed.length) {
+      Bulk.rows = parsed;
+      Bulk.renderBulkRows();
+      trackGA4Event("bulk_import_csv", { rows: parsed.length });
+    }
+  });
+
+  document.querySelector("#bulkCalculate")?.addEventListener("click", () => {
+    const rows = Bulk.rows.map((row) => ({ name: String(row.name || "").trim(), cost: row.cost })).filter((row) => row.name || Bulk.parseMoney(row.cost) > 0);
+    const results = Bulk.bulkCalculate(rows);
+    Bulk.results = results;
+    Bulk.renderResults(results);
+    trackGA4Event("bulk_calculate", { rows: rows.length });
+  });
+
+  document.querySelector("#bulkExport")?.addEventListener("click", () => {
+    Bulk.exportBulkCSV(Bulk.results || []);
+    trackGA4Event("bulk_export_csv", { rows: (Bulk.results || []).length });
+  });
+}
+
+
 function recalc(options = {}) {
   const source = options.source || "auto";
   const cost = Math.max(0, toNumber(document.querySelector("#cost")?.value));
@@ -1132,6 +1554,7 @@ function recalc(options = {}) {
       "Shopee",
       `${(shFee.pct * 100).toFixed(0)}% + ${brl(shFee.fixed)}`,
       shopee,
+      cost,
       taxPct,
       profitType,
       profitValue,
@@ -1153,6 +1576,7 @@ function recalc(options = {}) {
       "TikTok Shop",
       `12% + ${brl(4)}`,
       tiktok,
+      cost,
       taxPct,
       profitType,
       profitValue,
@@ -1167,6 +1591,7 @@ function recalc(options = {}) {
       "SHEIN",
       `${(sheinPct * 100).toFixed(0)}% + ${brl(sheinFixed)} (frete)`,
       shein,
+      cost,
       taxPct,
       profitType,
       profitValue,
@@ -1186,6 +1611,7 @@ function recalc(options = {}) {
         "Amazon (DBA)",
         `${(amazonPct * 100).toFixed(2)}% + ${brl(amazonData.fee)} (DBA)`,
         amazonData.result,
+        cost,
         taxPct,
         profitType,
         profitValue,
@@ -1206,6 +1632,7 @@ function recalc(options = {}) {
       "Mercado Livre — Clássico",
       `${(mlClassicPct * 100).toFixed(2)}%`,
       mlClassic.r,
+      cost,
       taxPct,
       profitType,
       profitValue,
@@ -1223,6 +1650,7 @@ function recalc(options = {}) {
       "Mercado Livre — Premium",
       `${(mlPremiumPct * 100).toFixed(2)}%`,
       mlPremium.r,
+      cost,
       taxPct,
       profitType,
       profitValue,
@@ -1237,6 +1665,11 @@ function recalc(options = {}) {
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
     )
   ].join("");
+
+  if (resultsEl.children.length && !sessionStorage.getItem(COMPOSITION_VIEW_KEY)) {
+    trackGA4Event("view_composition");
+    sessionStorage.setItem(COMPOSITION_VIEW_KEY, "1");
+  }
 
   const marketplaceState = [
     { key: "shopee", title: "Shopee", marketplacePct: shFee.pct, marketplaceFixed: shFee.fixed, percentCosts: adv.pctExtra + adv.affiliate.shopee, fixedCosts: adv.fixedBRL },
@@ -1582,7 +2015,7 @@ function bind() {
   });
 
   // Auto recalcular em input/change
-  document.querySelectorAll("input, select").forEach((el) => {
+  document.querySelectorAll("#sec-precificacao input, #sec-precificacao select, #sec-comparar input, #sec-lucro input, #sec-escala input").forEach((el) => {
     el.addEventListener("input", () => recalc({ source: "auto" }));
     el.addEventListener("change", () => recalc({ source: "auto" }));
   });
@@ -1593,6 +2026,19 @@ function bind() {
   });
 
   document.querySelector("#results")?.addEventListener("click", (event) => {
+    const compBar = event.target.closest(".comp-bar");
+    if (compBar) {
+      const card = compBar.closest(".marketplaceCard");
+      const tip = card?.querySelector(".comp-tip");
+      if (tip) {
+        const shouldOpen = tip.hidden;
+        tip.hidden = !shouldOpen;
+        tip.textContent = shouldOpen ? (compBar.getAttribute("data-composition-tip") || "") : "";
+      }
+      trackGA4Event("composition_click");
+      return;
+    }
+
     const toggle = event.target.closest(".incidenceToggle");
     if (!toggle) return;
     const panelId = toggle.getAttribute("aria-controls");
@@ -1605,6 +2051,25 @@ function bind() {
     const card = toggle.closest(".marketplaceCard");
     const marketplace = card?.querySelector(".cardTitle")?.textContent?.trim() || "unknown";
     trackGA4Event(expanded ? "close_incidences" : "open_incidences", { section: "results", marketplace });
+  });
+
+  document.querySelector("#results")?.addEventListener("mouseover", (event) => {
+    const compBar = event.target.closest(".comp-bar");
+    if (!compBar) return;
+    const card = compBar.closest(".marketplaceCard");
+    const tip = card?.querySelector(".comp-tip");
+    if (!tip) return;
+    tip.hidden = false;
+    tip.textContent = compBar.getAttribute("data-composition-tip") || "";
+  });
+
+  document.querySelector("#results")?.addEventListener("mouseout", (event) => {
+    const compBar = event.target.closest(".comp-bar");
+    if (!compBar) return;
+    const tip = compBar.closest(".marketplaceCard")?.querySelector(".comp-tip");
+    if (!tip || window.matchMedia("(hover: none)").matches) return;
+    tip.hidden = true;
+    tip.textContent = "";
   });
 
   const profitType = $("#profitType");
@@ -1756,12 +2221,13 @@ function bindSegmentMenuActiveState() {
 
 
 function bindSmoothScroll() {
-  const allowedSections = new Set(["#sec-precificacao", "#sec-comparar", "#sec-lucro", "#sec-escala"]);
+  const allowedSections = new Set(["#sec-precificacao", "#sec-comparar", "#sec-lucro", "#sec-escala", "#sec-bulk"]);
   const sectionMap = {
     "#sec-precificacao": "precificacao",
     "#sec-comparar": "comparar_preco",
     "#sec-lucro": "lucro_atual",
-    "#sec-escala": "escala"
+    "#sec-escala": "escala",
+    "#sec-bulk": "massa"
   };
 
   const resolveAndScroll = (selector, { updateHash = true } = {}) => {
@@ -1829,6 +2295,7 @@ function initApp() {
   bindStickySummaryVisibility();
   bindSmoothScroll();
   bindSegmentMenuActiveState();
+  bindTourAndBulk();
   renderSavedSimulations();
   track("session_ready", { device: getDeviceType() });
   recalc({ source: "auto" });
