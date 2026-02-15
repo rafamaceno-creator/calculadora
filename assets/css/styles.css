@@ -72,6 +72,30 @@ input:hover,select:hover{border-color:#b8c5d7}
 .check input{width:18px;height:18px}
 .check--inline{margin-bottom:10px}
 .hidden{display:none!important}
+.is-hidden{display:none!important}
+
+.formBlock{display:flex;flex-direction:column;gap:4px}
+.formBlock__head h3{margin:0;font-size:17px;letter-spacing:-.01em}
+.formBlock__head p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.formDivider{height:1px;background:var(--stroke);margin:16px 0}
+.formBlock--actions{gap:10px}
+
+.segmented{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:5px;border:1px solid var(--stroke);border-radius:12px;background:#f8fafc}
+.segmented__option{position:relative;cursor:pointer}
+.segmented__option input{position:absolute;opacity:0;inset:0;margin:0}
+.segmented__option span{display:flex;align-items:center;justify-content:center;min-height:40px;padding:8px 10px;border-radius:10px;font-weight:700;color:#334155;transition:.2s ease}
+.segmented__option input:checked + span{background:#fff;color:var(--accent);border:1px solid #bcefeb;box-shadow:var(--shadow-sm)}
+
+.formInfoDetails{margin:8px 0 0;padding:0;border:none;background:transparent}
+.formInfoDetails summary{font-size:13px;color:#334155}
+.formInfoDetails p{margin:8px 0 0;padding:10px;border:1px solid var(--stroke);border-radius:12px;background:#f8fafc;color:var(--muted);font-size:12px}
+
+.formAccordion{margin-top:14px;padding:0;border:1px solid var(--stroke);border-radius:14px;background:#fff;overflow:hidden}
+.formAccordion summary{list-style:none;display:flex;align-items:center;justify-content:space-between;padding:14px;font-size:14px;color:#0f172a}
+.formAccordion summary::-webkit-details-marker{display:none}
+.formAccordion summary::after{content:"▾";font-size:14px;color:var(--muted);transition:transform .2s ease}
+.formAccordion[open] summary::after{transform:rotate(180deg)}
+.formAccordion > :not(summary){padding:0 14px 14px}
 
 .cardMini{margin-top:14px;border-radius:14px;border:1px solid var(--stroke);background:#fff;padding:14px}
 .cardMini__header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -283,6 +307,9 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
   .stickySummary__actions{position:sticky;bottom:0;background:#fff;padding-top:8px}
   .shareBox{padding:12px}
   .shareBox .btn,.stickySummary .btn,.actions .btn,#pdfButtonContainer .btn{width:100%}
+  .formAccordion summary{padding:12px 12px}
+  .formAccordion > :not(summary){padding:0 12px 12px}
+  .segmented{grid-template-columns:1fr}
   .resultList .card,.marketCompareList .card{overflow:visible}
   .topbar__controls .btn{display:none}
 

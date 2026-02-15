@@ -93,105 +93,172 @@
       <div class="grid">
       <div class="card">
         <div class="card__inner">
-          <h2>Dados básicos</h2>
+          <h2>Precificação do produto</h2>
 
-          <div class="field">
-            <div class="label label-row">
-              <span>Nome do cálculo / produto</span>
-              <button class="info" type="button" aria-label="Info: Nome do cálculo / produto" data-tooltip="Dê um nome para identificar este cálculo no PDF e no salvamento local. Ex: Camiseta Dry Fit Preta.">i</button>
-            </div>
-            <input id="calcName" type="text" maxlength="80" placeholder="Ex: Camiseta Dry Fit Preta" />
-          </div>
-
-          <div class="field">
-            <div class="label label-row">
-              <span>Preço de custo final (compra + impostos) (R$)</span>
-              <button class="info" type="button" aria-label="Info: Preço de custo final (compra + impostos) (R$)" data-tooltip="O custo total do produto antes da venda: compra + impostos/encargos de compra. Ex: preço do fornecedor + ICMS-ST (se houver) + frete de compra, se você já embute no custo.">i</button>
-            </div>
-            <div class="inputWrap">
-              <span class="inputPrefix">R$</span>
-              <input id="cost" type="number" step="0.01" min="0" value="60" />
+          <section class="formBlock">
+            <div class="formBlock__head">
+              <h3>Dados do produto</h3>
+              <p>Preencha apenas os dados essenciais para começar.</p>
             </div>
 
-          </div>
-
-          <div class="field">
-            <div class="label label-row">
-              <span>Alíquota de imposto de venda (%)</span>
-              <button class="info" type="button" aria-label="Info: Alíquota de imposto de venda (%)" data-tooltip="Percentual de imposto que incide na venda (sobre o preço de venda). Use a alíquota efetiva do seu cenário.">i</button>
-            </div>
-            <div class="inputWrap">
-              <input id="tax" type="number" step="0.01" min="0" value="10" />
-              <span class="inputSuffix">%</span>
-            </div>
-
-          </div>
-
-          <div class="row2">
             <div class="field">
               <div class="label label-row">
-                <span id="profitValueLabel">Lucro desejado (valor)</span>
-
-                <button class="info" type="button" aria-label="Info: Lucro desejado (tipo)" data-tooltip="Escolha se o lucro desejado será um valor fixo em reais (R$) ou uma margem em % sobre o preço de venda.">i</button>
+                <span>Nome do cálculo / produto</span>
+                <button class="info" type="button" aria-label="Info: Nome do cálculo / produto" data-tooltip="Dê um nome para identificar este cálculo no PDF e no salvamento local. Ex: Camiseta Dry Fit Preta.">i</button>
               </div>
-              <select id="profitType">
-                <option value="brl">Em R$ (lucro em reais)</option>
+              <input id="calcName" type="text" maxlength="80" placeholder="Ex: Camiseta Dry Fit Preta" />
+            </div>
+
+            <div class="row2">
+              <div class="field">
+                <div class="label label-row">
+                  <span>Custo total (R$)</span>
+                  <button class="info" type="button" aria-label="Info: Custo total (R$)" data-tooltip="O custo total do produto antes da venda: compra + impostos/encargos de compra. Ex: preço do fornecedor + ICMS-ST (se houver) + frete de compra, se você já embute no custo.">i</button>
+                </div>
+                <div class="inputWrap">
+                  <span class="inputPrefix">R$</span>
+                  <input id="cost" type="number" step="0.01" min="0" value="60" />
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="label label-row">
+                  <span>Imposto de venda (%)</span>
+                  <button class="info" type="button" aria-label="Info: Imposto de venda (%)" data-tooltip="Percentual de imposto que incide na venda (sobre o preço de venda). Use a alíquota efetiva do seu cenário.">i</button>
+                </div>
+                <div class="inputWrap">
+                  <input id="tax" type="number" step="0.01" min="0" value="10" />
+                  <span class="inputSuffix">%</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="formDivider"></div>
+
+          <section class="formBlock">
+            <div class="formBlock__head">
+              <h3>Meta de lucro</h3>
+              <p>Escolha o modo e informe sua meta.</p>
+            </div>
+
+            <div class="field">
+              <div class="label label-row">
+                <span>Modo da meta</span>
+                <button class="info" type="button" aria-label="Info: Modo da meta" data-tooltip="Escolha se o lucro desejado será um valor fixo em reais (R$) ou uma margem em % sobre o preço de venda.">i</button>
+              </div>
+              <div class="segmented" role="radiogroup" aria-label="Modo da meta de lucro">
+                <label class="segmented__option">
+                  <input type="radio" name="profitMode" value="brl" checked />
+                  <span>Em R$</span>
+                </label>
+                <label class="segmented__option">
+                  <input type="radio" name="profitMode" value="pct" />
+                  <span>Em %</span>
+                </label>
+              </div>
+              <select id="profitType" class="is-hidden" aria-hidden="true" tabindex="-1">
+                <option value="brl" selected>Em R$ (lucro em reais)</option>
                 <option value="pct">Em % (margem sobre o preço)</option>
               </select>
             </div>
 
-            <div class="field">
-              <div class="label label-row">
-                <span>Lucro desejado (valor)</span>
-                <button class="info" type="button" aria-label="Info: Lucro desejado (valor)" data-tooltip="Se estiver em R$: digite o valor do lucro por pedido. Se estiver em %: digite a margem sobre o preço de venda.">i</button>
+            <div id="profitFieldBRL" class="field">
+              <div class="label">Lucro desejado (R$)</div>
+              <div class="inputWrap">
+                <span class="inputPrefix">R$</span>
+                <input id="profitValueBRL" type="number" step="0.01" min="0" value="10" />
               </div>
-              <input id="profitValue" type="number" step="0.01" min="0" value="10" />
-            </div>
-          </div>
-
-          <div class="hint">
-            Regra: custos fixos e lucro em R$ somam no custo. Depois, somamos incidências em % (comissão + imposto [+ lucro% se escolhido] + custos%) e calculamos:
-            <strong>Preço = custo ajustado ÷ (1 − incidências)</strong>.
-          </div>
-
-          <div class="toggle">
-            <label class="check">
-              <input id="mlWeightToggle" type="checkbox" />
-              <span>Informar peso (Mercado Livre + SHEIN)</span>
-            </label>
-            <small>Se ativar, usamos a tabela de custos por faixa de peso + faixa de preço.</small>
-          </div>
-
-          <div id="mlWeightBox" class="row2 hidden">
-            <div class="field">
-              <div class="label label-row">
-                <span>Peso</span>
-                <button class="info" type="button" aria-label="Info: Peso" data-tooltip="Peso do produto para cálculo do custo fixo de envio do Mercado Livre. Se não informar, o sistema assume 500g por padrão.">i</button>
-              </div>
-              <input id="mlWeightValue" type="number" step="0.001" min="0" value="0.5" />
             </div>
 
-            <div class="field">
-              <div class="label label-row">
-                <span>Unidade</span>
-                <button class="info" type="button" aria-label="Info: Unidade" data-tooltip="Escolha gramas (g) ou quilogramas (kg). Ex: 500g = 0,5kg.">i</button>
+            <div id="profitFieldPCT" class="field is-hidden">
+              <div class="label">Lucro desejado (%)</div>
+              <div class="inputWrap">
+                <input id="profitValuePct" type="number" step="0.01" min="0" value="10" />
+                <span class="inputSuffix">%</span>
               </div>
-              <select id="mlWeightUnit">
-                <option value="kg">kg</option>
-                <option value="g">g</option>
+            </div>
+
+            <input id="profitValue" class="is-hidden" type="number" step="0.01" min="0" value="10" tabindex="-1" aria-hidden="true" />
+          </section>
+
+          <details class="formInfoDetails">
+            <summary>Como calculamos?</summary>
+            <p>Regra: custos fixos e lucro em R$ somam no custo. Depois, somamos incidências em % (comissão + imposto [+ lucro% se escolhido] + custos%) e calculamos: <strong>Preço = custo ajustado ÷ (1 − incidências)</strong>.</p>
+          </details>
+
+          <div class="formDivider"></div>
+
+          <section class="formBlock formBlock--actions">
+            <button id="recalc" class="btn btn--primary btn--wide" type="button">Calcular</button>
+
+            <div class="actions actions--stacked">
+              <button id="saveSimulation" class="btn btn--ghost btn--wide" type="button">Salvar simulação</button>
+              <select id="savedSimulations" aria-label="Simulações salvas">
+                <option value="">Simulações salvas</option>
               </select>
             </div>
-          </div>
+          </section>
 
-          <div class="toggle">
-            <label class="check">
-              <input id="amazonDbaToggle" type="checkbox" checked />
-              <span>Incluir Amazon (DBA) no cálculo?</span>
-            </label>
-            <small>Ative para aplicar comissão e tarifa logística DBA por unidade.</small>
-          </div>
+          <details class="formAccordion" id="commissionAccordion">
+            <summary>Personalizar comissões (opcional)</summary>
 
-          <div id="amazonDbaBox" class="cardMini hidden">
+            <div class="toggle">
+              <label class="check">
+                <input id="mlCommissionToggle" type="checkbox" />
+                <span>Definir comissão Mercado Livre</span>
+              </label>
+            </div>
+
+            <div id="mlCommissionBox" class="cardMini is-hidden">
+              <div class="row2">
+                <div class="field">
+                  <div class="label label-row">
+                    <span>ML Clássico (%)</span>
+                    <button class="info" type="button" aria-label="Info: Mercado Livre Clássico (%)" data-tooltip="Por padrão usamos 14%. Você pode editar conforme sua categoria/anúncio.">i</button>
+                  </div>
+                  <input id="mlClassicPct" type="number" step="0.01" min="0" value="14" />
+                </div>
+
+                <div class="field">
+                  <div class="label label-row">
+                    <span>ML Premium (%)</span>
+                    <button class="info" type="button" aria-label="Info: Mercado Livre Premium (%)" data-tooltip="Por padrão usamos 19%. Você pode editar conforme sua categoria/anúncio.">i</button>
+                  </div>
+                  <input id="mlPremiumPct" type="number" step="0.01" min="0" value="19" />
+                </div>
+              </div>
+            </div>
+
+            <div class="toggle">
+              <label class="check">
+                <input id="sheinCommissionToggle" type="checkbox" />
+                <span>Definir comissão SHEIN</span>
+              </label>
+            </div>
+
+            <div id="sheinCommissionBox" class="cardMini is-hidden">
+              <div class="field">
+                <div class="label label-row">
+                  <span>Categoria SHEIN</span>
+                  <button class="info" type="button" aria-label="Info: Categoria SHEIN" data-tooltip="A comissão da SHEIN varia por categoria: Vestuário feminino 20% e demais categorias 18%.">i</button>
+                </div>
+                <select id="sheinCategory">
+                  <option value="other" selected>Demais categorias (18%)</option>
+                  <option value="female">Vestuário feminino (20%)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="toggle">
+              <label class="check">
+                <input id="amazonDbaToggle" type="checkbox" checked />
+                <span>Incluir Amazon (DBA) no cálculo</span>
+              </label>
+              <small>Ative para aplicar comissão e tarifa logística DBA por unidade.</small>
+            </div>
+
+            <div id="amazonDbaBox" class="cardMini is-hidden">
             <div class="cardMini__header">
               <strong>Amazon (DBA)</strong>
               <span class="pill">Opcional</span>
@@ -208,7 +275,7 @@
             <small>DBA usa o maior entre peso real e cúbico. Aqui usamos o peso informado.</small>
             <small>Se o peso não estiver ativo, calculamos com padrão de 0,5 kg.</small>
 
-            <div id="amazonOriginWrap" class="field hidden">
+            <div id="amazonOriginWrap" class="field is-hidden">
               <div class="label label-row">
                 <span>Origem do envio (DBA)</span>
                 <button class="info" type="button" aria-label="Info: Origem do envio (DBA)" data-tooltip="A origem é exigida no bloco de produtos acima de R$ 200 na tabela DBA da Amazon.">i</button>
@@ -222,53 +289,39 @@
             </div>
           </div>
 
-          <div class="cardMini">
-            <div class="cardMini__header">
-              <strong>Mercado Livre (comissão editável)</strong>
-              <span class="pill">Clássico e Premium</span>
+          </details>
+
+          <details class="formAccordion" id="advancedAccordion">
+            <summary>Ajustes avançados (opcional)</summary>
+
+            <div class="toggle">
+              <label class="check">
+                <input id="mlWeightToggle" type="checkbox" />
+                <span>Informar peso (Mercado Livre + SHEIN)</span>
+              </label>
+              <small>A SHEIN também aplica intermediação de frete por faixa de peso.</small>
             </div>
 
-            <div class="row2">
+            <div id="mlWeightBox" class="row2 is-hidden">
               <div class="field">
                 <div class="label label-row">
-                  <span>Clássico (%)</span>
-                  <button class="info" type="button" aria-label="Info: Mercado Livre Clássico (%)" data-tooltip="Por padrão usamos 14%. Você pode editar conforme sua categoria/anúncio.">i</button>
+                  <span>Peso</span>
+                  <button class="info" type="button" aria-label="Info: Peso" data-tooltip="Peso do produto para cálculo do custo fixo de envio do Mercado Livre. Se não informar, o sistema assume 500g por padrão.">i</button>
                 </div>
-                <input id="mlClassicPct" type="number" step="0.01" min="0" value="14" />
+                <input id="mlWeightValue" type="number" step="0.001" min="0" value="0.5" />
               </div>
 
               <div class="field">
                 <div class="label label-row">
-                  <span>Premium (%)</span>
-                  <button class="info" type="button" aria-label="Info: Mercado Livre Premium (%)" data-tooltip="Por padrão usamos 19%. Você pode editar conforme sua categoria/anúncio.">i</button>
+                  <span>Unidade</span>
+                  <button class="info" type="button" aria-label="Info: Unidade" data-tooltip="Escolha gramas (g) ou quilogramas (kg). Ex: 500g = 0,5kg.">i</button>
                 </div>
-                <input id="mlPremiumPct" type="number" step="0.01" min="0" value="19" />
-              </div>
-            </div>
-
-            <div class="hint">
-              Use este ajuste se sua categoria estiver fora do padrão 14% / 19%.
-            </div>
-          </div>
-
-          <div class="cardMini">
-            <div class="cardMini__header">
-              <strong>Variáveis avançadas</strong>
-              <span class="pill">Opcional</span>
-            </div>
-              <div class="field">
-                <div class="label label-row">
-                  <span>Categoria SHEIN</span>
-                  <button class="info" type="button" aria-label="Info: Categoria SHEIN" data-tooltip="A comissão da SHEIN varia por categoria: Vestuário feminino 20% e demais categorias 18%.">i</button>
-                </div>
-                <select id="sheinCategory">
-                  <option value="other" selected>Demais categorias (18%)</option>
-                  <option value="female">Vestuário feminino (20%)</option>
+                <select id="mlWeightUnit">
+                  <option value="kg">kg</option>
+                  <option value="g">g</option>
                 </select>
-                <small>A SHEIN também aplica uma taxa fixa de intermediação de frete por faixa de peso (calculada pelo peso informado acima; se não informar, assumimos 500g).</small>
               </div>
-
-
+            </div>
 
             <div class="toggle">
               <label class="check">
@@ -278,7 +331,7 @@
               <small>Ads, devolução, custo fixo, DIFAL, PIS, COFINS, outro e afiliados.</small>
             </div>
 
-            <div id="advBox" class="hidden">
+            <div id="advBox" class="is-hidden">
               <div class="advGrid">
                 <div class="advItem">
                   <div class="label label-row">
@@ -394,7 +447,7 @@
                   </label>
                   <small>Incide somente na plataforma correspondente (Shopee, Mercado Livre e TikTok).</small>
 
-                  <div id="affBox" class="affGrid hidden">
+                  <div id="affBox" class="affGrid is-hidden">
                     <div class="field">
                       <div class="label label-row">
                         <span>Afiliados Shopee (%)</span>
@@ -427,16 +480,7 @@
                 Regras: itens em R$ entram como custo fixo (somam no custo). Itens em % entram como incidência (somam nas %).
               </div>
             </div>
-          </div>
-
-          <button id="recalc" class="btn btn--primary btn--wide" type="button">Recalcular</button>
-
-          <div class="actions actions--stacked">
-            <button id="saveSimulation" class="btn btn--ghost btn--wide" type="button">Salvar Simulação</button>
-            <select id="savedSimulations" aria-label="Simulações salvas">
-              <option value="">Simulações salvas</option>
-            </select>
-          </div>
+          </details>
         </div>
       </div>
 
