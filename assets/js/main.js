@@ -31,6 +31,9 @@ const COMPOSITION_VIEW_KEY = "composition_view_tracked";
 const CURRENT_SAME_PRICE_KEY = "CURRENT_SAME_PRICE";
 const CURRENT_PRICE_GLOBAL_KEY = "CURRENT_PRICE_GLOBAL";
 const CURRENT_PRICE_BY_MKT_KEY = "CURRENT_PRICE_BY_MKT";
+const PRO_MODE_STORAGE_KEY = "PRO_MODE_ENABLED";
+
+let PRO_MODE_ENABLED = false;
 
 const CURRENT_PRICE_MARKETPLACE_INPUTS = {
   shopee: "currentPriceShopee",
@@ -1039,6 +1042,76 @@ function initTheme() {
   });
 }
 
+function renderProModeBadgeAndInsight(beforeResults = [], afterResults = []) {
+  const badgeSlot = document.querySelector("#proModeBadgeSlot");
+  const insight = document.querySelector("#proModeInsight");
+
+  if (badgeSlot) {
+    badgeSlot.innerHTML = PRO_MODE_ENABLED ? '<div class="pro-mode-result-badge">🔬 Simulação detalhada ativada</div>' : "";
+  }
+
+  if (!insight) return;
+
+  if (!PRO_MODE_ENABLED) {
+    insight.textContent = "Dica: ajustes profissionais podem mudar seu lucro final.";
+    return;
+  }
+
+  const beforeBest = (beforeResults || []).reduce((best, item) => (!best || (item?.profitBRL || 0) > (best?.profitBRL || 0) ? item : best), null);
+  const afterBest = (afterResults || []).reduce((best, item) => (!best || (item?.profitBRL || 0) > (best?.profitBRL || 0) ? item : best), null);
+
+  if (!beforeBest || !afterBest) {
+    insight.textContent = "Dica: ajustes profissionais podem mudar seu lucro final.";
+    return;
+  }
+
+  const delta = (afterBest.profitBRL || 0) - (beforeBest.profitBRL || 0);
+  insight.textContent = `Seu lucro mudou em ${brl(Math.abs(delta))} após ativar ajustes profissionais.`;
+}
+
+function applyProModeState({ persist = true, recalculate = true } = {}) {
+  document.body.classList.toggle("pro-enabled", PRO_MODE_ENABLED);
+
+  const toggleButton = document.querySelector("#proModeToggle");
+  const proContent = document.querySelector("#proModeContent");
+  const advToggle = document.querySelector("#advToggle");
+
+  if (toggleButton) {
+    toggleButton.textContent = PRO_MODE_ENABLED ? "Modo Profissional ativado ✅" : "Ativar Modo Profissional";
+    toggleButton.setAttribute("aria-pressed", PRO_MODE_ENABLED ? "true" : "false");
+    toggleButton.setAttribute("aria-expanded", PRO_MODE_ENABLED ? "true" : "false");
+    toggleButton.classList.toggle("is-on", PRO_MODE_ENABLED);
+  }
+
+  if (proContent) {
+    proContent.classList.toggle("is-open", PRO_MODE_ENABLED);
+    proContent.setAttribute("aria-hidden", PRO_MODE_ENABLED ? "false" : "true");
+  }
+
+  if (advToggle && !PRO_MODE_ENABLED) {
+    advToggle.checked = false;
+  }
+
+  if (persist) {
+    localStorage.setItem(PRO_MODE_STORAGE_KEY, PRO_MODE_ENABLED ? "1" : "0");
+  }
+
+  if (recalculate) {
+    recalc({ source: "auto" });
+  }
+}
+
+function initProMode() {
+  PRO_MODE_ENABLED = localStorage.getItem(PRO_MODE_STORAGE_KEY) === "1";
+  applyProModeState({ persist: false, recalculate: false });
+
+  const toggleButton = document.querySelector("#proModeToggle");
+  toggleButton?.addEventListener("click", () => {
+    PRO_MODE_ENABLED = !PRO_MODE_ENABLED;
+    applyProModeState({ persist: true, recalculate: true });
+  });
+}
+
 
 function getCalculationConfig() {
   const taxPct = clamp(toNumber(document.querySelector("#tax")?.value), 0, 99);
@@ -1049,9 +1122,9 @@ function getCalculationConfig() {
   const mlClassicPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
   const mlPremiumPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
 
-  const adv = getAdvancedVars();
+  const adv = PRO_MODE_ENABLED ? getAdvancedVars() : { pctExtra: 0, fixedBRL: 0, affiliate: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 }, details: { ads: { pct: 0, brl: 0 }, ret: { pct: 0, brl: 0 }, other: { pct: 0, brl: 0 }, costFixed: { pct: 0, brl: 0 }, difal: 0, pis: 0, cofins: 0, aff: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 } } };
 
-  const weightToggle = document.querySelector("#mlWeightToggle")?.checked;
+  const weightToggle = PRO_MODE_ENABLED && document.querySelector("#mlWeightToggle")?.checked;
   const weightValueRaw = document.querySelector("#mlWeightValue")?.value;
   const weightUnit = document.querySelector("#mlWeightUnit")?.value || "kg";
   const weightData = resolveMarketplaceWeight({ enabled: weightToggle, rawValue: weightValueRaw, unit: weightUnit });
@@ -1129,7 +1202,7 @@ const Tour = {
     { selector: "#calcName", title: "Nome do cálculo", body: "Dê um nome para identificar este produto e reutilizar depois.", placement: "bottom" },
     { selector: "#cost", title: "Custo total", body: "Informe o custo real do produto com os custos fixos que você já considera.", placement: "bottom" },
     { selector: "#tax", title: "Imposto + lucro", body: "Defina imposto e meta de lucro para obter o preço ideal com margem real.", placement: "bottom" },
-    { selector: "#advancedAccordion", title: "Ajustes avançados", body: "Ative variáveis avançadas quando quiser uma simulação mais detalhada.", placement: "bottom" },
+    { selector: "#proModeToggle", title: "Modo Profissional", body: "Ative variáveis avançadas quando quiser uma simulação mais detalhada.", placement: "bottom" },
     { selector: "#results", title: "Resultados", body: "Aqui você vê o preço ideal, você recebe e o detalhamento por marketplace.", placement: "left" },
     { selector: "#pdfButtonContainer", title: "Exportar e compartilhar", body: "Gere relatório em PDF e compartilhe sua simulação.", placement: "left" }
   ],
@@ -1407,9 +1480,9 @@ function recalc(options = {}) {
   const mlClassicPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
   const mlPremiumPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
 
-  const adv = getAdvancedVars();
+  const adv = PRO_MODE_ENABLED ? getAdvancedVars() : { pctExtra: 0, fixedBRL: 0, affiliate: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 }, details: { ads: { pct: 0, brl: 0 }, ret: { pct: 0, brl: 0 }, other: { pct: 0, brl: 0 }, costFixed: { pct: 0, brl: 0 }, difal: 0, pis: 0, cofins: 0, aff: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 } } };
 
-  const weightToggle = document.querySelector("#mlWeightToggle")?.checked;
+  const weightToggle = PRO_MODE_ENABLED && document.querySelector("#mlWeightToggle")?.checked;
   const weightValueRaw = document.querySelector("#mlWeightValue")?.value;
   const weightUnit = document.querySelector("#mlWeightUnit")?.value || "kg";
   const weightData = resolveMarketplaceWeight({
@@ -1749,6 +1822,16 @@ function recalc(options = {}) {
   ].map((item) => ({ ...item, totalCost: Math.max(0, item.price - item.profitBRL) }));
 
   const state = { marketplaces: marketplaceState, cost, taxPct, shopeeAntecipa, computedResults };
+  const basicResults = computeForAllMarketplaces({
+    cost,
+    config: {
+      ...cfg,
+      adv: { pctExtra: 0, fixedBRL: 0, affiliate: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 }, details: { ads: { pct: 0, brl: 0 }, ret: { pct: 0, brl: 0 }, other: { pct: 0, brl: 0 }, costFixed: { pct: 0, brl: 0 }, difal: 0, pis: 0, cofins: 0, aff: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 } } },
+      weightData: resolveMarketplaceWeight({ enabled: false, rawValue: "", unit: "kg" })
+    }
+  }).computedResults;
+  renderProModeBadgeAndInsight(basicResults, computedResults);
+
   renderSamePriceComparison(state);
   renderCurrentPriceAnalysis(state);
   renderScaleSimulation(state);
@@ -2136,9 +2219,9 @@ function bind() {
 
   $("#recalc")?.addEventListener("click", () => {
     recalc({ source: "manual" });
-    const mode = document.querySelector("#advToggle")?.checked ? "advanced" : "basic";
-    const hasWeight = !!document.querySelector("#mlWeightToggle")?.checked;
-    const hasAffiliate = !!(document.querySelector("#advToggle")?.checked && document.querySelector("#affToggle")?.checked);
+    const mode = PRO_MODE_ENABLED ? "advanced" : "basic";
+    const hasWeight = !!(PRO_MODE_ENABLED && document.querySelector("#mlWeightToggle")?.checked);
+    const hasAffiliate = !!(PRO_MODE_ENABLED && document.querySelector("#advToggle")?.checked && document.querySelector("#affToggle")?.checked);
     trackGA4Event("recalc", { section: "button", value: mode, has_weight: hasWeight, has_affiliate: hasAffiliate });
     scrollToResults();
   });
@@ -2293,7 +2376,7 @@ function bind() {
   const advBox = $("#advBox");
   const applyAdvBox = () => {
     if (!advToggle || !advBox) return;
-    advBox.classList.toggle("is-hidden", !advToggle.checked);
+    advBox.classList.toggle("is-hidden", !PRO_MODE_ENABLED || !advToggle.checked);
   };
   advToggle?.addEventListener("change", applyAdvBox);
   applyAdvBox();
@@ -2313,7 +2396,7 @@ function bind() {
   const wBox = $("#mlWeightBox");
   const applyWBox = () => {
     if (!wToggle || !wBox) return;
-    wBox.classList.toggle("is-hidden", !wToggle.checked);
+    wBox.classList.toggle("is-hidden", !PRO_MODE_ENABLED || !wToggle.checked);
   };
   wToggle?.addEventListener("change", applyWBox);
   applyWBox();
@@ -2471,6 +2554,7 @@ function initApp() {
 
   applySimpleShareParams();
   initTheme();
+  initProMode();
   loadCurrentPriceState();
   bind();
   bindActionButtons();
