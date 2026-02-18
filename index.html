@@ -549,13 +549,67 @@
             <div class="cardMini__header">
               <strong>Analisar preço atual</strong>
             </div>
-            <div class="field">
-              <div class="label">Preço que estou vendendo hoje (R$)</div>
+            <div class="field currentPriceToggleField">
+              <label class="check check--inline" for="currentSamePriceToggle">
+                <input id="currentSamePriceToggle" type="checkbox" checked aria-checked="true" />
+                <span>Usar o mesmo preço para todos</span>
+              </label>
+            </div>
+
+            <div id="currentPriceGlobalBlock" class="field">
+              <label class="label" for="currentPriceInput">Preço que estou vendendo hoje (R$)</label>
               <div class="inputWrap">
                 <span class="inputPrefix">R$</span>
-                <input id="currentPriceInput" type="number" step="0.01" min="0" placeholder="Ex: 99,90" />
+                <input id="currentPriceInput" type="text" inputmode="decimal" placeholder="Ex: 99,90" />
               </div>
             </div>
+
+            <div id="currentPriceByMarketplace" class="currentPriceByMarketplace is-hidden" aria-live="polite">
+              <div class="field">
+                <label class="label" for="currentPriceShopee"><span class="marketBadge marketBadge--shopee">Shopee</span></label>
+                <div class="inputWrap">
+                  <span class="inputPrefix">R$</span>
+                  <input id="currentPriceShopee" type="text" inputmode="decimal" placeholder="Ex: 99,90" data-current-price-marketplace="shopee" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="currentPriceMlClassic"><span class="marketBadge marketBadge--mlClassic">Mercado Livre Clássico</span></label>
+                <div class="inputWrap">
+                  <span class="inputPrefix">R$</span>
+                  <input id="currentPriceMlClassic" type="text" inputmode="decimal" placeholder="Ex: 99,90" data-current-price-marketplace="mlClassic" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="currentPriceMlPremium"><span class="marketBadge marketBadge--mlPremium">Mercado Livre Premium</span></label>
+                <div class="inputWrap">
+                  <span class="inputPrefix">R$</span>
+                  <input id="currentPriceMlPremium" type="text" inputmode="decimal" placeholder="Ex: 99,90" data-current-price-marketplace="mlPremium" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="currentPriceTiktok"><span class="marketBadge marketBadge--tiktok">TikTok Shop</span></label>
+                <div class="inputWrap">
+                  <span class="inputPrefix">R$</span>
+                  <input id="currentPriceTiktok" type="text" inputmode="decimal" placeholder="Ex: 99,90" data-current-price-marketplace="tiktok" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="currentPriceShein"><span class="marketBadge marketBadge--shein">Shein</span></label>
+                <div class="inputWrap">
+                  <span class="inputPrefix">R$</span>
+                  <input id="currentPriceShein" type="text" inputmode="decimal" placeholder="Ex: 99,90" data-current-price-marketplace="shein" />
+                </div>
+              </div>
+              <div class="field" data-current-price-optional="amazon">
+                <label class="label" for="currentPriceAmazon"><span class="marketBadge marketBadge--amazon">Amazon</span></label>
+                <div class="inputWrap">
+                  <span class="inputPrefix">R$</span>
+                  <input id="currentPriceAmazon" type="text" inputmode="decimal" placeholder="Ex: 99,90" data-current-price-marketplace="amazon" />
+                </div>
+              </div>
+            </div>
+
+            <p id="currentPriceHint" class="currentPriceHint is-hidden">Informe pelo menos um preço.</p>
             <div id="currentPriceResults" class="marketCompareList"></div>
           </div>
         </div>
