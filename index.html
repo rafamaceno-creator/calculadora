@@ -188,6 +188,9 @@
           <section class="formBlock formBlock--actions">
             <button id="recalc" class="btn btn--primary btn--wide" type="button">Calcular</button>
 
+            <button id="btnProModeGo" class="btn btn--ghost btn--wide btn--pro-cta" type="button">Calcular no Modo Profissional</button>
+            <small class="btnProModeGo__microcopy">Inclui taxas e detalhes que mudam seu lucro real.</small>
+
             <div class="actions actions--stacked formActionsSecondary">
               <button id="saveSimulation" class="btn btn--ghost btn--wide" type="button">Salvar simulação</button>
               <select id="savedSimulations" aria-label="Simulações salvas">
@@ -329,7 +332,7 @@
       </div>
       </div>
 
-      <section class="pro-mode" aria-labelledby="proModeTitle">
+      <section id="pro-mode" class="pro-mode" aria-labelledby="proModeTitle">
         <div class="pro-mode__header">
           <h3 id="proModeTitle">💎 Modo Profissional (recomendado)</h3>
           <p class="pro-mode__subtitle">Inclua taxas e detalhes que mudam seu lucro de verdade.</p>

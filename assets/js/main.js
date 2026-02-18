@@ -113,6 +113,55 @@ function scrollToWithTopbarOffset(target) {
   window.scrollTo({ top: y, behavior: "smooth" });
 }
 
+function scrollToProMode({ openAccordion = true } = {}) {
+  const proModeContainer = document.querySelector("#pro-mode");
+  const proModeContent = document.querySelector("#proModeContent");
+  const proModeToggle = document.querySelector("#proModeToggle");
+  if (!proModeContainer) return;
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const headerH = document.querySelector("header")?.offsetHeight || 0;
+  const elTop = proModeContainer.getBoundingClientRect().top + window.pageYOffset;
+  const targetTop = Math.max(0, elTop - headerH - 12);
+
+  const wasOpen = !!proModeContent?.classList.contains("is-open");
+
+  trackGA4Event("pro_mode_cta_click", { location: "top_card" });
+
+  window.scrollTo({
+    top: targetTop,
+    behavior: reduceMotion ? "auto" : "smooth"
+  });
+
+  const afterScroll = () => {
+    let openedNow = wasOpen;
+
+    if (openAccordion && !wasOpen) {
+      proModeContent?.classList.add("is-open");
+      proModeContent?.setAttribute("aria-hidden", "false");
+      proModeToggle?.setAttribute("aria-expanded", "true");
+      openedNow = true;
+    }
+
+    trackGA4Event("pro_mode_scrolled", { opened: openedNow });
+
+    if (!PRO_MODE_ENABLED) {
+      proModeToggle?.focus({ preventScroll: true });
+    }
+
+    if (!reduceMotion) {
+      proModeContainer.classList.remove("pro-attention");
+      void proModeContainer.offsetWidth;
+      proModeContainer.classList.add("pro-attention");
+      window.setTimeout(() => {
+        proModeContainer.classList.remove("pro-attention");
+      }, 1400);
+    }
+  };
+
+  window.setTimeout(afterScroll, reduceMotion ? 0 : 420);
+}
+
 
 /* ===== SHEIN =====
    Comissão:
@@ -2216,6 +2265,10 @@ function bind() {
     const results = $("#results");
     scrollToWithTopbarOffset(results);
   };
+
+  $("#btnProModeGo")?.addEventListener("click", () => {
+    scrollToProMode({ openAccordion: true });
+  });
 
   $("#recalc")?.addEventListener("click", () => {
     recalc({ source: "manual" });
