@@ -114,7 +114,14 @@ input:hover,select:hover{border-color:#b8c5d7}
 .pro-mode__content{max-height:0;overflow:hidden;opacity:0;transition:max-height .35s ease,opacity .25s ease;margin-top:0}
 .pro-mode__content.is-open{max-height:2200px;opacity:1;margin-top:14px}
 .pro-mode__insight{margin:14px 0 0;font-size:13px;color:#4c1d95;font-weight:600}
+.pro-mode.pro-attention{animation:proPulse 1.4s ease}
 .pro-mode-result-badge{margin:0 0 12px;padding:10px 12px;border-radius:12px;background:#ecfeff;border:1px solid #67e8f9;color:#155e75;font-weight:700}
+
+@keyframes proPulse{
+  0%{box-shadow:0 10px 30px rgba(76,29,149,.08),0 0 0 0 rgba(99,102,241,0);outline:2px solid transparent;outline-offset:2px}
+  30%{box-shadow:0 14px 34px rgba(76,29,149,.16),0 0 0 6px rgba(99,102,241,.18);outline:2px solid rgba(99,102,241,.42)}
+  100%{box-shadow:0 10px 30px rgba(76,29,149,.08),0 0 0 0 rgba(99,102,241,0);outline:2px solid transparent;outline-offset:2px}
+}
 
 .cardMini{margin-top:14px;border-radius:14px;border:1px solid var(--stroke);background:#fff;padding:14px}
 .cardMini__header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -278,7 +285,11 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
 
 .rankingInsights{margin:0 0 12px;padding:12px;border:1px solid var(--stroke);border-radius:12px;background:var(--surface-soft);display:grid;gap:6px}
 .actions--stacked{margin-top:0;display:grid;grid-template-columns:1fr;gap:10px}
+
 .formActionsSecondary .btn--ghost{border-color:#cbd5e1;background:#f8fafc;font-weight:600}
+.btn--pro-cta{border-color:#c7d2fe;background:linear-gradient(180deg,#f8faff,#eef2ff);color:#3730a3;font-weight:700}
+.btn--pro-cta:hover{border-color:#a5b4fc;box-shadow:0 8px 18px rgba(67,56,202,.14);transform:translateY(-1px)}
+.btnProModeGo__microcopy{display:block;margin-top:-4px;color:#64748b;font-size:12px;line-height:1.35}
 
 .marketplaceCard .cardHeader{padding:14px 16px;margin:-1px -1px 10px;border-radius:16px 16px 0 0;border-bottom:1px solid var(--stroke)}
 .marketplaceCard.marketplace-shopee .cardHeader{background:rgba(238,77,45,.08)}
@@ -329,6 +340,7 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
   .pro-mode__header h3{font-size:19px}
   .pro-mode__chips{gap:6px}
   .pro-chip{font-size:11px}
+  .btnProModeGo__microcopy{margin-top:0}
   .card__inner{padding:16px}
   .cardHeader{flex-wrap:wrap}
   .cardHeader .pill{margin-top:2px}
@@ -610,4 +622,10 @@ body.tour-active{overflow:hidden}
 @media (max-width:768px){
   .tourPopover{left:10px!important;right:10px!important;bottom:10px!important;top:auto!important;width:auto}
   .bulkToolbar .btn{flex:1 1 100%}
+}
+
+
+@media (prefers-reduced-motion: reduce){
+  html,body{scroll-behavior:auto}
+  .pro-mode.pro-attention{animation:none}
 }
