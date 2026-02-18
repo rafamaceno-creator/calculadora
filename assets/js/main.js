@@ -1108,11 +1108,17 @@ const Tour = {
   index: 0,
   source: "button",
   active: false,
+  overlay: null,
+  popover: null,
+  onOverlayClick: null,
+  onKeydown: null,
   start(source = "button") {
+    if (this.active) this.destroyTour();
     this.source = source;
     this.index = 0;
     this.active = true;
     this.ensureDOM();
+    if (!this.overlay) return;
     this.overlay.hidden = false;
     document.body.classList.add("tour-active");
     trackGA4Event("tour_start", { source });
@@ -1121,23 +1127,26 @@ const Tour = {
   ensureDOM() {
     if (this.overlay) return;
     const overlay = document.createElement("div");
-    overlay.className = "tourOverlay";
+    overlay.className = "tourOverlay tour-overlay";
     overlay.hidden = true;
-    overlay.innerHTML = `<div class="tourPopover" role="dialog" aria-modal="true" aria-live="polite"><h3 class="tourTitle"></h3><p class="tourBody"></p><div class="tourActions"><button type="button" class="btn btn--ghost" data-tour="prev">Voltar</button><button type="button" class="btn btn--ghost" data-tour="skip">Pular</button><button type="button" class="btn btn--primary" data-tour="next">Próximo</button></div></div>`;
+    overlay.innerHTML = `<div class="tourPopover tour-popover" role="dialog" aria-modal="true" aria-live="polite"><button type="button" class="tour-close" data-tour="close" aria-label="Fechar tour">×</button><h3 class="tourTitle"></h3><p class="tourBody"></p><div class="tourActions"><button type="button" class="btn btn--ghost" data-tour="prev">Voltar</button><button type="button" class="btn btn--ghost" data-tour="skip">Pular</button><button type="button" class="btn btn--primary" data-tour="next">Próximo</button></div></div>`;
     document.body.appendChild(overlay);
     this.overlay = overlay;
     this.popover = overlay.querySelector(".tourPopover");
-    overlay.addEventListener("click", (event) => {
-      if (event.target === overlay) this.stop();
+    this.onOverlayClick = (event) => {
+      if (event.target === overlay) this.skipTour("overlay");
       const action = event.target.closest("[data-tour]")?.getAttribute("data-tour");
       if (!action) return;
       if (action === "next") this.next();
       if (action === "prev") this.prev();
-      if (action === "skip") this.stop(true);
-    });
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && this.active) this.stop();
-    });
+      if (action === "skip") this.skipTour("skip");
+      if (action === "close") this.skipTour("close_x");
+    };
+    this.onKeydown = (event) => {
+      if (event.key === "Escape" && this.active) this.skipTour("esc");
+    };
+    overlay.addEventListener("click", this.onOverlayClick);
+    document.addEventListener("keydown", this.onKeydown);
   },
   render() {
     const step = this.steps[this.index];
@@ -1145,8 +1154,10 @@ const Tour = {
     const target = document.querySelector(step.selector);
     if (!target) return this.next();
 
-    document.querySelectorAll(".tourTarget").forEach((el) => el.classList.remove("tourTarget"));
-    target.classList.add("tourTarget");
+    document.querySelectorAll(".tourTarget, .tour-highlight").forEach((el) => {
+      el.classList.remove("tourTarget", "tour-highlight");
+    });
+    target.classList.add("tourTarget", "tour-highlight");
     this.popover.querySelector(".tourTitle").textContent = step.title;
     this.popover.querySelector(".tourBody").textContent = step.body;
 
@@ -1182,18 +1193,38 @@ const Tour = {
     this.index -= 1;
     this.render();
   },
-  stop(skipped = false) {
+  destroyTour() {
     this.active = false;
-    this.overlay.hidden = true;
-    document.body.classList.remove("tour-active");
-    document.querySelectorAll(".tourTarget").forEach((el) => el.classList.remove("tourTarget"));
-    if (skipped) {
-      localStorage.setItem("TOUR_SKIPPED", "1");
-      trackGA4Event("tour_skip");
+    if (this.overlay && this.onOverlayClick) {
+      this.overlay.removeEventListener("click", this.onOverlayClick);
     }
+    if (this.onKeydown) {
+      document.removeEventListener("keydown", this.onKeydown);
+    }
+    this.onOverlayClick = null;
+    this.onKeydown = null;
+
+    if (this.overlay) {
+      this.overlay.remove();
+      this.overlay = null;
+      this.popover = null;
+    }
+
+    document.body.classList.remove("tour-active");
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+    document.querySelectorAll(".tourTarget, .tour-highlight").forEach((el) => {
+      el.classList.remove("tourTarget", "tour-highlight");
+    });
+  },
+  skipTour(source = "skip") {
+    this.destroyTour();
+    localStorage.setItem("TOUR_DONE", "1");
+    localStorage.setItem("TOUR_SKIPPED", "1");
+    trackGA4Event("tour_skip", { source });
   },
   complete() {
-    this.stop(false);
+    this.destroyTour();
     localStorage.setItem("TOUR_DONE", "1");
     trackGA4Event("tour_complete");
   }
@@ -1295,7 +1326,7 @@ const Bulk = {
 
 function bindTourAndBulk() {
   document.querySelector("#startTour")?.addEventListener("click", () => Tour.start("button"));
-  if (!localStorage.getItem("TOUR_DONE")) {
+  if (localStorage.getItem("TOUR_DONE") !== "1") {
     window.setTimeout(() => Tour.start("auto"), 900);
   }
 
