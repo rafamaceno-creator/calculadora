@@ -287,202 +287,14 @@
 
           </details>
 
-          <details class="formAccordion" id="advancedAccordion">
-            <summary>Ajustes avançados (opcional)</summary>
-
-            <div class="toggle">
-              <label class="check">
-                <input id="mlWeightToggle" type="checkbox" />
-                <span>Informar peso (Mercado Livre + SHEIN)</span>
-              </label>
-              <small>A SHEIN também aplica intermediação de frete por faixa de peso.</small>
-            </div>
-
-            <div id="mlWeightBox" class="row2 is-hidden">
-              <div class="field">
-                <div class="label label-row">
-                  <span>Peso</span>
-                  <button class="info" type="button" aria-label="Info: Peso" data-tooltip="Peso do produto para cálculo do custo fixo de envio do Mercado Livre. Se não informar, o sistema assume 500g por padrão.">i</button>
-                </div>
-                <input id="mlWeightValue" type="number" step="0.001" min="0" value="0.5" />
-              </div>
-
-              <div class="field">
-                <div class="label label-row">
-                  <span>Unidade</span>
-                  <button class="info" type="button" aria-label="Info: Unidade" data-tooltip="Escolha gramas (g) ou quilogramas (kg). Ex: 500g = 0,5kg.">i</button>
-                </div>
-                <select id="mlWeightUnit">
-                  <option value="kg">kg</option>
-                  <option value="g">g</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="toggle">
-              <label class="check">
-                <input id="advToggle" type="checkbox" />
-                <span>Aplicar variáveis avançadas</span>
-              </label>
-              <small>Ads, devolução, custo fixo, DIFAL, PIS, COFINS, outro e afiliados.</small>
-            </div>
-
-            <div id="advBox" class="is-hidden">
-              <div class="advGrid">
-                <div class="advItem">
-                  <div class="label label-row">
-                    <label class="check">
-                      <input id="adsToggle" type="checkbox" />
-                      <span>Custo de Ads</span>
-                    </label>
-                    <button
-                      class="info"
-                      type="button"
-                      aria-label="Info: Custo de Ads"
-                      data-tooltip="Informe quanto do seu faturamento é gasto em ads (%). Ex: se a cada R$ 100 vendidos você gasta R$ 8 em anúncios, preencha 8%."
-                    >i</button>
-                  </div>
-
-                  <div class="row2">
-                    <select id="adsType">
-                      <option value="pct">Em %</option>
-                      <option value="brl">Em R$</option>
-                    </select>
-                    <input id="adsValue" type="number" step="0.01" min="0" value="0" />
-                  </div>
-                </div>
-
-                <div class="advItem">
-                  <div class="label label-row">
-                    <label class="check">
-                      <input id="returnToggle" type="checkbox" />
-                      <span>Custo de devolução</span>
-                    </label>
-                    <button
-                      class="info"
-                      type="button"
-                      aria-label="Info: Custo de devolução"
-                      data-tooltip="Informe quanto do seu faturamento é gasto com devoluções (%). Considere trocas, reenvios, estornos e logística reversa. Ex: se perde R$ 3 a cada R$ 100 vendidos, preencha 3%."
-                    >i</button>
-                  </div>
-
-                  <div class="row2">
-                    <select id="returnType">
-                      <option value="pct">Em %</option>
-                      <option value="brl">Em R$</option>
-                    </select>
-                    <input id="returnValue" type="number" step="0.01" min="0" value="0" />
-                  </div>
-                </div>
-
-                <div class="advItem">
-                  <div class="label label-row">
-                    <label class="check">
-                      <input id="costFixedToggle" type="checkbox" />
-                      <span>Custo fixo</span>
-                    </label>
-                    <button
-                      class="info"
-                      type="button"
-                      aria-label="Info: Custo fixo"
-                      data-tooltip="Custos fixos que incidem sobre o preço de venda. Pode ser um percentual (%) ou um valor fixo em reais (R$). Ex: 5% de custos operacionais ou R$ 10 por produto."
-                    >i</button>
-                  </div>
-
-                  <div class="row2">
-                    <select id="costFixedType">
-                      <option value="pct">Em %</option>
-                      <option value="brl">Em R$</option>
-                    </select>
-                    <input id="costFixedValue" type="number" step="0.01" min="0" value="0" />
-                  </div>
-                </div>
-
-                <div class="advItem">
-                  <label class="check">
-                    <input id="difalToggle" type="checkbox" />
-                    <span>DIFAL (%)</span>
-                  </label>
-                  <input id="difalValue" type="number" step="0.01" min="0" value="0" />
-                </div>
-
-                <div class="advItem">
-                  <label class="check">
-                    <input id="pisToggle" type="checkbox" />
-                    <span>PIS (%)</span>
-                  </label>
-                  <input id="pisValue" type="number" step="0.01" min="0" value="0" />
-                </div>
-
-                <div class="advItem">
-                  <label class="check">
-                    <input id="cofinsToggle" type="checkbox" />
-                    <span>COFINS (%)</span>
-                  </label>
-                  <input id="cofinsValue" type="number" step="0.01" min="0" value="0" />
-                </div>
-
-                <div class="advItem">
-                  <label class="check">
-                    <input id="otherToggle" type="checkbox" />
-                    <span>Outro</span>
-                  </label>
-                  <div class="row2">
-                    <select id="otherType">
-                      <option value="pct">Em %</option>
-                      <option value="brl">Em R$</option>
-                    </select>
-                    <input id="otherValue" type="number" step="0.01" min="0" value="0" />
-                  </div>
-                </div>
-
-                <div class="advItem advItem--wide">
-                  <label class="check">
-                    <input id="affToggle" type="checkbox" />
-                    <span>Afiliados</span>
-                  </label>
-                  <small>Incide somente na plataforma correspondente (Shopee, Mercado Livre e TikTok).</small>
-
-                  <div id="affBox" class="affGrid is-hidden">
-                    <div class="field">
-                      <div class="label label-row">
-                        <span>Afiliados Shopee (%)</span>
-                        <button class="info" type="button" aria-label="Info: Afiliados Shopee (%)" data-tooltip="Percentual pago ao afiliado dentro da Shopee. Incide só no cálculo da Shopee.">i</button>
-                      </div>
-                      <input id="affShopee" type="number" step="0.01" min="0" value="0" />
-                    </div>
-
-                    <div class="field">
-                      <div class="label label-row">
-                        <span>Afiliados Mercado Livre (%)</span>
-                        <button class="info" type="button" aria-label="Info: Afiliados Mercado Livre (%)" data-tooltip="Percentual de custo de afiliados/CPA do Mercado Livre. Incide só no cálculo do ML (Clássico e Premium).">i</button>
-                      </div>
-                      <input id="affML" type="number" step="0.01" min="0" value="0" />
-                    </div>
-
-                    <div class="field">
-                      <div class="label label-row">
-                        <span>Afiliados TikTok (%)</span>
-                        <button class="info" type="button" aria-label="Info: Afiliados TikTok (%)" data-tooltip="Percentual pago ao afiliado dentro do TikTok Shop. Incide só no cálculo do TikTok.">i</button>
-                      </div>
-                      <input id="affTikTok" type="number" step="0.01" min="0" value="0" />
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-
-              <div class="hint">
-                Regras: itens em R$ entram como custo fixo (somam no custo). Itens em % entram como incidência (somam nas %).
-              </div>
-            </div>
-          </details>
+          
         </div>
       </div>
 
       <div class="card stickyResultsCard">
         <div class="card__inner">
           <h2>Resultados</h2>
+          <div id="proModeBadgeSlot"></div>
           <div id="rankingInsights" class="rankingInsights" aria-live="polite"></div>
           <div id="results" class="resultList"></div>
 
@@ -516,6 +328,214 @@
         </div>
       </div>
       </div>
+
+      <section class="pro-mode" aria-labelledby="proModeTitle">
+        <div class="pro-mode__header">
+          <h3 id="proModeTitle">💎 Modo Profissional (recomendado)</h3>
+          <p class="pro-mode__subtitle">Inclua taxas e detalhes que mudam seu lucro de verdade.</p>
+          <p class="pro-mode__microcopy">Evite precificar no “olhômetro”.<br />Ative para considerar impostos, taxas extras e regras específicas do marketplace.</p>
+
+          <div class="pro-mode__chips" aria-label="Itens cobertos no modo profissional">
+            <span class="pro-chip">Impostos</span>
+            <span class="pro-chip">Taxas do marketplace</span>
+            <span class="pro-chip">Frete / Peso</span>
+            <span class="pro-chip">Custos extras</span>
+            <span class="pro-chip">Antecipação / recebimento</span>
+          </div>
+
+          <button
+            id="proModeToggle"
+            class="pro-mode__toggle"
+            type="button"
+            aria-pressed="false"
+            aria-expanded="false"
+            aria-controls="proModeContent"
+          >
+            Ativar Modo Profissional
+          </button>
+        </div>
+
+        <div id="proModeContent" class="pro-mode__content" aria-hidden="true">
+          <div class="toggle">
+            <label class="check">
+              <input id="mlWeightToggle" type="checkbox" />
+              <span>Informar peso (Mercado Livre + SHEIN)</span>
+            </label>
+            <small>A SHEIN também aplica intermediação de frete por faixa de peso.</small>
+          </div>
+
+          <div id="mlWeightBox" class="row2 is-hidden">
+            <div class="field">
+              <div class="label label-row">
+                <span>Peso</span>
+                <button class="info" type="button" aria-label="Info: Peso" data-tooltip="Peso do produto para cálculo do custo fixo de envio do Mercado Livre. Se não informar, o sistema assume 500g por padrão.">i</button>
+              </div>
+              <input id="mlWeightValue" type="number" step="0.001" min="0" value="0.5" />
+            </div>
+
+            <div class="field">
+              <div class="label label-row">
+                <span>Unidade</span>
+                <button class="info" type="button" aria-label="Info: Unidade" data-tooltip="Escolha gramas (g) ou quilogramas (kg). Ex: 500g = 0,5kg.">i</button>
+              </div>
+              <select id="mlWeightUnit">
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toggle">
+            <label class="check">
+              <input id="advToggle" type="checkbox" />
+              <span>Aplicar variáveis avançadas</span>
+            </label>
+            <small>Ads, devolução, custo fixo, DIFAL, PIS, COFINS, outro e afiliados.</small>
+          </div>
+
+          <div id="advBox" class="is-hidden">
+            <div class="advGrid">
+              <div class="advItem">
+                <div class="label label-row">
+                  <label class="check">
+                    <input id="adsToggle" type="checkbox" />
+                    <span>Custo de Ads</span>
+                  </label>
+                  <button
+                    class="info"
+                    type="button"
+                    aria-label="Info: Custo de Ads"
+                    data-tooltip="Informe quanto do seu faturamento é gasto em ads (%). Ex: se a cada R$ 100 vendidos você gasta R$ 8 em anúncios, preencha 8%."
+                  >i</button>
+                </div>
+
+                <div class="row2">
+                  <select id="adsType">
+                    <option value="pct">Em %</option>
+                    <option value="brl">Em R$</option>
+                  </select>
+                  <input id="adsValue" type="number" step="0.01" min="0" value="0" />
+                </div>
+              </div>
+
+              <div class="advItem">
+                <div class="label label-row">
+                  <label class="check">
+                    <input id="returnToggle" type="checkbox" />
+                    <span>Custo de devolução</span>
+                  </label>
+                  <button
+                    class="info"
+                    type="button"
+                    aria-label="Info: Custo de devolução"
+                    data-tooltip="Estimativa de devolução/troca. Pode ser percentual do faturamento ou valor fixo por venda."
+                  >i</button>
+                </div>
+
+                <div class="row2">
+                  <select id="returnType">
+                    <option value="pct">Em %</option>
+                    <option value="brl">Em R$</option>
+                  </select>
+                  <input id="returnValue" type="number" step="0.01" min="0" value="0" />
+                </div>
+              </div>
+
+              <div class="advItem">
+                <label class="check">
+                  <input id="costFixedToggle" type="checkbox" />
+                  <span>Custo fixo</span>
+                </label>
+                <div class="row2">
+                  <select id="costFixedType">
+                    <option value="brl" selected>Em R$</option>
+                    <option value="pct">Em %</option>
+                  </select>
+                  <input id="costFixedValue" type="number" step="0.01" min="0" value="0" />
+                </div>
+              </div>
+
+              <div class="advItem">
+                <label class="check">
+                  <input id="difalToggle" type="checkbox" />
+                  <span>DIFAL (%)</span>
+                </label>
+                <input id="difalValue" type="number" step="0.01" min="0" value="0" />
+              </div>
+
+              <div class="advItem">
+                <label class="check">
+                  <input id="pisToggle" type="checkbox" />
+                  <span>PIS (%)</span>
+                </label>
+                <input id="pisValue" type="number" step="0.01" min="0" value="0" />
+              </div>
+
+              <div class="advItem">
+                <label class="check">
+                  <input id="cofinsToggle" type="checkbox" />
+                  <span>COFINS (%)</span>
+                </label>
+                <input id="cofinsValue" type="number" step="0.01" min="0" value="0" />
+              </div>
+
+              <div class="advItem">
+                <label class="check">
+                  <input id="otherToggle" type="checkbox" />
+                  <span>Outro</span>
+                </label>
+                <div class="row2">
+                  <select id="otherType">
+                    <option value="pct">Em %</option>
+                    <option value="brl">Em R$</option>
+                  </select>
+                  <input id="otherValue" type="number" step="0.01" min="0" value="0" />
+                </div>
+              </div>
+
+              <div class="advItem advItem--wide">
+                <label class="check">
+                  <input id="affToggle" type="checkbox" />
+                  <span>Afiliados</span>
+                </label>
+                <small>Incide somente na plataforma correspondente (Shopee, Mercado Livre e TikTok).</small>
+
+                <div id="affBox" class="affGrid is-hidden">
+                  <div class="field">
+                    <div class="label label-row">
+                      <span>Afiliados Shopee (%)</span>
+                      <button class="info" type="button" aria-label="Info: Afiliados Shopee (%)" data-tooltip="Percentual pago ao afiliado dentro da Shopee. Incide só no cálculo da Shopee.">i</button>
+                    </div>
+                    <input id="affShopee" type="number" step="0.01" min="0" value="0" />
+                  </div>
+
+                  <div class="field">
+                    <div class="label label-row">
+                      <span>Afiliados Mercado Livre (%)</span>
+                      <button class="info" type="button" aria-label="Info: Afiliados Mercado Livre (%)" data-tooltip="Percentual de custo de afiliados/CPA do Mercado Livre. Incide só no cálculo do ML (Clássico e Premium).">i</button>
+                    </div>
+                    <input id="affML" type="number" step="0.01" min="0" value="0" />
+                  </div>
+
+                  <div class="field">
+                    <div class="label label-row">
+                      <span>Afiliados TikTok (%)</span>
+                      <button class="info" type="button" aria-label="Info: Afiliados TikTok (%)" data-tooltip="Percentual pago ao afiliado dentro do TikTok Shop. Incide só no cálculo do TikTok.">i</button>
+                    </div>
+                    <input id="affTikTok" type="number" step="0.01" min="0" value="0" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="hint">
+              Regras: itens em R$ entram como custo fixo (somam no custo). Itens em % entram como incidência (somam nas %).
+            </div>
+          </div>
+        </div>
+        <p id="proModeInsight" class="pro-mode__insight">Dica: ajustes profissionais podem mudar seu lucro final.</p>
+      </section>
     </section>
 
     <section id="sec-comparar" class="sectionCard">
