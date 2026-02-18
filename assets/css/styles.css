@@ -249,6 +249,16 @@ details p{margin:8px 0 0;color:#334155}
 .inputWrap .inputSuffix + input,.inputWrap input + .inputSuffix{padding-right:36px;padding-left:12px}
 
 
+.currentPriceByMarketplace{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.currentPriceByMarketplace .field{margin-bottom:0}
+.currentPriceHint{margin:10px 0 0;color:#64748b;font-size:12px}
+.marketBadge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;border:1px solid var(--stroke);font-size:11px;font-weight:700;line-height:1;background:#f8fafc;color:#334155}
+.marketBadge--shopee{background:rgba(238,77,45,.10);border-color:rgba(238,77,45,.22);color:#a93a1f}
+.marketBadge--mlClassic,.marketBadge--mlPremium{background:rgba(255,221,0,.2);border-color:rgba(224,193,0,.35);color:#6b5800}
+.marketBadge--tiktok{background:rgba(0,0,0,.06);border-color:rgba(15,23,42,.15);color:#0f172a}
+.marketBadge--shein{background:rgba(30,64,175,.10);border-color:rgba(30,64,175,.24);color:#1e3a8a}
+.marketBadge--amazon{background:rgba(255,153,0,.14);border-color:rgba(180,103,6,.25);color:#9a5709}
+
 body.theme-dark{--bg:#0f172a;--surface:#1e293b;--surface-soft:#1f2d46;--stroke:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#14b8a6;--accent-soft:#173f42}
 body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.theme-dark .card,body.theme-dark .sectionCard,body.theme-dark .hint,body.theme-dark .shareBox{background:#1e293b;color:#e2e8f0}
 
@@ -300,7 +310,7 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
   .segmentMenu{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:8px 6px}
   .segmentMenu__btn{flex:0 0 auto;scroll-snap-align:start;white-space:nowrap}
   .sectionCard{padding:16px}
-  .grid,.row2,.affGrid,.advGrid,.stickySummary__actions,.shareBox__actions,.actions{grid-template-columns:1fr}
+  .grid,.row2,.affGrid,.advGrid,.stickySummary__actions,.shareBox__actions,.actions,.currentPriceByMarketplace{grid-template-columns:1fr}
   .card__inner{padding:16px}
   .cardHeader{flex-wrap:wrap}
   .cardHeader .pill{margin-top:2px}

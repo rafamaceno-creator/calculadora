@@ -28,6 +28,18 @@ const INPUT_EVENT_FIELDS = {
 const THEME_KEY = "pricing_theme";
 const SAVED_SIMULATIONS_KEY = "saved_simulations_v2";
 const COMPOSITION_VIEW_KEY = "composition_view_tracked";
+const CURRENT_SAME_PRICE_KEY = "CURRENT_SAME_PRICE";
+const CURRENT_PRICE_GLOBAL_KEY = "CURRENT_PRICE_GLOBAL";
+const CURRENT_PRICE_BY_MKT_KEY = "CURRENT_PRICE_BY_MKT";
+
+const CURRENT_PRICE_MARKETPLACE_INPUTS = {
+  shopee: "currentPriceShopee",
+  mlClassic: "currentPriceMlClassic",
+  mlPremium: "currentPriceMlPremium",
+  tiktok: "currentPriceTiktok",
+  shein: "currentPriceShein",
+  amazon: "currentPriceAmazon"
+};
 
 
 function track(eventName, params = {}) {
@@ -172,6 +184,22 @@ const AMAZON_DBA = {
 function toNumber(v) {
   const n = Number(String(v ?? "").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
+}
+
+function sanitizeBRLInput(rawValue) {
+  const raw = String(rawValue ?? "").replace(/R\$/gi, "").replace(/\s+/g, "").trim();
+  const onlyNumbers = raw.replace(/[^\d,.-]/g, "");
+  if (!onlyNumbers) return "";
+  if (onlyNumbers.includes(",")) {
+    return onlyNumbers.replace(/\./g, "").replace(",", ".");
+  }
+  return onlyNumbers;
+}
+
+function parsePriceInput(rawValue) {
+  const normalized = sanitizeBRLInput(rawValue);
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
 function brl(n) {
@@ -1758,6 +1786,97 @@ function recalc(options = {}) {
 }
 
 
+function getCurrentPriceInputElement(marketplaceKey) {
+  const inputId = CURRENT_PRICE_MARKETPLACE_INPUTS[marketplaceKey];
+  return inputId ? document.querySelector(`#${inputId}`) : null;
+}
+
+function setCurrentPriceVisibility(samePrice) {
+  const globalBlock = document.querySelector("#currentPriceGlobalBlock");
+  const byMarketplaceBlock = document.querySelector("#currentPriceByMarketplace");
+  globalBlock?.classList.toggle("is-hidden", !samePrice);
+  byMarketplaceBlock?.classList.toggle("is-hidden", samePrice);
+}
+
+function saveCurrentPriceState() {
+  const toggle = document.querySelector("#currentSamePriceToggle");
+  const globalInput = document.querySelector("#currentPriceInput");
+
+  localStorage.setItem(CURRENT_SAME_PRICE_KEY, toggle?.checked ? "1" : "0");
+  localStorage.setItem(CURRENT_PRICE_GLOBAL_KEY, globalInput?.value?.trim() || "");
+
+  const byMarketplace = Object.entries(CURRENT_PRICE_MARKETPLACE_INPUTS).reduce((acc, [key, inputId]) => {
+    acc[key] = document.querySelector(`#${inputId}`)?.value?.trim() || "";
+    return acc;
+  }, {});
+
+  localStorage.setItem(CURRENT_PRICE_BY_MKT_KEY, JSON.stringify(byMarketplace));
+}
+
+function loadCurrentPriceState() {
+  const toggle = document.querySelector("#currentSamePriceToggle");
+  const globalInput = document.querySelector("#currentPriceInput");
+  if (!toggle || !globalInput) return;
+
+  const samePriceStored = localStorage.getItem(CURRENT_SAME_PRICE_KEY);
+  toggle.checked = samePriceStored !== "0";
+  toggle.setAttribute("aria-checked", toggle.checked ? "true" : "false");
+
+  globalInput.value = localStorage.getItem(CURRENT_PRICE_GLOBAL_KEY) || globalInput.value || "";
+
+  let byMarketplace = {};
+  try {
+    byMarketplace = JSON.parse(localStorage.getItem(CURRENT_PRICE_BY_MKT_KEY) || "{}");
+  } catch (error) {
+    byMarketplace = {};
+  }
+
+  Object.entries(CURRENT_PRICE_MARKETPLACE_INPUTS).forEach(([key, inputId]) => {
+    const input = document.querySelector(`#${inputId}`);
+    if (!input) return;
+    input.value = typeof byMarketplace[key] === "string" ? byMarketplace[key] : "";
+  });
+
+  setCurrentPriceVisibility(toggle.checked);
+}
+
+function hasCurrentPriceValues(state) {
+  const globalRaw = document.querySelector("#currentPriceInput")?.value?.trim() || "";
+  if (globalRaw) return true;
+
+  if (document.querySelector("#currentSamePriceToggle")?.checked) return false;
+
+  return (state.marketplaces || []).some((mp) => (getCurrentPriceInputElement(mp.key)?.value?.trim() || "") !== "");
+}
+
+function getCurrentPriceForMarketplace(marketplaceKey) {
+  const samePriceToggle = document.querySelector("#currentSamePriceToggle");
+  const globalRaw = document.querySelector("#currentPriceInput")?.value || "";
+  const globalPrice = parsePriceInput(globalRaw);
+
+  if (!samePriceToggle || samePriceToggle.checked) return globalPrice;
+
+  const marketplaceRaw = getCurrentPriceInputElement(marketplaceKey)?.value || "";
+  if (String(marketplaceRaw).trim()) return parsePriceInput(marketplaceRaw);
+  if (String(globalRaw).trim()) return globalPrice;
+  return 0;
+}
+
+function syncCurrentPriceMarketplaceInputs(state) {
+  const activeKeys = new Set((state.marketplaces || []).map((mp) => mp.key));
+
+  document.querySelectorAll("[data-current-price-marketplace]").forEach((input) => {
+    const key = input.getAttribute("data-current-price-marketplace");
+    const field = input.closest(".field");
+    if (!key || !field) return;
+    if (key === "amazon") {
+      field.classList.toggle("is-hidden", !activeKeys.has("amazon"));
+      return;
+    }
+    field.classList.remove("is-hidden");
+  });
+}
+
 function renderSamePriceComparison(state) {
   const wrap = document.querySelector("#samePriceResults");
   if (!wrap) return;
@@ -1788,17 +1907,19 @@ function renderSamePriceComparison(state) {
 
 function renderCurrentPriceAnalysis(state) {
   const wrap = document.querySelector("#currentPriceResults");
+  const hint = document.querySelector("#currentPriceHint");
   if (!wrap) return;
 
-  const currentPrice = Math.max(0, toNumber(document.querySelector("#currentPriceInput")?.value));
-  if (!currentPrice) {
-    wrap.innerHTML = "";
-    return;
-  }
+  syncCurrentPriceMarketplaceInputs(state);
+
+  const samePriceMode = document.querySelector("#currentSamePriceToggle")?.checked !== false;
+  const hasAnyPrice = hasCurrentPriceValues(state);
+
+  hint?.classList.toggle("is-hidden", hasAnyPrice);
 
   const cards = state.marketplaces.map((mp) => {
     const analysis = calculateMarketplaceAtPrice({
-      price: currentPrice,
+      price: getCurrentPriceForMarketplace(mp.key),
       cost: state.cost,
       taxPct: state.taxPct,
       marketplacePct: mp.marketplacePct,
@@ -1812,6 +1933,7 @@ function renderCurrentPriceAnalysis(state) {
   });
 
   wrap.innerHTML = cards.join("");
+  trackGA4Event("current_profit_calculate", { mode: samePriceMode ? "global" : "per_marketplace" });
 }
 
 function renderScaleSimulation(state) {
@@ -1973,7 +2095,14 @@ function bindInputTracking() {
     "amazonPct",
     "amazonOriginGroup",
     "samePriceInput",
-    "currentPriceInput"
+    "currentPriceInput",
+    "currentSamePriceToggle",
+    "currentPriceShopee",
+    "currentPriceMlClassic",
+    "currentPriceMlPremium",
+    "currentPriceTiktok",
+    "currentPriceShein",
+    "currentPriceAmazon"
   ]);
 
   const handleEngagement = (event) => {
@@ -2209,6 +2338,30 @@ function bind() {
   });
 
   applyAmazonBox();
+
+  const currentSamePriceToggle = $("#currentSamePriceToggle");
+  currentSamePriceToggle?.addEventListener("change", (event) => {
+    const samePrice = !!event.target.checked;
+    event.target.setAttribute("aria-checked", samePrice ? "true" : "false");
+    setCurrentPriceVisibility(samePrice);
+    saveCurrentPriceState();
+    trackGA4Event("current_profit_toggle", { same_price: samePrice });
+    recalc({ source: "auto" });
+  });
+
+  Object.entries(CURRENT_PRICE_MARKETPLACE_INPUTS).forEach(([marketplace, inputId]) => {
+    const input = document.querySelector(`#${inputId}`);
+    if (!input) return;
+
+    input.addEventListener("input", () => saveCurrentPriceState());
+    input.addEventListener("change", () => {
+      saveCurrentPriceState();
+      trackGA4Event("current_profit_input", { marketplace });
+    });
+  });
+
+  $("#currentPriceInput")?.addEventListener("input", () => saveCurrentPriceState());
+  $("#currentPriceInput")?.addEventListener("change", () => saveCurrentPriceState());
 }
 
 
@@ -2318,6 +2471,7 @@ function initApp() {
 
   applySimpleShareParams();
   initTheme();
+  loadCurrentPriceState();
   bind();
   bindActionButtons();
   bindMobileMenu();
