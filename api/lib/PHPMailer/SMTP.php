@@ -7,113 +7,130 @@ namespace PHPMailer\PHPMailer;
 class SMTP
 {
     /** @var resource|null */
-    private $socket;
+    private $socket = null;
 
-    public function connect(string $host, int $port, int $timeout = 15): void
+    public function connect(string $host, int $port, string $security = ''): void
     {
-        $context = stream_context_create();
-        $this->socket = @stream_socket_client(
-            sprintf('ssl://%s:%d', $host, $port),
-            $errno,
-            $errstr,
-            $timeout,
-            STREAM_CLIENT_CONNECT,
-            $context
-        );
+        $prefix = strtolower($security) === 'ssl' ? 'ssl://' : '';
+        $remote = $prefix . $host . ':' . $port;
 
+        $this->socket = @stream_socket_client($remote, $errno, $errstr, 20);
         if (!is_resource($this->socket)) {
-            throw new Exception(sprintf('Falha ao conectar SMTP: %s (%d)', $errstr ?: 'erro desconhecido', $errno));
+            throw new Exception(sprintf('SMTP connect failed: %s (%d)', $errstr ?: 'unknown', (int) $errno));
         }
 
-        $this->readCode(220);
+        stream_set_timeout($this->socket, 20);
+        $this->expectCode([220]);
     }
 
-    public function hello(string $hostName): void
+    public function hello(string $host): void
     {
-        $this->command('EHLO ' . $hostName, 250);
+        $this->write('EHLO ' . $host);
+        $this->expectCode([250]);
     }
 
-    public function auth(string $username, string $password): void
+    public function startTLS(): void
     {
-        $this->command('AUTH LOGIN', 334);
-        $this->command(base64_encode($username), 334);
-        $this->command(base64_encode($password), 235);
+        $this->write('STARTTLS');
+        $this->expectCode([220]);
+
+        $ok = @stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+        if ($ok !== true) {
+            throw new Exception('SMTP STARTTLS failed');
+        }
     }
 
-    public function mailFrom(string $from): void
+    public function authenticate(string $username, string $password): void
     {
-        $this->command('MAIL FROM:<' . $from . '>', 250);
+        $this->write('AUTH LOGIN');
+        $this->expectCode([334]);
+
+        $this->write(base64_encode($username));
+        $this->expectCode([334]);
+
+        $this->write(base64_encode($password));
+        $this->expectCode([235]);
     }
 
-    public function rcptTo(string $to): void
+    /**
+     * @param array<int, array{email: string, name: string}> $recipients
+     */
+    public function sendMessage(string $from, array $recipients, string $payload): void
     {
-        $this->command('RCPT TO:<' . $to . '>', [250, 251]);
-    }
+        $this->write('MAIL FROM:<' . $from . '>');
+        $this->expectCode([250]);
 
-    public function data(string $data): void
-    {
-        $this->command('DATA', 354);
-        $this->write($this->normalizeData($data) . "\r\n.\r\n");
-        $this->readCode(250);
+        foreach ($recipients as $recipient) {
+            $this->write('RCPT TO:<' . $recipient['email'] . '>');
+            $this->expectCode([250, 251]);
+        }
+
+        $this->write('DATA');
+        $this->expectCode([354]);
+
+        $data = preg_replace('/\r\n|\r|\n/', "\r\n", $payload);
+        $data = preg_replace('/^\./m', '..', (string) $data);
+        $this->write($data . "\r\n.");
+        $this->expectCode([250]);
     }
 
     public function quit(): void
     {
+        if (!is_resource($this->socket)) {
+            return;
+        }
+
+        $this->write('QUIT');
+        $this->close();
+    }
+
+    public function close(): void
+    {
         if (is_resource($this->socket)) {
-            $this->command('QUIT', 221);
             fclose($this->socket);
-            $this->socket = null;
-        }
-    }
-
-    private function normalizeData(string $data): string
-    {
-        $lines = preg_split('/\r\n|\r|\n/', $data) ?: [];
-        foreach ($lines as &$line) {
-            if (str_starts_with($line, '.')) {
-                $line = '.' . $line;
-            }
         }
 
-        return implode("\r\n", $lines);
+        $this->socket = null;
     }
 
-    /** @param int|int[] $expected */
-    private function command(string $command, $expected): void
-    {
-        $this->write($command . "\r\n");
-        $this->readCode($expected);
-    }
-
-    private function write(string $payload): void
+    private function write(string $line): void
     {
         if (!is_resource($this->socket)) {
-            throw new Exception('Conexão SMTP indisponível');
+            throw new Exception('SMTP socket not connected');
         }
 
-        fwrite($this->socket, $payload);
+        fwrite($this->socket, $line . "\r\n");
     }
 
-    /** @param int|int[] $expected */
-    private function readCode($expected): void
+    /** @param array<int, int> $expected */
+    private function expectCode(array $expected): void
+    {
+        $response = $this->readResponse();
+        $code = (int) substr($response, 0, 3);
+
+        if (!in_array($code, $expected, true)) {
+            throw new Exception('SMTP unexpected response: ' . trim($response));
+        }
+    }
+
+    private function readResponse(): string
     {
         if (!is_resource($this->socket)) {
-            throw new Exception('Conexão SMTP indisponível');
+            throw new Exception('SMTP socket not connected');
         }
 
-        $expectedCodes = is_array($expected) ? $expected : [$expected];
         $response = '';
-        do {
-            $line = fgets($this->socket, 515);
-            if ($line === false) {
+        while (($line = fgets($this->socket, 515)) !== false) {
+            $response .= $line;
+            if (strlen($line) < 4 || $line[3] !== '-') {
                 break;
             }
-            $response .= $line;
-        } while (isset($line[3]) && $line[3] === '-');
-
-        $code = (int) substr(trim($response), 0, 3);
-        if (!in_array($code, $expectedCodes, true)) {
-            throw new Exception('Erro SMTP: ' . trim($response));
         }
+
+        if ($response === '') {
+            throw new Exception('SMTP empty response');
+        }
+
+        return $response;
     }
 }

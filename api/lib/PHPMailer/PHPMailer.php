@@ -6,14 +6,15 @@ namespace PHPMailer\PHPMailer;
 
 class PHPMailer
 {
+    public const ENCRYPTION_STARTTLS = 'tls';
     public const ENCRYPTION_SMTPS = 'ssl';
 
-    public bool $SMTPAuth = false;
+    public bool $SMTPAuth = true;
     public string $Host = '';
     public string $Username = '';
     public string $Password = '';
-    public string $SMTPSecure = self::ENCRYPTION_SMTPS;
-    public int $Port = 465;
+    public string $SMTPSecure = '';
+    public int $Port = 25;
     public string $Subject = '';
     public string $Body = '';
 
@@ -21,6 +22,7 @@ class PHPMailer
     private bool $isHtml = false;
     private string $from = '';
     private string $fromName = '';
+
     /** @var array<int, array{email: string, name: string}> */
     private array $to = [];
 
@@ -48,67 +50,75 @@ class PHPMailer
     public function send(): bool
     {
         if (!$this->isSmtp) {
-            throw new Exception('Apenas SMTP é suportado nesta implementação.');
+            throw new Exception('Only SMTP mode is supported');
         }
 
-        if ($this->from === '' || $this->Host === '' || empty($this->to)) {
-            throw new Exception('Configuração de e-mail incompleta.');
+        if ($this->Host === '' || $this->from === '' || empty($this->to)) {
+            throw new Exception('SMTP host, from and recipient are required');
         }
 
         $smtp = new SMTP();
-        $smtp->connect($this->Host, $this->Port);
-        $smtp->hello(gethostname() ?: 'localhost');
 
-        if ($this->SMTPAuth) {
-            $smtp->auth($this->Username, $this->Password);
+        try {
+            $smtp->connect($this->Host, $this->Port, $this->SMTPSecure);
+            $smtp->hello($this->detectClientHost());
+
+            if ($this->SMTPSecure === self::ENCRYPTION_STARTTLS) {
+                $smtp->startTLS();
+                $smtp->hello($this->detectClientHost());
+            }
+
+            if ($this->SMTPAuth) {
+                $smtp->authenticate($this->Username, $this->Password);
+            }
+
+            $smtp->sendMessage($this->from, $this->to, $this->buildMessage());
+            $smtp->quit();
+
+            return true;
+        } catch (\Throwable $exception) {
+            $smtp->close();
+            throw $exception;
         }
+    }
 
-        $smtp->mailFrom($this->from);
-        foreach ($this->to as $recipient) {
-            $smtp->rcptTo($recipient['email']);
-        }
-
-        $smtp->data($this->buildMessage());
-        $smtp->quit();
-
-        return true;
+    private function detectClientHost(): string
+    {
+        $host = gethostname();
+        return is_string($host) && $host !== '' ? $host : 'localhost';
     }
 
     private function buildMessage(): string
     {
-        $boundary = md5((string) microtime(true));
-        $toHeader = implode(', ', array_map(static function (array $recipient): string {
-            return $recipient['name'] !== ''
-                ? sprintf('%s <%s>', $recipient['name'], $recipient['email'])
-                : $recipient['email'];
-        }, $this->to));
+        $toHeader = [];
+        foreach ($this->to as $recipient) {
+            $toHeader[] = $this->formatAddress($recipient['email'], $recipient['name']);
+        }
 
         $headers = [
             'Date: ' . date(DATE_RFC2822),
-            'From: ' . ($this->fromName !== '' ? sprintf('%s <%s>', $this->fromName, $this->from) : $this->from),
-            'To: ' . $toHeader,
-            'Subject: ' . $this->Subject,
+            'From: ' . $this->formatAddress($this->from, $this->fromName),
+            'To: ' . implode(', ', $toHeader),
+            'Subject: ' . $this->encodeHeader($this->Subject),
             'MIME-Version: 1.0',
-            'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
+            'Content-Type: ' . ($this->isHtml ? 'text/html' : 'text/plain') . '; charset=UTF-8',
+            'Content-Transfer-Encoding: 8bit',
         ];
 
-        $textBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $this->Body));
-        $htmlBody = $this->isHtml ? $this->Body : nl2br(htmlspecialchars($this->Body, ENT_QUOTES, 'UTF-8'));
+        return implode("\r\n", $headers) . "\r\n\r\n" . $this->Body;
+    }
 
-        $parts = [
-            '--' . $boundary,
-            'Content-Type: text/plain; charset=UTF-8',
-            'Content-Transfer-Encoding: 8bit',
-            '',
-            $textBody,
-            '--' . $boundary,
-            'Content-Type: text/html; charset=UTF-8',
-            'Content-Transfer-Encoding: 8bit',
-            '',
-            $htmlBody,
-            '--' . $boundary . '--',
-        ];
+    private function formatAddress(string $email, string $name = ''): string
+    {
+        if ($name === '') {
+            return $email;
+        }
 
-        return implode("\r\n", array_merge($headers, [''], $parts));
+        return sprintf('"%s" <%s>', addcslashes($name, '"\\'), $email);
+    }
+
+    private function encodeHeader(string $value): string
+    {
+        return '=?UTF-8?B?' . base64_encode($value) . '?=';
     }
 }
