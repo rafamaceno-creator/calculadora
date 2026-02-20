@@ -625,3 +625,18 @@ body.theme-dark .resultCard .pill{
   html,body{scroll-behavior:auto}
   .pro-mode.pro-attention{animation:none}
 }
+
+.leadCapture{margin-top:14px;border:1px solid var(--stroke);border-radius:14px;background:#fff;padding:14px;box-shadow:var(--shadow-sm)}
+.leadCapture__head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
+.leadCapture__head h3{margin:0;font-size:18px;letter-spacing:-.01em}
+.leadCapture__head p{margin:6px 0 0;color:var(--muted);font-size:13px;max-width:52ch}
+.leadCapture__close{width:30px;height:30px;border:1px solid var(--stroke);border-radius:999px;background:#fff;cursor:pointer;color:#334155}
+.leadCapture__grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.leadCapture__form{display:grid;gap:10px}
+.leadCapture__honeypot{position:absolute;left:-9999px;opacity:0;pointer-events:none}
+.leadCapture__feedback{margin:0;font-size:13px;font-weight:600}
+.leadCapture[data-status="success"] .leadCapture__feedback{color:#047857}
+.leadCapture[data-status="error"] .leadCapture__feedback{color:#b91c1c}
+body.theme-dark .leadCapture,body.theme-dark .leadCapture__close{background:#1e293b;color:#e2e8f0}
+body.theme-dark .leadCapture__head p{color:#94a3b8}
+@media (max-width:768px){.leadCapture__grid{grid-template-columns:1fr}}

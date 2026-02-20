@@ -15,6 +15,31 @@ const SHOPEE_FAIXAS = [
 
 const TIKTOK = { pct: 0.12, fixed: 4.00 };
 
+const DEFAULT_CFG = {};
+const cfg = {
+  ...DEFAULT_CFG,
+  ...(window.cfg || window.CFG || window.CONFIG || window.__APP_CONFIG || {})
+};
+
+if (window.location.hostname !== "localhost" && typeof window.WebSocket === "function") {
+  const NativeWebSocket = window.WebSocket;
+  window.WebSocket = function SafeWebSocket(url, protocols) {
+    const target = String(url || "");
+    if (target.includes("ws://localhost:8081")) {
+      console.info("[dev-ws] Conexão ws://localhost:8081 bloqueada fora de localhost.");
+      return {
+        readyState: 3,
+        close() {},
+        send() {},
+        addEventListener() {},
+        removeEventListener() {}
+      };
+    }
+    return protocols === undefined ? new NativeWebSocket(url) : new NativeWebSocket(url, protocols);
+  };
+  window.WebSocket.prototype = NativeWebSocket.prototype;
+}
+
 
 const INPUT_EVENT_FIELDS = {
   cost: "cost",
@@ -32,6 +57,8 @@ const CURRENT_SAME_PRICE_KEY = "CURRENT_SAME_PRICE";
 const CURRENT_PRICE_GLOBAL_KEY = "CURRENT_PRICE_GLOBAL";
 const CURRENT_PRICE_BY_MKT_KEY = "CURRENT_PRICE_BY_MKT";
 const PRO_MODE_STORAGE_KEY = "PRO_MODE_ENABLED";
+const LEAD_CAPTURE_SESSION_KEY = "lead_capture_dismissed";
+const LEAD_CAPTURE_BLOCK_ID = "leadCaptureBlock";
 
 let PRO_MODE_ENABLED = false;
 
@@ -1230,8 +1257,8 @@ function getCalculationConfig() {
 
 function computeForAllMarketplaces(inputState) {
   const cost = Math.max(0, toNumber(inputState?.cost));
-  const cfg = inputState?.config || getCalculationConfig();
-  const { taxPct, profitType, profitValue, mlClassicPct, mlPremiumPct, adv, weightData, sheinCategory, amazonDbaEnabled, amazonPct, amazonOriginGroup } = cfg;
+  const calcConfig = inputState?.config || getCalculationConfig();
+  const { taxPct, profitType, profitValue, mlClassicPct, mlPremiumPct, adv, weightData, sheinCategory, amazonDbaEnabled, amazonPct, amazonOriginGroup } = calcConfig;
   const weightKg = weightData.kg;
 
   const tiktok = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: TIKTOK.pct, marketplaceFixed: TIKTOK.fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.tiktok });
@@ -1283,7 +1310,7 @@ function computeForAllMarketplaces(inputState) {
     }
   }
 
-  return { cfg, cost, tiktok, shein, sheinPct, sheinFixed, shopeeRaw, shopeeFaixa: currentFaixa, mlClassic, mlPremium, amazonData };
+  return { calcConfig, cost, tiktok, shein, sheinPct, sheinFixed, shopeeRaw, shopeeFaixa: currentFaixa, mlClassic, mlPremium, amazonData };
 }
 
 const Bulk = {
@@ -1825,7 +1852,7 @@ function recalc(options = {}) {
   const basicResults = computeForAllMarketplaces({
     cost,
     config: {
-      ...cfg,
+      ...getCalculationConfig(),
       adv: { pctExtra: 0, fixedBRL: 0, affiliate: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 }, details: { ads: { pct: 0, brl: 0 }, ret: { pct: 0, brl: 0 }, other: { pct: 0, brl: 0 }, costFixed: { pct: 0, brl: 0 }, difal: 0, pis: 0, cofins: 0, aff: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 } } },
       weightData: resolveMarketplaceWeight({ enabled: false, rawValue: "", unit: "kg" })
     }
@@ -1837,6 +1864,10 @@ function recalc(options = {}) {
   renderScaleSimulation(state);
   renderShareActions();
   renderRankingInsights(computedResults);
+  updateLeadCaptureAfterRecalc({
+    shouldDisplay: cost > 0,
+    computedResults
+  });
   updateStickySummary([
     { title: "Shopee", received: shopee.received, profitBRL: shopee.profitBRL, profitPctReal: shopee.profitPctReal },
     { title: "TikTok Shop", received: tiktok.received, profitBRL: tiktok.profitBRL, profitPctReal: tiktok.profitPctReal },
@@ -2077,6 +2108,186 @@ function renderShareActions() {
       <button class="btn btn--ghost" type="button" data-action="copy-link" data-from="results-share-box">Copiar link</button>
     </div>
   `;
+}
+
+
+const leadCaptureState = {
+  dismissed: sessionStorage.getItem(LEAD_CAPTURE_SESSION_KEY) === "1",
+  status: "idle",
+  result: { precoMinimo: 0, precoIdeal: 0 },
+  marketplace: "unknown",
+  utm: { utm_source: "", utm_medium: "", utm_campaign: "", utm_content: "", utm_term: "" }
+};
+
+function getUTMData() {
+  const params = new URLSearchParams(window.location.search || "");
+  return {
+    utm_source: params.get("utm_source") || "",
+    utm_medium: params.get("utm_medium") || "",
+    utm_campaign: params.get("utm_campaign") || "",
+    utm_content: params.get("utm_content") || "",
+    utm_term: params.get("utm_term") || ""
+  };
+}
+
+function isValidLeadEmail(email) {
+  const normalized = String(email || "").trim();
+  if (!normalized || !normalized.includes("@") || !normalized.includes(".")) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(normalized);
+}
+
+function setLeadCaptureStatus(status, message = "") {
+  leadCaptureState.status = status;
+  const block = document.querySelector(`#${LEAD_CAPTURE_BLOCK_ID}`);
+  if (!block) return;
+
+  const submitBtn = block.querySelector('[data-action="submit-lead"]');
+  const feedback = block.querySelector('.leadCapture__feedback');
+
+  block.setAttribute("data-status", status);
+  if (submitBtn) {
+    submitBtn.disabled = status === "loading" || status === "success";
+    submitBtn.classList.toggle("is-loading", status === "loading");
+    submitBtn.textContent = status === "loading" ? "Enviando..." : "Receber resumo";
+  }
+
+  if (feedback) {
+    feedback.textContent = message;
+    feedback.classList.toggle("is-hidden", !message);
+  }
+}
+
+async function submitLeadCaptureForm(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const nameInput = form.querySelector('input[name="nome"]');
+  const emailInput = form.querySelector('input[name="email"]');
+  const companyInput = form.querySelector('input[name="company"]');
+
+  const nome = String(nameInput?.value || "").trim().slice(0, 120);
+  const email = String(emailInput?.value || "").trim();
+  const company = String(companyInput?.value || "").trim();
+
+  if (!isValidLeadEmail(email)) {
+    setLeadCaptureStatus("error", "Informe um email válido para receber o resumo.");
+    emailInput?.focus();
+    return;
+  }
+
+  const payload = {
+    nome,
+    email,
+    company,
+    marketplace: leadCaptureState.marketplace || "unknown",
+    resultado: {
+      precoMinimo: leadCaptureState.result.precoMinimo || 0,
+      precoIdeal: leadCaptureState.result.precoIdeal || 0
+    },
+    utm: { ...leadCaptureState.utm },
+    page_url: window.location.href,
+    user_agent: navigator.userAgent
+  };
+
+  try {
+    setLeadCaptureStatus("loading");
+    const response = await fetch("/api/lead.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json().catch(() => ({}));
+    if (data && data.success === false) {
+      throw new Error(data.message || "lead_not_saved");
+    }
+
+    setLeadCaptureStatus("success", "Pronto! Resumo registrado. Verifique seu email em instantes.");
+
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "generate_lead", {
+        method: "email_capture",
+        marketplace: leadCaptureState.marketplace || "unknown"
+      });
+    }
+  } catch (error) {
+    console.error("[lead-capture] erro ao enviar lead", error);
+    setLeadCaptureStatus("error", "Não foi possível registrar agora. Tente novamente em instantes.");
+  }
+}
+
+function dismissLeadCapture() {
+  const block = document.querySelector(`#${LEAD_CAPTURE_BLOCK_ID}`);
+  if (block) block.classList.add("is-hidden");
+  leadCaptureState.dismissed = true;
+  sessionStorage.setItem(LEAD_CAPTURE_SESSION_KEY, "1");
+}
+
+function ensureLeadCaptureBlock() {
+  const resultsEl = document.querySelector("#results");
+  if (!resultsEl) return null;
+
+  let block = document.querySelector(`#${LEAD_CAPTURE_BLOCK_ID}`);
+  if (!block) {
+    block = document.createElement("section");
+    block.id = LEAD_CAPTURE_BLOCK_ID;
+    block.className = "leadCapture is-hidden";
+    block.innerHTML = `
+      <div class="leadCapture__head">
+        <div>
+          <h3>Quer salvar esse cálculo?</h3>
+          <p>Receba um resumo com custos, taxas e preço ideal no seu email. 100% gratuito.</p>
+        </div>
+        <button class="leadCapture__close" type="button" aria-label="Fechar captura" data-action="dismiss-lead">✕</button>
+      </div>
+      <form class="leadCapture__form" novalidate>
+        <div class="leadCapture__grid">
+          <input type="text" name="nome" maxlength="120" placeholder="Nome (opcional)" autocomplete="name" />
+          <input type="email" name="email" required placeholder="Seu melhor email" autocomplete="email" />
+        </div>
+        <input class="leadCapture__honeypot" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <button class="btn btn--primary" type="submit" data-action="submit-lead">Receber resumo</button>
+        <p class="leadCapture__feedback is-hidden" aria-live="polite"></p>
+      </form>
+    `;
+    resultsEl.insertAdjacentElement("afterend", block);
+
+    block.querySelector("form")?.addEventListener("submit", submitLeadCaptureForm);
+    block.querySelector('[data-action="dismiss-lead"]')?.addEventListener("click", dismissLeadCapture);
+  }
+
+  return block;
+}
+
+function updateLeadCaptureAfterRecalc({ shouldDisplay = false, computedResults = [] } = {}) {
+  leadCaptureState.utm = getUTMData();
+
+  const sortedByPrice = [...computedResults]
+    .filter((item) => Number.isFinite(item?.price))
+    .sort((a, b) => (a.price || 0) - (b.price || 0));
+
+  const sortedByProfit = [...computedResults]
+    .filter((item) => Number.isFinite(item?.profitBRL))
+    .sort((a, b) => (b.profitBRL || 0) - (a.profitBRL || 0));
+
+  leadCaptureState.result.precoMinimo = sortedByPrice[0]?.price || 0;
+  leadCaptureState.result.precoIdeal = sortedByProfit[0]?.price || 0;
+  leadCaptureState.marketplace = sortedByProfit[0]?.key || "unknown";
+
+  const block = ensureLeadCaptureBlock();
+  if (!block) return;
+
+  if (leadCaptureState.dismissed || !shouldDisplay) {
+    block.classList.add("is-hidden");
+    return;
+  }
+
+  if (leadCaptureState.status !== "success") {
+    setLeadCaptureStatus("idle");
+  }
+
+  block.classList.remove("is-hidden");
 }
 
 /* ===== Bindings ===== */
