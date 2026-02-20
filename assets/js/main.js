@@ -1286,140 +1286,6 @@ function computeForAllMarketplaces(inputState) {
   return { cfg, cost, tiktok, shein, sheinPct, sheinFixed, shopeeRaw, shopeeFaixa: currentFaixa, mlClassic, mlPremium, amazonData };
 }
 
-const Tour = {
-  steps: [
-    { selector: "#calcName", title: "Nome do cálculo", body: "Dê um nome para identificar este produto e reutilizar depois.", placement: "bottom" },
-    { selector: "#cost", title: "Custo total", body: "Informe o custo real do produto com os custos fixos que você já considera.", placement: "bottom" },
-    { selector: "#tax", title: "Imposto + lucro", body: "Defina imposto e meta de lucro para obter o preço ideal com margem real.", placement: "bottom" },
-    { selector: "#proModeToggle", title: "Modo Profissional", body: "Ative variáveis avançadas quando quiser uma simulação mais detalhada.", placement: "bottom" },
-    { selector: "#results", title: "Resultados", body: "Aqui você vê o preço ideal, você recebe e o detalhamento por marketplace.", placement: "left" },
-    { selector: "#pdfButtonContainer", title: "Exportar e compartilhar", body: "Gere relatório em PDF e compartilhe sua simulação.", placement: "left" }
-  ],
-  index: 0,
-  source: "button",
-  active: false,
-  overlay: null,
-  popover: null,
-  onOverlayClick: null,
-  onKeydown: null,
-  start(source = "button") {
-    if (this.active) this.destroyTour();
-    this.source = source;
-    this.index = 0;
-    this.active = true;
-    this.ensureDOM();
-    if (!this.overlay) return;
-    this.overlay.hidden = false;
-    document.body.classList.add("tour-active");
-    trackGA4Event("tour_start", { source });
-    this.render();
-  },
-  ensureDOM() {
-    if (this.overlay) return;
-    const overlay = document.createElement("div");
-    overlay.className = "tourOverlay tour-overlay";
-    overlay.hidden = true;
-    overlay.innerHTML = `<div class="tourPopover tour-popover" role="dialog" aria-modal="true" aria-live="polite"><button type="button" class="tour-close" data-tour="close" aria-label="Fechar tour">×</button><h3 class="tourTitle"></h3><p class="tourBody"></p><div class="tourActions"><button type="button" class="btn btn--ghost" data-tour="prev">Voltar</button><button type="button" class="btn btn--ghost" data-tour="skip">Pular</button><button type="button" class="btn btn--primary" data-tour="next">Próximo</button></div></div>`;
-    document.body.appendChild(overlay);
-    this.overlay = overlay;
-    this.popover = overlay.querySelector(".tourPopover");
-    this.onOverlayClick = (event) => {
-      if (event.target === overlay) this.skipTour("overlay");
-      const action = event.target.closest("[data-tour]")?.getAttribute("data-tour");
-      if (!action) return;
-      if (action === "next") this.next();
-      if (action === "prev") this.prev();
-      if (action === "skip") this.skipTour("skip");
-      if (action === "close") this.skipTour("close_x");
-    };
-    this.onKeydown = (event) => {
-      if (event.key === "Escape" && this.active) this.skipTour("esc");
-    };
-    overlay.addEventListener("click", this.onOverlayClick);
-    document.addEventListener("keydown", this.onKeydown);
-  },
-  render() {
-    const step = this.steps[this.index];
-    if (!step) return this.complete();
-    const target = document.querySelector(step.selector);
-    if (!target) return this.next();
-
-    document.querySelectorAll(".tourTarget, .tour-highlight").forEach((el) => {
-      el.classList.remove("tourTarget", "tour-highlight");
-    });
-    target.classList.add("tourTarget", "tour-highlight");
-    this.popover.querySelector(".tourTitle").textContent = step.title;
-    this.popover.querySelector(".tourBody").textContent = step.body;
-
-    const nextBtn = this.popover.querySelector('[data-tour="next"]');
-    nextBtn.textContent = this.index === this.steps.length - 1 ? "Concluir" : "Próximo";
-    this.popover.querySelector('[data-tour="prev"]').disabled = this.index === 0;
-
-    if (window.matchMedia("(max-width: 768px)").matches) {
-      this.popover.style.left = "10px";
-      this.popover.style.right = "10px";
-      this.popover.style.top = "auto";
-      this.popover.style.bottom = "10px";
-    } else {
-      const rect = target.getBoundingClientRect();
-      const top = Math.min(window.innerHeight - 240, Math.max(12, rect.bottom + 12));
-      const left = Math.min(window.innerWidth - 360, Math.max(12, rect.left));
-      this.popover.style.top = `${top}px`;
-      this.popover.style.left = `${left}px`;
-      this.popover.style.right = "auto";
-      this.popover.style.bottom = "auto";
-    }
-
-    scrollToWithTopbarOffset(target);
-    trackGA4Event("tour_step", { step_index: this.index + 1, step_title: step.title });
-  },
-  next() {
-    if (this.index >= this.steps.length - 1) return this.complete();
-    this.index += 1;
-    this.render();
-  },
-  prev() {
-    if (this.index <= 0) return;
-    this.index -= 1;
-    this.render();
-  },
-  destroyTour() {
-    this.active = false;
-    if (this.overlay && this.onOverlayClick) {
-      this.overlay.removeEventListener("click", this.onOverlayClick);
-    }
-    if (this.onKeydown) {
-      document.removeEventListener("keydown", this.onKeydown);
-    }
-    this.onOverlayClick = null;
-    this.onKeydown = null;
-
-    if (this.overlay) {
-      this.overlay.remove();
-      this.overlay = null;
-      this.popover = null;
-    }
-
-    document.body.classList.remove("tour-active");
-    document.body.style.overflow = "";
-    document.documentElement.style.overflow = "";
-    document.querySelectorAll(".tourTarget, .tour-highlight").forEach((el) => {
-      el.classList.remove("tourTarget", "tour-highlight");
-    });
-  },
-  skipTour(source = "skip") {
-    this.destroyTour();
-    localStorage.setItem("TOUR_DONE", "1");
-    localStorage.setItem("TOUR_SKIPPED", "1");
-    trackGA4Event("tour_skip", { source });
-  },
-  complete() {
-    this.destroyTour();
-    localStorage.setItem("TOUR_DONE", "1");
-    trackGA4Event("tour_complete");
-  }
-};
-
 const Bulk = {
   rows: [],
   results: [],
@@ -1514,12 +1380,7 @@ const Bulk = {
 };
 
 
-function bindTourAndBulk() {
-  document.querySelector("#startTour")?.addEventListener("click", () => Tour.start("button"));
-  if (localStorage.getItem("TOUR_DONE") !== "1") {
-    window.setTimeout(() => Tour.start("auto"), 900);
-  }
-
+function bindBulk() {
   Bulk.init();
 
   document.querySelector("#bulkAddRow")?.addEventListener("click", () => Bulk.addRow());
@@ -2710,7 +2571,7 @@ function initApp() {
   bindStickySummaryVisibility();
   bindSmoothScroll();
   bindSegmentMenuActiveState();
-  bindTourAndBulk();
+  bindBulk();
   renderSavedSimulations();
   track("session_ready", { device: getDeviceType() });
   recalc({ source: "auto" });
