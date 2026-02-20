@@ -1,0 +1,9 @@
+# Config local (segredos)
+api/config.local.php
+
+# Logs
+api/email_errors.log
+api/email_success.log
+
+# Sistema
+.DS_Store
