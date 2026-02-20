@@ -656,6 +656,46 @@ function calculateMarketplaceAtPrice({
   };
 }
 
+function breakdownAtPrice({
+  price,
+  cost,
+  taxPct,
+  marketplacePct,
+  marketplaceFixed,
+  percentCosts,
+  fixedCosts,
+  applyAntecipa = false
+}) {
+  const safePrice = Math.max(0, toNumber(price));
+  const safeCost = Math.max(0, toNumber(cost));
+  const tax = Math.max(0, toNumber(taxPct)) / 100;
+
+  const commissionPct = Math.max(0, marketplacePct || 0);
+  const commissionFixed = Math.max(0, marketplaceFixed || 0);
+  const commissionValue = safePrice * commissionPct + commissionFixed;
+  const taxesValue = safePrice * tax;
+  const otherFeesValue = safePrice * (percentCosts || 0) + (fixedCosts || 0);
+
+  // Mantém a base atual da taxa de antecipa: líquido do marketplace sem comissões.
+  const netWithoutCommissionsBase = safePrice - commissionValue;
+  const antecipaFee = applyAntecipa ? Math.max(0, netWithoutCommissionsBase) * 0.025 : 0;
+
+  const profitValue =
+    safePrice - commissionValue - taxesValue - otherFeesValue - safeCost - antecipaFee;
+
+  return {
+    price: safePrice,
+    commissionValue,
+    commissionPct,
+    commissionFixed,
+    taxesValue,
+    otherFeesValue,
+    netWithoutCommissionsBase,
+    antecipaFee,
+    profitValue
+  };
+}
+
 function compareCardHTML(title, data) {
   const status = marginStatus(data.margem);
   return `
@@ -1626,14 +1666,64 @@ function recalc(options = {}) {
   const shFee = shopeeData.faixa;
   const shopeeAntecipa = document.querySelector("#shopeeAntecipa")?.checked || false;
 
-  const custoAntecipa = shopeeAntecipa ? Math.max(0, shopeeRaw.received) * 0.025 : 0;
-  const liquidoFinalShopee = shopeeRaw.received - custoAntecipa;
-  const shopee = {
-    ...shopeeRaw,
-    received: liquidoFinalShopee,
-    profitBRL: shopeeRaw.profitBRL - custoAntecipa,
-    profitPctReal: shopeeRaw.price > 0 ? (shopeeRaw.profitBRL - custoAntecipa) / shopeeRaw.price : 0
-  };
+  const targetProfitBRL = Math.max(0, shopeeRaw.profitBRL);
+  let shopee = { ...shopeeRaw };
+  let custoAntecipa = 0;
+  let liquidoFinalShopee = shopeeRaw.received;
+
+  if (shopeeAntecipa) {
+    const shopeeBreakdownAtPrice = (price) => breakdownAtPrice({
+      price,
+      cost,
+      taxPct,
+      marketplacePct: shFee.pct,
+      marketplaceFixed: shFee.fixed,
+      percentCosts: adv.pctExtra + adv.affiliate.shopee,
+      fixedCosts: adv.fixedBRL,
+      applyAntecipa: true
+    });
+
+    let low = Math.max(0, cost + adv.fixedBRL + shFee.fixed);
+    let high = Math.max(low + 1, shopeeRaw.price || 0);
+    let highBreakdown = shopeeBreakdownAtPrice(high);
+    let expandGuard = 0;
+
+    while (highBreakdown.profitValue < targetProfitBRL && expandGuard < 25) {
+      high *= 2;
+      highBreakdown = shopeeBreakdownAtPrice(high);
+      expandGuard += 1;
+    }
+
+    for (let i = 0; i < 40; i += 1) {
+      const mid = (low + high) / 2;
+      const breakdown = shopeeBreakdownAtPrice(mid);
+      if (breakdown.profitValue < targetProfitBRL) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+
+    const adjustedPrice = Math.max(0, Math.round(high * 100) / 100);
+    const adjustedBreakdown = shopeeBreakdownAtPrice(adjustedPrice);
+
+    custoAntecipa = adjustedBreakdown.antecipaFee;
+    liquidoFinalShopee = adjustedPrice - adjustedBreakdown.commissionValue - adjustedBreakdown.antecipaFee;
+
+    shopee = {
+      ...shopeeRaw,
+      price: adjustedPrice,
+      commissionValue: adjustedBreakdown.commissionValue,
+      received: liquidoFinalShopee,
+      profitBRL: adjustedBreakdown.profitValue,
+      profitPctReal: adjustedPrice > 0 ? adjustedBreakdown.profitValue / adjustedPrice : 0
+    };
+
+    trackGA4Event("antecipa_price_adjusted", {
+      marketplace: "shopee",
+      delta_price: Math.max(0, adjustedPrice - shopeeRaw.price)
+    });
+  }
 
   /* ===== MERCADO LIVRE ===== */
   function solveML(mlPct) {
@@ -2318,7 +2408,10 @@ function bind() {
 
   document.querySelector("#results")?.addEventListener("change", (event) => {
     const target = event.target;
-    if (target && target.id === "shopeeAntecipa") recalc({ source: "auto" });
+    if (target && target.id === "shopeeAntecipa") {
+      trackGA4Event("antecipa_toggle", { enabled: !!target.checked });
+      recalc({ source: "auto" });
+    }
   });
 
   document.querySelector("#results")?.addEventListener("click", (event) => {
