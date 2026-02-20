@@ -868,56 +868,65 @@ function resultCardHTML(
     : "";
 
   const accordionId = `incidence-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  const cardId = `market-card-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return `
-  <div class="card marketplaceCard resultCard ${options.marketplaceClass || ""}">
-    <div class="cardHeader">
-      <div class="cardTitleWrap">
-        <span class="cardIcon" aria-hidden="true">${options.marketplaceIcon || "🛒"}</span>
-        <div class="cardTitle">${title}</div>
+  <details class="card marketplaceCard resultCard resultAccordion ${options.marketplaceClass || ""}" id="${cardId}">
+    <summary class="resultAccordion__summary">
+      <div class="cardHeader resultAccordion__header">
+        <div class="cardTitleWrap">
+          <span class="cardIcon" aria-hidden="true">${options.marketplaceIcon || "🛒"}</span>
+          <div class="cardTitle">${title}</div>
+        </div>
+        <div class="pill">${pill}</div>
       </div>
-      <div class="pill">${pill}</div>
-    </div>
 
-    ${shopeeToggleHTML}
+      <div class="heroBox resultAccordion__heroBox">
+        <div class="heroLabel">PREÇO IDEAL</div>
+        <div class="heroValue">${price}</div>
+      </div>
 
-    <div class="heroBox">
-      <div class="heroLabel">PREÇO IDEAL</div>
-      <div class="heroValue">${price}</div>
-    </div>
+      <div class="resultAccordion__quickStats" aria-hidden="true">
+        <div>Você recebe <strong>${received}</strong></div>
+        <div>Incidências <strong>${incidencesPct}</strong></div>
+      </div>
+    </summary>
 
-    <!-- RESUMO (sem repetir embaixo) -->
-    <div class="resultGrid">
-      <div class="k">VOCÊ RECEBE</div><div class="v">${received}</div>
-      <div class="k">LUCRO</div><div class="v">${profitLine}</div>
-      <div class="k">TOTAL DE INCIDÊNCIAS</div><div class="v">
-        <button class="incidenceToggle" type="button" aria-expanded="false" aria-controls="${accordionId}">
-          <span>Total de incidências (${incidencesPct})</span>
-          <span class="incidenceToggle__icon">▾</span>
+    <div class="resultAccordion__body">
+      ${shopeeToggleHTML}
+
+      <div class="resultGrid resultGrid--support">
+        <div class="k">VOCÊ RECEBE</div><div class="v">${received}</div>
+        <div class="k">LUCRO</div><div class="v">${profitLine}</div>
+        <div class="k">TOTAL DE INCIDÊNCIAS</div><div class="v">
+          <button class="incidenceToggle" type="button" aria-expanded="false" aria-controls="${accordionId}">
+            <span>Total de incidências (${incidencesPct})</span>
+            <span class="incidenceToggle__icon">▾</span>
+          </button>
+        </div>
+        ${extraHTML}
+        ${shopeeInfoHTML}
+      </div>
+
+      <div class="comp">
+        <button class="comp-bar" type="button" role="img" aria-label="${compositionLabel}" data-composition-tip="${compositionTip}">
+          <span class="seg seg-cost" style="width:${composition.pctCost.toFixed(2)}%"></span>
+          <span class="seg seg-fees" style="width:${composition.pctFees.toFixed(2)}%"></span>
+          <span class="seg seg-tax" style="width:${composition.pctTax.toFixed(2)}%"></span>
+          <span class="seg seg-profit" style="width:${composition.pctProfit.toFixed(2)}%"></span>
         </button>
+        <div class="comp-legend">Custo • Taxas • Impostos • Lucro</div>
+        <div class="comp-tip" aria-live="polite" hidden></div>
       </div>
-      ${extraHTML}
-      ${shopeeInfoHTML}
-    </div>
 
-    <div class="comp">
-      <button class="comp-bar" type="button" role="img" aria-label="${compositionLabel}" data-composition-tip="${compositionTip}">
-        <span class="seg seg-cost" style="width:${composition.pctCost.toFixed(2)}%"></span>
-        <span class="seg seg-fees" style="width:${composition.pctFees.toFixed(2)}%"></span>
-        <span class="seg seg-tax" style="width:${composition.pctTax.toFixed(2)}%"></span>
-        <span class="seg seg-profit" style="width:${composition.pctProfit.toFixed(2)}%"></span>
-      </button>
-      <div class="comp-legend">Custo • Taxas • Impostos • Lucro</div>
-      <div class="comp-tip" aria-live="polite" hidden></div>
-    </div>
-
-    <div id="${accordionId}" class="incidencePanel" aria-hidden="true">
-      <div class="resultGrid resultGrid--details">
-        ${itemsHTML}
+      <div id="${accordionId}" class="incidencePanel" aria-hidden="true">
+        <div class="resultGrid resultGrid--details">
+          ${itemsHTML}
+        </div>
       </div>
-    </div>
 
-    ${assumedWeightNoteHTML}
-  </div>
+      ${assumedWeightNoteHTML}
+    </div>
+  </details>
   `;
 }
 
@@ -2484,6 +2493,14 @@ function bind() {
       trackGA4Event("antecipa_toggle", { enabled: !!target.checked });
       recalc({ source: "auto" });
     }
+  });
+
+
+  document.querySelector("#results")?.addEventListener("toggle", (event) => {
+    const details = event.target;
+    if (!(details instanceof HTMLDetailsElement) || !details.classList.contains("resultAccordion")) return;
+    const marketplace = details.querySelector(".cardTitle")?.textContent?.trim() || "unknown";
+    trackGA4Event(details.open ? "open_marketplace_result" : "close_marketplace_result", { section: "results", marketplace });
   });
 
   document.querySelector("#results")?.addEventListener("click", (event) => {
