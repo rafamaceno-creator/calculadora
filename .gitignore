@@ -1,10 +1,4 @@
 api/config.local.php
-# Secrets (never commit)
-api/config.local.php
-
-# Logs
 api/email_errors.log
 api/email_success.log
-
-# OS
 .DS_Store
