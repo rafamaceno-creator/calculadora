@@ -2495,7 +2495,6 @@ function bindSegmentMenuActiveState() {
 
 
 function bindSmoothScroll() {
-  const allowedSections = new Set(["#sec-precificacao", "#sec-comparar", "#sec-lucro", "#sec-escala", "#sec-bulk"]);
   const sectionMap = {
     "#sec-precificacao": "precificacao",
     "#sec-comparar": "comparar_preco",
@@ -2505,27 +2504,39 @@ function bindSmoothScroll() {
   };
 
   const resolveAndScroll = (selector, { updateHash = true } = {}) => {
-    if (!allowedSections.has(selector)) return;
-    const target = document.querySelector(selector);
-    if (!target) return;
+    if (!selector || !selector.startsWith("#")) return false;
+
+    let target;
+    try {
+      target = document.querySelector(selector);
+    } catch (error) {
+      logActionError(`Seletor inválido para scroll: ${selector}`, error);
+      return false;
+    }
+
+    if (!target) return false;
 
     scrollToWithTopbarOffset(target);
     if (updateHash && window.location.hash !== selector && typeof window.history?.pushState === "function") {
       window.history.pushState(null, "", selector);
     }
-    setActiveSegmentButton(selector);
+
+    if (selector in sectionMap) {
+      setActiveSegmentButton(selector);
+    }
+
+    return true;
   };
 
-  document.querySelectorAll('a[href^="#sec-"], [data-target^="#sec-"], [data-scroll^="#sec-"]').forEach((trigger) => {
+  document.querySelectorAll('a[href^="#"], [data-target^="#"], [data-scroll^="#"]').forEach((trigger) => {
     trigger.addEventListener("click", (event) => {
       const selector = getTriggerSelector(trigger);
-      if (!allowedSections.has(selector)) return;
+      if (!selector || !selector.startsWith("#")) return;
 
-      const target = document.querySelector(selector);
-      if (!target) return;
+      const didScroll = resolveAndScroll(selector, { updateHash: true });
+      if (!didScroll) return;
 
       event.preventDefault();
-      resolveAndScroll(selector, { updateHash: true });
 
       const section = sectionMap[selector];
       if (section && trigger.classList.contains("segmentMenu__btn")) {
@@ -2534,14 +2545,11 @@ function bindSmoothScroll() {
     });
   });
 
-  if (allowedSections.has(window.location.hash)) {
-    window.requestAnimationFrame(() => resolveAndScroll(window.location.hash, { updateHash: false }));
-  } else {
+  if (!resolveAndScroll(window.location.hash, { updateHash: false })) {
     setActiveSegmentButton("#sec-precificacao");
   }
 
   window.addEventListener("popstate", () => {
-    if (!allowedSections.has(window.location.hash)) return;
     resolveAndScroll(window.location.hash, { updateHash: false });
   });
 }
