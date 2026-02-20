@@ -107,6 +107,7 @@ input:hover,select:hover{border-color:#b8c5d7}
 .formAccordion summary::after{content:"▾";font-size:14px;color:var(--muted);transition:transform .2s ease}
 .formAccordion[open] summary::after{transform:rotate(180deg)}
 .formAccordion > :not(summary){padding:0 16px 16px}
+.formAccordion__intro{margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.4}
 
 .pro-mode{margin-top:18px;padding:20px;border:1px solid #d9d5ff;border-radius:18px;background:linear-gradient(180deg,#ffffff,#f7f5ff);box-shadow:0 10px 30px rgba(76,29,149,.08)}
 .pro-mode__header h3{margin:0;font-size:22px;letter-spacing:-.01em}
@@ -137,6 +138,20 @@ input:hover,select:hover{border-color:#b8c5d7}
 .advItem--wide{grid-column:1/-1}
 .affGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
 
+.resultAccordion{overflow:hidden;padding:0}
+.resultAccordion summary{list-style:none;cursor:pointer;padding:14px 16px}
+.resultAccordion summary::-webkit-details-marker{display:none}
+.resultAccordion__summary{display:grid;gap:10px}
+.resultAccordion__header{margin-bottom:0}
+.resultAccordion__quickStats{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:12px}
+.resultAccordion__quickStats strong{display:block;color:var(--text);font-size:14px;font-weight:700}
+.resultAccordion__heroBox{margin-bottom:0}
+.resultAccordion__body{padding:0 16px 16px;border-top:1px solid var(--stroke)}
+.resultAccordion .heroLabel{font-size:14px;letter-spacing:.1em;font-weight:800}
+.resultAccordion .heroValue{font-size:clamp(36px,4.6vw,50px);font-weight:900}
+.resultAccordion .resultGrid--support .k{font-size:10px;font-weight:600;opacity:.85}
+.resultAccordion .resultGrid--support .v{font-size:13px;font-weight:600}
+.resultAccordion[open] .resultAccordion__summary{padding-bottom:2px}
 .resultList,.marketCompareList{display:flex;flex-direction:column;gap:12px}
 .resultList .card,
 .marketCompareList .card{
@@ -355,6 +370,9 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
   .cardHeader .pill{margin-top:2px}
   .resultGrid .k{font-size:11px}
   .resultGrid .v{font-size:13px}
+  .resultAccordion summary{padding:12px}
+  .resultAccordion__body{padding:0 12px 12px}
+  .resultAccordion__quickStats{display:grid;grid-template-columns:1fr 1fr}
   .stickySummary{left:10px;right:10px;bottom:10px;width:auto;max-height:none;overflow:visible;padding:12px 12px calc(12px + env(safe-area-inset-bottom));border-radius:16px 16px 12px 12px}
   .stickySummary__content{max-height:none;overflow:visible;padding-right:0}
   .stickyOpen{right:10px;bottom:14px}
