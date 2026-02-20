@@ -871,23 +871,24 @@ function resultCardHTML(
   const cardId = `market-card-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return `
   <details class="card marketplaceCard resultCard resultAccordion ${options.marketplaceClass || ""}" id="${cardId}">
-    <summary class="resultAccordion__summary">
-      <div class="cardHeader resultAccordion__header">
-        <div class="cardTitleWrap">
-          <span class="cardIcon" aria-hidden="true">${options.marketplaceIcon || "🛒"}</span>
-          <div class="cardTitle">${title}</div>
+    <summary class="resultAccordion__summary" aria-label="${title}: vender por ${price}">
+      <div class="resultAccordion__summaryMain">
+        <div class="resultAccordion__left">
+          <div class="cardTitleWrap">
+            <span class="cardIcon" aria-hidden="true">${options.marketplaceIcon || "🛒"}</span>
+            <div>
+              <div class="cardTitle">${title}</div>
+              <div class="pill pill--subtle">${pill}</div>
+            </div>
+          </div>
         </div>
-        <div class="pill">${pill}</div>
-      </div>
 
-      <div class="heroBox resultAccordion__heroBox">
-        <div class="heroLabel">PREÇO IDEAL</div>
-        <div class="heroValue">${price}</div>
-      </div>
+        <div class="resultAccordion__right">
+          <div class="resultAccordion__priceLabel">VENDER POR:</div>
+          <div class="resultAccordion__priceValue">${price}</div>
+        </div>
 
-      <div class="resultAccordion__quickStats" aria-hidden="true">
-        <div>Você recebe <strong>${received}</strong></div>
-        <div>Incidências <strong>${incidencesPct}</strong></div>
+        <span class="resultAccordion__chevron" aria-hidden="true">▾</span>
       </div>
     </summary>
 
@@ -1872,7 +1873,6 @@ function recalc(options = {}) {
   renderCurrentPriceAnalysis(state);
   renderScaleSimulation(state);
   renderShareActions();
-  renderRankingInsights(computedResults);
   updateLeadCaptureAfterRecalc({
     shouldDisplay: cost > 0,
     computedResults
