@@ -138,20 +138,23 @@ input:hover,select:hover{border-color:#b8c5d7}
 .advItem--wide{grid-column:1/-1}
 .affGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
 
-.resultAccordion{overflow:hidden;padding:0}
+
+.resultAccordion{overflow:hidden;padding:0;border:1px solid var(--stroke);border-radius:14px;background:#fff;box-shadow:var(--shadow-sm)}
 .resultAccordion summary{list-style:none;cursor:pointer;padding:14px 16px}
 .resultAccordion summary::-webkit-details-marker{display:none}
-.resultAccordion__summary{display:grid;gap:10px}
-.resultAccordion__header{margin-bottom:0}
-.resultAccordion__quickStats{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:12px}
-.resultAccordion__quickStats strong{display:block;color:var(--text);font-size:14px;font-weight:700}
-.resultAccordion__heroBox{margin-bottom:0}
-.resultAccordion__body{padding:0 16px 16px;border-top:1px solid var(--stroke)}
-.resultAccordion .heroLabel{font-size:14px;letter-spacing:.1em;font-weight:800}
-.resultAccordion .heroValue{font-size:clamp(36px,4.6vw,50px);font-weight:900}
-.resultAccordion .resultGrid--support .k{font-size:10px;font-weight:600;opacity:.85}
-.resultAccordion .resultGrid--support .v{font-size:13px;font-weight:600}
-.resultAccordion[open] .resultAccordion__summary{padding-bottom:2px}
+.resultAccordion__summaryMain{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.resultAccordion__left{min-width:0;flex:1}
+.resultAccordion__right{text-align:right;min-width:130px}
+.resultAccordion__priceLabel{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.resultAccordion__priceValue{font-size:clamp(30px,3.2vw,38px);font-weight:900;line-height:1.05;color:var(--accent)}
+.resultAccordion__chevron{font-size:16px;color:var(--muted);transition:transform .25s ease}
+.resultAccordion[open] .resultAccordion__chevron{transform:rotate(180deg)}
+.resultAccordion .pill--subtle{display:inline-flex;margin-top:4px;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--stroke);background:#f8fafc;color:#475569}
+.resultAccordion__body{max-height:0;overflow:hidden;padding:0 16px;opacity:0;border-top:0;transition:max-height .35s ease,opacity .25s ease,padding .2s ease,border-color .2s ease}
+.resultAccordion[open] .resultAccordion__body{max-height:900px;opacity:1;padding:0 16px 16px;border-top:1px solid var(--stroke)}
+.resultAccordion:hover{background:#f8fafc}
+.resultAccordion[open]{background:#fff}
+
 .resultList,.marketCompareList{display:flex;flex-direction:column;gap:12px}
 .resultList .card,
 .marketCompareList .card{
@@ -371,8 +374,11 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
   .resultGrid .k{font-size:11px}
   .resultGrid .v{font-size:13px}
   .resultAccordion summary{padding:12px}
-  .resultAccordion__body{padding:0 12px 12px}
-  .resultAccordion__quickStats{display:grid;grid-template-columns:1fr 1fr}
+  .resultAccordion__body{padding:0 12px}
+  .resultAccordion[open] .resultAccordion__body{padding:0 12px 12px}
+  .resultAccordion__summaryMain{align-items:flex-start}
+  .resultAccordion__right{min-width:0}
+  .resultAccordion__priceValue{font-size:clamp(26px,9vw,32px)}
   .stickySummary{left:10px;right:10px;bottom:10px;width:auto;max-height:none;overflow:visible;padding:12px 12px calc(12px + env(safe-area-inset-bottom));border-radius:16px 16px 12px 12px}
   .stickySummary__content{max-height:none;overflow:visible;padding-right:0}
   .stickyOpen{right:10px;bottom:14px}
