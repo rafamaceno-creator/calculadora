@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Calculadora de Precificação Shopee, Mercado Livre e Amazon | Rafa Maceno</title>
   <meta name="description" content="Calcule comissão, taxas e preço ideal para vender na Shopee, Mercado Livre e Amazon sem prejuízo. Ferramenta gratuita para vendedores de marketplace." />
   <meta property="og:title" content="Calculadora de Precificação Shopee, Mercado Livre e Amazon">
@@ -15,9 +18,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260220-1" data-asset="true" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260220-2" data-asset="true" />
   <script>
-    const APP_VERSION = "20260220-1";
+    const APP_VERSION = "20260220-2";
 
     window.versionAssetPath = function versionAssetPath(path) {
       const url = new URL(path, window.location.href);
@@ -831,7 +834,7 @@
       <div class="footer__inner">
         <div>
           <strong>Precificação Marketplaces</strong><br />
-          <small>© <span id="year"></span> • Feito para vendedores de marketplace</small>
+          <small>© <span id="year"></span> • Feito para vendedores de marketplace • Build <span id="buildVersion"></span></small>
         </div>
 
         <div class="footer__links">
@@ -845,6 +848,11 @@
   <div id="printRoot" class="printRoot" aria-hidden="true"></div>
 
   <script>
+    (function exposeBuildVersion() {
+      const buildEl = document.querySelector("#buildVersion");
+      if (buildEl) buildEl.textContent = APP_VERSION;
+    })();
+
     (function loadVersionedScripts() {
       const scripts = [
         "assets/js/storage.js",
