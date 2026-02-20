@@ -1,9 +1,9 @@
-# Config local (segredos)
+# Secrets (never commit)
 api/config.local.php
 
 # Logs
 api/email_errors.log
 api/email_success.log
 
-# Sistema
+# OS
 .DS_Store
