@@ -122,7 +122,7 @@
               <p>Use apenas os dados essenciais para iniciar.</p>
             </div>
 
-            <div class="field">
+            <div class="field" id="calcModeField">
               <div class="label">Modo de cálculo</div>
               <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo de cálculo">
                 <input id="mode_real" type="radio" name="calcMode" value="real" checked />
@@ -135,6 +135,7 @@
             <div class="field">
               <div class="label">Marketplaces</div>
               <div id="marketplaceSelector" class="marketplaceSelector" aria-label="Selecionar marketplaces"></div>
+              <p id="calcModeMicrocopy" class="fieldHint">Descubra o lucro real pelo preço informado em cada marketplace selecionado.</p>
             </div>
 
             <div class="field">
@@ -188,9 +189,9 @@
 
           <div class="formDivider"></div>
 
-          <section class="formBlock">
+          <section class="formBlock" id="profitGoalSection">
             <div class="formBlock__head">
-              <h3>Meta de lucro</h3>
+              <h3 id="profitGoalHeading">Meta de lucro</h3>
               <p>Defina sua meta em valor fixo ou em percentual.</p>
             </div>
 

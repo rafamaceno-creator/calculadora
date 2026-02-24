@@ -1223,7 +1223,7 @@ function applyProModeState({ persist = true, recalculate = true } = {}) {
   }
 
   if (recalculate) {
-    recalc({ source: "auto" });
+    uxRecalc();
   }
 }
 
@@ -2796,6 +2796,7 @@ const UX_MARKETPLACES = [
 
 let UX_SELECTED_MARKETPLACES = ["shopee", "mlClassic", "mlPremium"];
 const UX_PRICE_VALUES = {};
+let UX_RECALC_TIMER = null;
 
 function getCalcMode() {
   return document.querySelector('input[name="calcMode"]:checked')?.value || "real";
@@ -2819,8 +2820,7 @@ function buildMarketplaceSelector() {
 function renderMode1PriceInputs() {
   const wrap = document.querySelector("#mode1PriceInputs");
   if (!wrap) return;
-  const selected = getSelectedMarketplaces();
-  wrap.innerHTML = selected.map((key) => {
+  wrap.innerHTML = getSelectedMarketplaces().map((key) => {
     const mp = UX_MARKETPLACES.find((item) => item.key === key);
     return `
       <div class="field cardMini">
@@ -2834,117 +2834,209 @@ function renderMode1PriceInputs() {
   }).join("");
 }
 
-function syncGlobalWeightToAdvanced() {
-  const raw = document.querySelector("#globalWeightInput")?.value || "";
+function syncGlobalWeightToAdvancedAll() {
+  const raw = (document.querySelector("#globalWeightInput")?.value || "").trim();
   const unit = document.querySelector("#globalWeightUnit")?.value || "kg";
   const mlWeightToggle = document.querySelector("#mlWeightToggle");
   const mlWeightValue = document.querySelector("#mlWeightValue");
   const mlWeightUnit = document.querySelector("#mlWeightUnit");
   if (!mlWeightToggle || !mlWeightValue || !mlWeightUnit) return;
-  mlWeightToggle.checked = String(raw).trim() !== "";
+  if (!raw) return;
+  mlWeightToggle.checked = true;
   mlWeightValue.value = raw;
   mlWeightUnit.value = unit;
 }
 
-function marketplaceConfigForPrice(marketplaceKey, price, config) {
-  const weightKg = config.weightData.kg;
-  if (marketplaceKey === "shopee") {
-    const faixa = SHOPEE_FAIXAS.find((f) => price >= f.min && price <= f.max) || SHOPEE_FAIXAS[0];
-    return { pct: faixa.pct, fixed: faixa.fixed, extraPct: config.adv.pctExtra + config.adv.affiliate.shopee, applyAntecipa: document.querySelector("#shopeeAntecipa")?.checked || false };
+function mapMarketplaceEvaluation(key, computed, cost, taxPct) {
+  const c = computed.calcConfig;
+  if (key === "shopee") {
+    return {
+      title: "Shopee",
+      feeText: `${(computed.shopeeFaixa.pct * 100).toFixed(0)}% + ${brl(computed.shopeeFaixa.fixed)}`,
+      result: computed.shopeeRaw,
+      pct: computed.shopeeFaixa.pct,
+      fixed: computed.shopeeFaixa.fixed,
+      affiliate: c.adv.affiliate.shopee,
+      extra: [{ k: "Faixa aplicada", v: computed.shopeeFaixa.label }],
+      options: { marketplaceClass: "mp-shopee" }
+    };
   }
-  if (marketplaceKey === "mlClassic") return { pct: config.mlClassicPct, fixed: mlFixedByTable(price, weightKg), extraPct: config.adv.pctExtra + config.adv.affiliate.ml, applyAntecipa: false };
-  if (marketplaceKey === "mlPremium") return { pct: config.mlPremiumPct, fixed: mlFixedByTable(price, weightKg), extraPct: config.adv.pctExtra + config.adv.affiliate.ml, applyAntecipa: false };
-  if (marketplaceKey === "tiktok") return { pct: TIKTOK.pct, fixed: TIKTOK.fixed, extraPct: config.adv.pctExtra + config.adv.affiliate.tiktok, applyAntecipa: false };
-  if (marketplaceKey === "shein") return { pct: config.sheinCategory === "female" ? SHEIN.pctFemale : SHEIN.pctOther, fixed: sheinFixedByWeight(weightKg), extraPct: config.adv.pctExtra, applyAntecipa: false };
-  if (marketplaceKey === "amazon") return { pct: config.amazonPct, fixed: amazonDbaFee({ price, weightKg, originGroup: config.amazonOriginGroup }), extraPct: config.adv.pctExtra + config.adv.affiliate.amazon, applyAntecipa: false };
-  return { pct: 0, fixed: 0, extraPct: 0, applyAntecipa: false };
+  if (key === "mlClassic") {
+    return {
+      title: "Mercado Livre — Clássico",
+      feeText: `${(c.mlClassicPct * 100).toFixed(2)}%`,
+      result: computed.mlClassic.r,
+      pct: c.mlClassicPct,
+      fixed: computed.mlClassic.fixed,
+      affiliate: c.adv.affiliate.ml,
+      extra: [{ k: "Custo fixo (tabela)", v: brl(computed.mlClassic.fixed) }, { k: "Peso usado", v: `${c.weightData.kg.toFixed(3)} kg` }],
+      options: { marketplaceClass: "mp-ml", showAssumedWeightNote: true, assumedWeight: c.weightData.assumed }
+    };
+  }
+  if (key === "mlPremium") {
+    return {
+      title: "Mercado Livre — Premium",
+      feeText: `${(c.mlPremiumPct * 100).toFixed(2)}%`,
+      result: computed.mlPremium.r,
+      pct: c.mlPremiumPct,
+      fixed: computed.mlPremium.fixed,
+      affiliate: c.adv.affiliate.ml,
+      extra: [{ k: "Custo fixo (tabela)", v: brl(computed.mlPremium.fixed) }, { k: "Peso usado", v: `${c.weightData.kg.toFixed(3)} kg` }],
+      options: { marketplaceClass: "mp-ml", showAssumedWeightNote: true, assumedWeight: c.weightData.assumed }
+    };
+  }
+  if (key === "tiktok") {
+    return {
+      title: "TikTok Shop",
+      feeText: `12% + ${brl(4)}`,
+      result: computed.tiktok,
+      pct: TIKTOK.pct,
+      fixed: TIKTOK.fixed,
+      affiliate: c.adv.affiliate.tiktok,
+      extra: [],
+      options: { marketplaceClass: "mp-tiktok" }
+    };
+  }
+  if (key === "shein") {
+    return {
+      title: "SHEIN",
+      feeText: `${(computed.sheinPct * 100).toFixed(0)}% + ${brl(computed.sheinFixed)} (frete)`,
+      result: computed.shein,
+      pct: computed.sheinPct,
+      fixed: computed.sheinFixed,
+      affiliate: 0,
+      extra: [{ k: "Intermediação de frete", v: brl(computed.sheinFixed) }, { k: "Peso usado", v: `${c.weightData.kg.toFixed(3)} kg` }],
+      options: { marketplaceClass: "mp-shein", showAssumedWeightNote: true, assumedWeight: c.weightData.assumed }
+    };
+  }
+  if (key === "amazon" && computed.amazonData) {
+    return {
+      title: "Amazon (DBA)",
+      feeText: `${(c.amazonPct * 100).toFixed(2)}% + ${brl(computed.amazonData.fee)} (DBA)`,
+      result: computed.amazonData.result,
+      pct: c.amazonPct,
+      fixed: computed.amazonData.fee,
+      affiliate: c.adv.affiliate.amazon,
+      extra: [{ k: "Faixa de peso DBA", v: computed.amazonData.weightBand }, { k: "Peso usado", v: `${c.weightData.kg.toFixed(3)} kg` }],
+      options: { marketplaceClass: "mp-amazon", showAssumedWeightNote: true, assumedWeight: c.weightData.assumed }
+    };
+  }
+  return null;
 }
 
-function binarySearchIdealPrice(targetType, targetValue, evaluator, minPrice) {
-  let low = Math.max(0.01, minPrice || 0.01);
-  let high = Math.max(low * 2, 10);
+function evaluateMarketplace(key, { cost, config }) {
+  const computed = computeForAllMarketplaces({ cost, config });
+  return mapMarketplaceEvaluation(key, computed, cost, computed.calcConfig.taxPct);
+}
+
+function evaluateMarketplaceAtPrice(key, targetPrice, { cost, config }) {
+  const minProfit = 0;
+  let low = minProfit;
+  let high = Math.max(100, cost);
+  let highEval = evaluateMarketplace(key, { cost, config: { ...config, profitType: "brl", profitValue: high } });
   let guard = 0;
-  const metric = (price) => {
-    const r = evaluator(price);
-    return targetType === "pct" ? r.margem : r.lucro;
-  };
-  while (metric(high) < targetValue && guard < 40) {
+  while (highEval && highEval.result.price < targetPrice && guard < 20) {
     high *= 2;
+    highEval = evaluateMarketplace(key, { cost, config: { ...config, profitType: "brl", profitValue: high } });
     guard += 1;
-    if (high > Math.max(low * 50, 100000)) break;
   }
-  for (let i = 0; i < 50; i += 1) {
+
+  for (let i = 0; i < 35; i += 1) {
     const mid = (low + high) / 2;
-    if (metric(mid) < targetValue) low = mid;
+    const midEval = evaluateMarketplace(key, { cost, config: { ...config, profitType: "brl", profitValue: mid } });
+    if (!midEval) break;
+    if (midEval.result.price < targetPrice) low = mid;
     else high = mid;
   }
-  return Math.round(high * 100) / 100;
+
+  const finalEval = evaluateMarketplace(key, { cost, config: { ...config, profitType: "brl", profitValue: high } });
+  if (!finalEval) return null;
+
+  const breakdown = breakdownAtPrice({
+    price: targetPrice,
+    cost,
+    taxPct: config.taxPct,
+    marketplacePct: finalEval.pct,
+    marketplaceFixed: finalEval.fixed,
+    percentCosts: config.adv.pctExtra + finalEval.affiliate,
+    fixedCosts: config.adv.fixedBRL,
+    applyAntecipa: key === "shopee" ? (document.querySelector("#shopeeAntecipa")?.checked || false) : false
+  });
+
+  finalEval.result = {
+    ...finalEval.result,
+    price: targetPrice,
+    commissionValue: breakdown.commissionValue,
+    received: targetPrice - breakdown.commissionValue,
+    profitBRL: breakdown.profitValue,
+    profitPctReal: targetPrice > 0 ? breakdown.profitValue / targetPrice : 0
+  };
+
+  return finalEval;
+}
+
+function toggleUxModeSections() {
+  const mode = getCalcMode();
+  document.querySelector("#mode1PriceSection")?.classList.toggle("is-hidden", mode !== "real");
+  document.querySelector("#profitGoalSection")?.classList.toggle("is-hidden", mode === "real");
+  const heading = document.querySelector("#profitGoalHeading");
+  if (heading) heading.textContent = "Margem desejada";
+  const hint = document.querySelector("#calcModeMicrocopy");
+  if (hint) hint.textContent = mode === "real"
+    ? "Descubra o lucro real pelo preço informado em cada marketplace selecionado."
+    : "Descubra o preço ideal para margem desejada em cada marketplace selecionado.";
 }
 
 function renderUxResults() {
-  const mode = getCalcMode();
   const selected = getSelectedMarketplaces();
   const resultsEl = document.querySelector("#results");
   if (!resultsEl) return;
   const cost = Math.max(0, toNumber(document.querySelector("#cost")?.value));
-  const taxPct = clamp(toNumber(document.querySelector("#tax")?.value), 0, 99);
   const config = getCalculationConfig();
+  const taxPct = config.taxPct;
+  const mode = getCalcMode();
+
   const cards = selected.map((key) => {
     const mp = UX_MARKETPLACES.find((item) => item.key === key);
+    let data = null;
+
     if (mode === "real") {
-      const raw = document.querySelector(`[data-ux-price-marketplace="${key}"]`)?.value;
-      const price = Math.max(0, toNumber(raw));
+      const price = Math.max(0, toNumber(document.querySelector(`[data-ux-price-marketplace="${key}"]`)?.value));
       if (!price) {
-        return `<article class="card marketplaceCard resultCard"><div class="card__inner"><div class="cardTitle">${mp?.title || key}</div><p>Informe o preço para calcular.</p></div></article>`;
+        return `<article class="card marketplaceCard resultCard"><div class="card__inner"><div class="cardTitle">${mp?.title || key}</div><p>Informe o preço para calcular o lucro real.</p></div></article>`;
       }
-      const cfg = marketplaceConfigForPrice(key, price, config);
-      const atPrice = calculateMarketplaceAtPrice({ price, cost, taxPct, marketplacePct: cfg.pct, marketplaceFixed: cfg.fixed, percentCosts: cfg.extraPct, fixedCosts: config.adv.fixedBRL, applyAntecipa: cfg.applyAntecipa });
-      const fakeResult = {
-        price,
-        received: price - (price * cfg.pct + cfg.fixed),
-        profitBRL: atPrice.lucro,
-        profitPctReal: price > 0 ? atPrice.lucro / price : 0,
-        totalPercentCosts: clamp(cfg.pct + (taxPct / 100) + cfg.extraPct, 0, 0.95)
-      };
-      return resultCardHTML(mp?.title || key, `${(cfg.pct * 100).toFixed(2)}%`, fakeResult, cost, taxPct, "pct", 0, cfg.pct, cfg.fixed, config.adv.details, 0, []);
+      data = evaluateMarketplaceAtPrice(key, price, { cost, config });
+    } else {
+      data = evaluateMarketplace(key, { cost, config });
     }
 
-    const targetType = document.querySelector("#profitType")?.value || "pct";
-    const targetValue = Math.max(0, toNumber(document.querySelector("#profitValue")?.value));
-    const minPrice = Math.max(cost, 0.01);
-    const idealPrice = binarySearchIdealPrice(targetType, targetValue, (probePrice) => {
-      const cfg = marketplaceConfigForPrice(key, probePrice, config);
-      return calculateMarketplaceAtPrice({ price: probePrice, cost, taxPct, marketplacePct: cfg.pct, marketplaceFixed: cfg.fixed, percentCosts: cfg.extraPct, fixedCosts: config.adv.fixedBRL, applyAntecipa: cfg.applyAntecipa });
-    }, minPrice);
+    if (!data) {
+      return `<article class="card marketplaceCard resultCard"><div class="card__inner"><div class="cardTitle">${mp?.title || key}</div><p>Não foi possível encontrar preço ideal com as configurações atuais.</p></div></article>`;
+    }
 
-    const cfg = marketplaceConfigForPrice(key, idealPrice, config);
-    const finalEval = calculateMarketplaceAtPrice({ price: idealPrice, cost, taxPct, marketplacePct: cfg.pct, marketplaceFixed: cfg.fixed, percentCosts: cfg.extraPct, fixedCosts: config.adv.fixedBRL, applyAntecipa: cfg.applyAntecipa });
-    const fakeResult = {
-      price: idealPrice,
-      received: idealPrice - (idealPrice * cfg.pct + cfg.fixed),
-      profitBRL: finalEval.lucro,
-      profitPctReal: idealPrice > 0 ? finalEval.lucro / idealPrice : 0,
-      totalPercentCosts: clamp(cfg.pct + (taxPct / 100) + cfg.extraPct, 0, 0.95)
-    };
-    return resultCardHTML(mp?.title || key, `${(cfg.pct * 100).toFixed(2)}%`, fakeResult, cost, taxPct, "pct", 0, cfg.pct, cfg.fixed, config.adv.details, 0, [{ k: "Preço ideal", v: brl(idealPrice) }]);
+    return resultCardHTML(data.title, data.feeText, data.result, cost, taxPct, config.profitType, config.profitValue, data.pct, data.fixed, config.adv.details, data.affiliate, data.extra, data.options);
   });
 
   resultsEl.innerHTML = cards.join("");
   updateReportRoot();
 }
 
-function toggleUxModeSections() {
-  const mode = getCalcMode();
-  const mode1Section = document.querySelector("#mode1PriceSection");
-  const actionBtn = document.querySelector("#recalc");
-  mode1Section?.classList.toggle("is-hidden", mode !== "real");
-  if (actionBtn) actionBtn.textContent = mode === "real" ? "Calcular" : "Calcular preço ideal";
+function uxRecalc() {
+  syncGlobalWeightToAdvancedAll();
+  recalc({ source: "auto" });
+  toggleUxModeSections();
+  renderUxResults();
+}
+
+function debounceUxRecalc() {
+  window.clearTimeout(UX_RECALC_TIMER);
+  UX_RECALC_TIMER = window.setTimeout(() => uxRecalc(), 150);
 }
 
 function initUxRefactor() {
   buildMarketplaceSelector();
   renderMode1PriceInputs();
-  toggleUxModeSections();
+
   const profitValuePct = document.querySelector("#profitValuePct");
   const metaPercent = document.querySelector("#meta_percent");
   if (profitValuePct && metaPercent) {
@@ -2960,30 +3052,28 @@ function initUxRefactor() {
     const input = event.target.closest("[data-ux-price-marketplace]");
     if (!input) return;
     UX_PRICE_VALUES[input.dataset.uxPriceMarketplace] = input.value;
+    debounceUxRecalc();
   });
 
   document.querySelector("#marketplaceSelector")?.addEventListener("change", () => {
     UX_SELECTED_MARKETPLACES = UX_MARKETPLACES.map((mp) => mp.key).filter((key) => document.querySelector(`#ux_mp_${key}`)?.checked);
     renderMode1PriceInputs();
-    recalc({ source: "auto" });
+    uxRecalc();
   });
 
-  document.querySelectorAll('input[name="calcMode"]').forEach((el) => {
-    el.addEventListener("change", () => {
-      toggleUxModeSections();
-      recalc({ source: "auto" });
-    });
+  document.querySelectorAll('input[name="calcMode"]').forEach((el) => el.addEventListener("change", uxRecalc));
+
+  ["#cost", "#tax", "#globalWeightInput"].forEach((selector) => {
+    document.querySelector(selector)?.addEventListener("input", debounceUxRecalc);
+  });
+  document.querySelector("#globalWeightUnit")?.addEventListener("change", uxRecalc);
+  document.querySelector("#recalc")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    uxRecalc();
   });
 
-  document.querySelector("#globalWeightInput")?.addEventListener("input", syncGlobalWeightToAdvanced);
-  document.querySelector("#globalWeightUnit")?.addEventListener("change", syncGlobalWeightToAdvanced);
-
-  const originalRecalc = recalc;
-  recalc = function patchedRecalc(options = {}) {
-    syncGlobalWeightToAdvanced();
-    originalRecalc(options);
-    renderUxResults();
-  };
+  uxRecalc();
 }
 
 function initApp() {
@@ -3014,7 +3104,7 @@ function initApp() {
   bindBulk();
   renderSavedSimulations();
   track("session_ready", { device: getDeviceType() });
-  recalc({ source: "auto" });
+  uxRecalc();
 }
 
 if (document.readyState === "loading") {
