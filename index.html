@@ -123,6 +123,21 @@
             </div>
 
             <div class="field">
+              <div class="label">Modo de cálculo</div>
+              <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo de cálculo">
+                <input id="mode_real" type="radio" name="calcMode" value="real" checked />
+                <label for="mode_real">Lucro real</label>
+                <input id="mode_ideal" type="radio" name="calcMode" value="ideal" />
+                <label for="mode_ideal">Preço ideal</label>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="label">Marketplaces</div>
+              <div id="marketplaceSelector" class="marketplaceSelector" aria-label="Selecionar marketplaces"></div>
+            </div>
+
+            <div class="field">
               <div class="label label-row">
                 <span>Nome do cálculo / produto</span>
                 <button class="info" type="button" aria-label="Info: Nome do cálculo / produto" data-tooltip="Dê um nome para identificar este cálculo no PDF e no salvamento local. Ex: Camiseta Dry Fit Preta.">i</button>
@@ -139,6 +154,22 @@
                 <div class="inputWrap">
                   <span class="inputPrefix">R$</span>
                   <input id="cost" type="number" step="0.01" min="0" value="60" />
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="label label-row">
+                  <span>Peso (opcional)</span>
+                  <button class="info" type="button" aria-label="Info: Peso (opcional)" data-tooltip="Peso global usado nas regras dos marketplaces que dependem de peso. Se não informar, o sistema mantém o padrão atual de 0,5 kg.">i</button>
+                </div>
+                <div class="formRow row2">
+                  <div class="inputWrap">
+                    <input id="globalWeightInput" type="number" step="0.001" min="0" placeholder="Ex: 0.5" />
+                  </div>
+                  <select id="globalWeightUnit" aria-label="Unidade do peso global">
+                    <option value="kg" selected>kg</option>
+                    <option value="g">g</option>
+                  </select>
                 </div>
               </div>
 
@@ -197,6 +228,14 @@
             </div>
 
             <input id="profitValue" class="is-hidden" type="number" step="0.01" min="0" value="10" tabindex="-1" aria-hidden="true" />
+          </section>
+
+          <section class="formBlock" id="mode1PriceSection">
+            <div class="formBlock__head">
+              <h3>Preço de venda por marketplace</h3>
+              <p>Preencha apenas os marketplaces selecionados.</p>
+            </div>
+            <div id="mode1PriceInputs" class="modeInputs"></div>
           </section>
 
           <details class="formInfoDetails">

@@ -2783,6 +2783,209 @@ function bindSmoothScroll() {
 }
 
 
+
+
+const UX_MARKETPLACES = [
+  { key: "shopee", title: "Shopee", icon: "🟠" },
+  { key: "mlClassic", title: "Mercado Livre — Clássico", icon: "🟨" },
+  { key: "mlPremium", title: "Mercado Livre — Premium", icon: "🟨" },
+  { key: "tiktok", title: "TikTok Shop", icon: "🎵" },
+  { key: "shein", title: "SHEIN", icon: "⚫" },
+  { key: "amazon", title: "Amazon (DBA)", icon: "🟤" }
+];
+
+let UX_SELECTED_MARKETPLACES = ["shopee", "mlClassic", "mlPremium"];
+const UX_PRICE_VALUES = {};
+
+function getCalcMode() {
+  return document.querySelector('input[name="calcMode"]:checked')?.value || "real";
+}
+
+function getSelectedMarketplaces() {
+  return UX_SELECTED_MARKETPLACES.filter((key) => document.querySelector(`#ux_mp_${key}`)?.checked);
+}
+
+function buildMarketplaceSelector() {
+  const wrap = document.querySelector("#marketplaceSelector");
+  if (!wrap) return;
+  wrap.innerHTML = UX_MARKETPLACES.map((mp) => `
+    <label class="marketplaceChip">
+      <input type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
+      <span>${mp.icon} ${mp.title}</span>
+    </label>
+  `).join("");
+}
+
+function renderMode1PriceInputs() {
+  const wrap = document.querySelector("#mode1PriceInputs");
+  if (!wrap) return;
+  const selected = getSelectedMarketplaces();
+  wrap.innerHTML = selected.map((key) => {
+    const mp = UX_MARKETPLACES.find((item) => item.key === key);
+    return `
+      <div class="field cardMini">
+        <div class="label">Preço de venda — ${mp?.title || key}</div>
+        <div class="inputWrap">
+          <span class="inputPrefix">R$</span>
+          <input type="number" step="0.01" min="0" data-ux-price-marketplace="${key}" value="${UX_PRICE_VALUES[key] || ""}" placeholder="Ex: 99,90" />
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function syncGlobalWeightToAdvanced() {
+  const raw = document.querySelector("#globalWeightInput")?.value || "";
+  const unit = document.querySelector("#globalWeightUnit")?.value || "kg";
+  const mlWeightToggle = document.querySelector("#mlWeightToggle");
+  const mlWeightValue = document.querySelector("#mlWeightValue");
+  const mlWeightUnit = document.querySelector("#mlWeightUnit");
+  if (!mlWeightToggle || !mlWeightValue || !mlWeightUnit) return;
+  mlWeightToggle.checked = String(raw).trim() !== "";
+  mlWeightValue.value = raw;
+  mlWeightUnit.value = unit;
+}
+
+function marketplaceConfigForPrice(marketplaceKey, price, config) {
+  const weightKg = config.weightData.kg;
+  if (marketplaceKey === "shopee") {
+    const faixa = SHOPEE_FAIXAS.find((f) => price >= f.min && price <= f.max) || SHOPEE_FAIXAS[0];
+    return { pct: faixa.pct, fixed: faixa.fixed, extraPct: config.adv.pctExtra + config.adv.affiliate.shopee, applyAntecipa: document.querySelector("#shopeeAntecipa")?.checked || false };
+  }
+  if (marketplaceKey === "mlClassic") return { pct: config.mlClassicPct, fixed: mlFixedByTable(price, weightKg), extraPct: config.adv.pctExtra + config.adv.affiliate.ml, applyAntecipa: false };
+  if (marketplaceKey === "mlPremium") return { pct: config.mlPremiumPct, fixed: mlFixedByTable(price, weightKg), extraPct: config.adv.pctExtra + config.adv.affiliate.ml, applyAntecipa: false };
+  if (marketplaceKey === "tiktok") return { pct: TIKTOK.pct, fixed: TIKTOK.fixed, extraPct: config.adv.pctExtra + config.adv.affiliate.tiktok, applyAntecipa: false };
+  if (marketplaceKey === "shein") return { pct: config.sheinCategory === "female" ? SHEIN.pctFemale : SHEIN.pctOther, fixed: sheinFixedByWeight(weightKg), extraPct: config.adv.pctExtra, applyAntecipa: false };
+  if (marketplaceKey === "amazon") return { pct: config.amazonPct, fixed: amazonDbaFee({ price, weightKg, originGroup: config.amazonOriginGroup }), extraPct: config.adv.pctExtra + config.adv.affiliate.amazon, applyAntecipa: false };
+  return { pct: 0, fixed: 0, extraPct: 0, applyAntecipa: false };
+}
+
+function binarySearchIdealPrice(targetType, targetValue, evaluator, minPrice) {
+  let low = Math.max(0.01, minPrice || 0.01);
+  let high = Math.max(low * 2, 10);
+  let guard = 0;
+  const metric = (price) => {
+    const r = evaluator(price);
+    return targetType === "pct" ? r.margem : r.lucro;
+  };
+  while (metric(high) < targetValue && guard < 40) {
+    high *= 2;
+    guard += 1;
+    if (high > Math.max(low * 50, 100000)) break;
+  }
+  for (let i = 0; i < 50; i += 1) {
+    const mid = (low + high) / 2;
+    if (metric(mid) < targetValue) low = mid;
+    else high = mid;
+  }
+  return Math.round(high * 100) / 100;
+}
+
+function renderUxResults() {
+  const mode = getCalcMode();
+  const selected = getSelectedMarketplaces();
+  const resultsEl = document.querySelector("#results");
+  if (!resultsEl) return;
+  const cost = Math.max(0, toNumber(document.querySelector("#cost")?.value));
+  const taxPct = clamp(toNumber(document.querySelector("#tax")?.value), 0, 99);
+  const config = getCalculationConfig();
+  const cards = selected.map((key) => {
+    const mp = UX_MARKETPLACES.find((item) => item.key === key);
+    if (mode === "real") {
+      const raw = document.querySelector(`[data-ux-price-marketplace="${key}"]`)?.value;
+      const price = Math.max(0, toNumber(raw));
+      if (!price) {
+        return `<article class="card marketplaceCard resultCard"><div class="card__inner"><div class="cardTitle">${mp?.title || key}</div><p>Informe o preço para calcular.</p></div></article>`;
+      }
+      const cfg = marketplaceConfigForPrice(key, price, config);
+      const atPrice = calculateMarketplaceAtPrice({ price, cost, taxPct, marketplacePct: cfg.pct, marketplaceFixed: cfg.fixed, percentCosts: cfg.extraPct, fixedCosts: config.adv.fixedBRL, applyAntecipa: cfg.applyAntecipa });
+      const fakeResult = {
+        price,
+        received: price - (price * cfg.pct + cfg.fixed),
+        profitBRL: atPrice.lucro,
+        profitPctReal: price > 0 ? atPrice.lucro / price : 0,
+        totalPercentCosts: clamp(cfg.pct + (taxPct / 100) + cfg.extraPct, 0, 0.95)
+      };
+      return resultCardHTML(mp?.title || key, `${(cfg.pct * 100).toFixed(2)}%`, fakeResult, cost, taxPct, "pct", 0, cfg.pct, cfg.fixed, config.adv.details, 0, []);
+    }
+
+    const targetType = document.querySelector("#profitType")?.value || "pct";
+    const targetValue = Math.max(0, toNumber(document.querySelector("#profitValue")?.value));
+    const minPrice = Math.max(cost, 0.01);
+    const idealPrice = binarySearchIdealPrice(targetType, targetValue, (probePrice) => {
+      const cfg = marketplaceConfigForPrice(key, probePrice, config);
+      return calculateMarketplaceAtPrice({ price: probePrice, cost, taxPct, marketplacePct: cfg.pct, marketplaceFixed: cfg.fixed, percentCosts: cfg.extraPct, fixedCosts: config.adv.fixedBRL, applyAntecipa: cfg.applyAntecipa });
+    }, minPrice);
+
+    const cfg = marketplaceConfigForPrice(key, idealPrice, config);
+    const finalEval = calculateMarketplaceAtPrice({ price: idealPrice, cost, taxPct, marketplacePct: cfg.pct, marketplaceFixed: cfg.fixed, percentCosts: cfg.extraPct, fixedCosts: config.adv.fixedBRL, applyAntecipa: cfg.applyAntecipa });
+    const fakeResult = {
+      price: idealPrice,
+      received: idealPrice - (idealPrice * cfg.pct + cfg.fixed),
+      profitBRL: finalEval.lucro,
+      profitPctReal: idealPrice > 0 ? finalEval.lucro / idealPrice : 0,
+      totalPercentCosts: clamp(cfg.pct + (taxPct / 100) + cfg.extraPct, 0, 0.95)
+    };
+    return resultCardHTML(mp?.title || key, `${(cfg.pct * 100).toFixed(2)}%`, fakeResult, cost, taxPct, "pct", 0, cfg.pct, cfg.fixed, config.adv.details, 0, [{ k: "Preço ideal", v: brl(idealPrice) }]);
+  });
+
+  resultsEl.innerHTML = cards.join("");
+  updateReportRoot();
+}
+
+function toggleUxModeSections() {
+  const mode = getCalcMode();
+  const mode1Section = document.querySelector("#mode1PriceSection");
+  const actionBtn = document.querySelector("#recalc");
+  mode1Section?.classList.toggle("is-hidden", mode !== "real");
+  if (actionBtn) actionBtn.textContent = mode === "real" ? "Calcular" : "Calcular preço ideal";
+}
+
+function initUxRefactor() {
+  buildMarketplaceSelector();
+  renderMode1PriceInputs();
+  toggleUxModeSections();
+  const profitValuePct = document.querySelector("#profitValuePct");
+  const metaPercent = document.querySelector("#meta_percent");
+  if (profitValuePct && metaPercent) {
+    profitValuePct.value = "10";
+    metaPercent.checked = true;
+    document.querySelector("#profitType").value = "pct";
+    document.querySelector("#profitValue").value = "10";
+    document.querySelector("#profitFieldBRL")?.classList.add("is-hidden");
+    document.querySelector("#profitFieldPCT")?.classList.remove("is-hidden");
+  }
+
+  document.querySelector("#mode1PriceInputs")?.addEventListener("input", (event) => {
+    const input = event.target.closest("[data-ux-price-marketplace]");
+    if (!input) return;
+    UX_PRICE_VALUES[input.dataset.uxPriceMarketplace] = input.value;
+  });
+
+  document.querySelector("#marketplaceSelector")?.addEventListener("change", () => {
+    UX_SELECTED_MARKETPLACES = UX_MARKETPLACES.map((mp) => mp.key).filter((key) => document.querySelector(`#ux_mp_${key}`)?.checked);
+    renderMode1PriceInputs();
+    recalc({ source: "auto" });
+  });
+
+  document.querySelectorAll('input[name="calcMode"]').forEach((el) => {
+    el.addEventListener("change", () => {
+      toggleUxModeSections();
+      recalc({ source: "auto" });
+    });
+  });
+
+  document.querySelector("#globalWeightInput")?.addEventListener("input", syncGlobalWeightToAdvanced);
+  document.querySelector("#globalWeightUnit")?.addEventListener("change", syncGlobalWeightToAdvanced);
+
+  const originalRecalc = recalc;
+  recalc = function patchedRecalc(options = {}) {
+    syncGlobalWeightToAdvanced();
+    originalRecalc(options);
+    renderUxResults();
+  };
+}
+
 function initApp() {
   const params = new URLSearchParams(window.location.search);
   const sharedState = params.get("state");
@@ -2798,6 +3001,7 @@ function initApp() {
   applySimpleShareParams();
   initTheme();
   initProMode();
+  initUxRefactor();
   loadCurrentPriceState();
   bind();
   bindActionButtons();
