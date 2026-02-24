@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Calculadora de Precificação Shopee, Mercado Livre e Amazon | Rafa Maceno</title>
   <meta name="description" content="Calcule comissão, taxas e preço ideal para vender na Shopee, Mercado Livre e Amazon sem prejuízo. Ferramenta gratuita para vendedores de marketplace." />
   <meta property="og:title" content="Calculadora de Precificação Shopee, Mercado Livre e Amazon">
@@ -10,14 +13,15 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://precificacao.rafamaceno.com.br/">
   <meta name="robots" content="index,follow" />
+  <meta name="app-build" content="20260220-4" />
   <link rel="canonical" href="./" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260213-5" data-asset="true" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260220-4" data-asset="true" />
   <script>
-    const APP_VERSION = "20260213-2";
+    const APP_VERSION = "20260220-4";
 
     window.versionAssetPath = function versionAssetPath(path) {
       const url = new URL(path, window.location.href);
@@ -50,6 +54,7 @@
 </head>
 
 <body>
+  <div id="buildBadge" style="position:fixed;left:10px;bottom:10px;z-index:9999;background:#0f172a;color:#fff;padding:6px 10px;border-radius:10px;font:600 12px/1.2 Inter,system-ui;box-shadow:0 4px 12px rgba(0,0,0,.25)">Build: -- (diagnóstico)</div>
   <header class="topbar">
     <div class="container topbar__inner">
       <div class="brand">
@@ -315,7 +320,7 @@
         <div class="card__inner">
           <h2>Resultados</h2>
           <div id="proModeBadgeSlot"></div>
-          <div id="rankingInsights" class="rankingInsights" aria-live="polite"></div>
+          <!-- Comparativo removido para priorizar leitura rápida do preço ideal por marketplace -->
           <div id="results" class="resultList"></div>
 
           <div id="reportRoot" class="reportRoot" aria-live="polite"></div>
@@ -831,7 +836,7 @@
       <div class="footer__inner">
         <div>
           <strong>Precificação Marketplaces</strong><br />
-          <small>© <span id="year"></span> • Feito para vendedores de marketplace</small>
+          <small>© <span id="year"></span> • Feito para vendedores de marketplace • Build <span id="buildVersion"></span> • <a id="buildVersionLink" href="build.txt" target="_blank" rel="noopener">ver build.txt</a> • <a id="versionJsonLink" href="version.json" target="_blank" rel="noopener">ver version.json</a></small>
         </div>
 
         <div class="footer__links">
@@ -845,6 +850,18 @@
   <div id="printRoot" class="printRoot" aria-hidden="true"></div>
 
   <script>
+    (function exposeBuildVersion() {
+      const buildEl = document.querySelector("#buildVersion");
+      const buildBadge = document.querySelector("#buildBadge");
+      const buildLink = document.querySelector("#buildVersionLink");
+      const versionJsonLink = document.querySelector("#versionJsonLink");
+      if (buildEl) buildEl.textContent = APP_VERSION;
+      if (buildBadge) buildBadge.textContent = `Build: ${APP_VERSION}`;
+      if (buildLink) buildLink.href = `build.txt?v=${APP_VERSION}`;
+      if (versionJsonLink) versionJsonLink.href = `version.json?v=${APP_VERSION}`;
+      console.info("[build]", APP_VERSION);
+    })();
+
     (function loadVersionedScripts() {
       const scripts = [
         "assets/js/storage.js",

@@ -1,0 +1,1 @@
+calculadora-build=20260220-4
