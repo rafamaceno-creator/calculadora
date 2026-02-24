@@ -665,24 +665,22 @@ body.theme-dark .leadCapture,body.theme-dark .leadCapture__close{background:#1e2
 body.theme-dark .leadCapture__head p{color:#94a3b8}
 @media (max-width:768px){.leadCapture__grid{grid-template-columns:1fr}}
 
-.marketplaceSelector {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-.marketplaceChip {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  border: 1px solid var(--line, #d6d6d6);
-  border-radius: 999px;
-  padding: 6px 10px;
-  background: #fff;
-}
-.marketplaceChip input { margin-right: 6px; }
-.modeInputs { display: grid; gap: 10px; }
+.marketplaceSelector{display:flex;gap:10px;flex-wrap:wrap;padding-bottom:4px}
+.marketplaceChip{display:inline-flex;align-items:center;gap:8px;min-height:38px;white-space:nowrap;border:1px solid var(--stroke);border-radius:999px;padding:8px 12px;background:var(--surface);font-size:13px;line-height:1.1;cursor:pointer;transition:.2s ease}
+.marketplaceChip:hover{border-color:var(--accent);transform:translateY(-1px)}
+.marketplaceChip input{margin:0}
+.marketplaceChip:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%, var(--surface) 88%);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 35%, transparent)}
+.fieldHint{margin:8px 0 0;color:var(--muted);font-size:12px}
+#calcModeField{margin-bottom:2px}
+#marketplaceSelector{margin-bottom:8px}
+#mode1PriceSection{margin-top:6px}
+.modeInputs{display:grid;gap:12px;grid-template-columns:1fr}
+#results{overflow-x:clip}
 
-@media (min-width: 900px) {
-  .modeInputs { grid-template-columns: 1fr 1fr; }
+@media (min-width:900px){
+  .modeInputs{grid-template-columns:1fr 1fr}
+}
+
+@media (max-width:768px){
+  .marketplaceSelector{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px}
 }
