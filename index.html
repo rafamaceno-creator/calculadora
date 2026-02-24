@@ -19,9 +19,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260220-4" data-asset="true" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260220-2" data-asset="true" />
   <script>
-    const APP_VERSION = "20260220-4";
+    const APP_VERSION = "20260220-2";
 
     window.versionAssetPath = function versionAssetPath(path) {
       const url = new URL(path, window.location.href);
@@ -836,7 +836,7 @@
       <div class="footer__inner">
         <div>
           <strong>Precificação Marketplaces</strong><br />
-          <small>© <span id="year"></span> • Feito para vendedores de marketplace • Build <span id="buildVersion"></span> • <a id="buildVersionLink" href="build.txt" target="_blank" rel="noopener">ver build.txt</a> • <a id="versionJsonLink" href="version.json" target="_blank" rel="noopener">ver version.json</a></small>
+          <small>© <span id="year"></span> • Feito para vendedores de marketplace • Build <span id="buildVersion"></span></small>
         </div>
 
         <div class="footer__links">
@@ -852,14 +852,7 @@
   <script>
     (function exposeBuildVersion() {
       const buildEl = document.querySelector("#buildVersion");
-      const buildBadge = document.querySelector("#buildBadge");
-      const buildLink = document.querySelector("#buildVersionLink");
-      const versionJsonLink = document.querySelector("#versionJsonLink");
       if (buildEl) buildEl.textContent = APP_VERSION;
-      if (buildBadge) buildBadge.textContent = `Build: ${APP_VERSION}`;
-      if (buildLink) buildLink.href = `build.txt?v=${APP_VERSION}`;
-      if (versionJsonLink) versionJsonLink.href = `version.json?v=${APP_VERSION}`;
-      console.info("[build]", APP_VERSION);
     })();
 
     (function loadVersionedScripts() {
