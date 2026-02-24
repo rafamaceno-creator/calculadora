@@ -52,10 +52,77 @@ function buildSummaryEmailBody(string $nome, string $marketplace, float $precoMi
         . '</div>';
 }
 
+function normalizePdfText(string $value): string
+{
+    $normalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+    $normalized = $normalized !== false ? $normalized : $value;
+    return preg_replace('/[^\x20-\x7E]/', '', $normalized) ?? '';
+}
+
+function escapePdfText(string $value): string
+{
+    return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $value);
+}
+
+function buildSummaryPdf(string $nome, string $marketplace, float $precoMinimo, float $precoIdeal): string
+{
+    $firstLine = $nome !== '' ? sprintf('Ola, %s!', normalizePdfText($nome)) : 'Ola!';
+    $lines = [
+        'Resumo de precificacao',
+        '',
+        $firstLine,
+        '',
+        'Marketplace: ' . normalizePdfText($marketplace),
+        'Preco minimo: ' . normalizePdfText(formatBrl($precoMinimo)),
+        'Preco ideal: ' . normalizePdfText(formatBrl($precoIdeal)),
+        '',
+        'https://precificacao.rafamaceno.com.br',
+        '',
+        'Rafa Maceno',
+    ];
+
+    $y = 780;
+    $commands = ['BT', '/F1 14 Tf'];
+    foreach ($lines as $line) {
+        $commands[] = sprintf('1 0 0 1 56 %d Tm (%s) Tj', $y, escapePdfText($line));
+        $y -= 24;
+    }
+    $commands[] = 'ET';
+
+    $stream = implode("\n", $commands) . "\n";
+
+    $objects = [
+        '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
+        '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
+        '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj',
+        '4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj',
+        sprintf("5 0 obj << /Length %d >> stream\n%sendstream endobj", strlen($stream), $stream),
+    ];
+
+    $pdf = "%PDF-1.4\n";
+    $offsets = [0];
+    foreach ($objects as $object) {
+        $offsets[] = strlen($pdf);
+        $pdf .= $object . "\n";
+    }
+
+    $xrefOffset = strlen($pdf);
+    $pdf .= "xref\n0 " . (count($objects) + 1) . "\n";
+    $pdf .= "0000000000 65535 f \n";
+    for ($i = 1; $i <= count($objects); $i++) {
+        $pdf .= sprintf("%010d 00000 n \n", $offsets[$i]);
+    }
+
+    $pdf .= "trailer << /Size " . (count($objects) + 1) . " /Root 1 0 R >>\n";
+    $pdf .= "startxref\n" . $xrefOffset . "\n%%EOF";
+
+    return $pdf;
+}
+
 /**
  * @return array{sent: bool, mode: string}
  */
-function sendEmailWithFallback(string $toEmail, string $toName, string $subject, string $htmlBody): array
+function sendEmailWithFallback(string $toEmail, string $toName, string $subject, string $htmlBody, array $attachments = []): array
 {
     if (!smtpConfigPresent()) {
         appendLog('email_errors.log', sprintf('destinatario=%s tentativa=none erro=smtp_config_missing', $toEmail));
@@ -83,6 +150,20 @@ function sendEmailWithFallback(string $toEmail, string $toName, string $subject,
             $mail->isHTML(true);
             $mail->Subject = $subject;
             $mail->Body = $htmlBody;
+            foreach ($attachments as $attachment) {
+                if (!is_array($attachment)) {
+                    continue;
+                }
+
+                $content = isset($attachment['content']) ? (string) $attachment['content'] : '';
+                $name = isset($attachment['name']) ? (string) $attachment['name'] : 'anexo.bin';
+                $mime = isset($attachment['mime']) ? (string) $attachment['mime'] : 'application/octet-stream';
+                if ($content === '') {
+                    continue;
+                }
+
+                $mail->addStringAttachment($content, $name, PHPMailer::ENCODING_BASE64, $mime);
+            }
 
             $mail->send();
 
