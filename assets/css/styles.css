@@ -90,8 +90,6 @@ input:hover,select:hover{border-color:#b8c5d7}
 .formBlock__head p{margin:5px 0 0;color:var(--muted);font-size:13px}
 .formDivider{height:1px;background:var(--stroke);margin:20px 0}
 .formBlock--actions{gap:12px}
-.proModeWizardSlot{margin-top:14px}
-
 
 .segmented{display:flex;gap:8px;padding:6px;border:1px solid #dbe4ef;border-radius:12px;background:linear-gradient(180deg,#f8fafc,#f1f5f9)}
 .segmented--goal{max-width:260px}
@@ -111,32 +109,12 @@ input:hover,select:hover{border-color:#b8c5d7}
 .formAccordion > :not(summary){padding:0 16px 16px}
 .formAccordion__intro{margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.4}
 
-.pro-mode{margin-top:18px;padding:20px;border:1px solid #d9d5ff;border-radius:18px;background:linear-gradient(180deg,#ffffff,#f7f5ff);box-shadow:0 10px 30px rgba(76,29,149,.08)}
-.pro-mode.pro-mode--in-wizard{margin-top:0;padding:16px;border:1px solid var(--stroke);border-radius:15px;background:var(--surface-soft,#f8fafc);box-shadow:none}
-.pro-mode.pro-mode--in-wizard .pro-mode__header h3{font-size:18px}
-.pro-mode.pro-mode--in-wizard .pro-mode__subtitle{margin-top:4px;font-size:13px}
-.pro-mode.pro-mode--in-wizard .pro-mode__microcopy{margin-top:8px;font-size:12px}
-.pro-mode.pro-mode--in-wizard .pro-mode__chips{margin-top:10px}
-.pro-mode.pro-mode--in-wizard .pro-mode__content.is-open{max-height:2800px}
-.pro-mode__header h3{margin:0;font-size:22px;letter-spacing:-.01em}
-.pro-mode__subtitle{margin:6px 0 0;font-weight:600;color:#4338ca}
-.pro-mode__microcopy{margin:10px 0 0;color:#475569;line-height:1.45}
-.pro-mode__chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.pro-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;font-size:12px;font-weight:700}
-.pro-mode__toggle{margin-top:14px;width:100%;padding:12px 14px;border:1px solid #c4b5fd;border-radius:12px;background:#fff;font-weight:700;color:#4338ca;cursor:pointer;transition:all .25s ease}
-.pro-mode__toggle:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(76,29,149,.14)}
-.pro-mode__toggle.is-on{background:linear-gradient(180deg,#4f46e5,#4338ca);color:#fff;border-color:#4338ca}
-.pro-mode__content{max-height:0;overflow:hidden;opacity:0;transition:max-height .35s ease,opacity .25s ease;margin-top:0}
-.pro-mode__content.is-open{max-height:2200px;opacity:1;margin-top:14px}
-.pro-mode__insight{margin:14px 0 0;font-size:13px;color:#4c1d95;font-weight:600}
-.pro-mode.pro-attention{animation:proPulse 1.4s ease}
-.pro-mode-result-badge{margin:0 0 12px;padding:10px 12px;border-radius:12px;background:#ecfeff;border:1px solid #67e8f9;color:#155e75;font-weight:700}
-
-@keyframes proPulse{
-  0%{box-shadow:0 10px 30px rgba(76,29,149,.08),0 0 0 0 rgba(99,102,241,0);outline:2px solid transparent;outline-offset:2px}
-  30%{box-shadow:0 14px 34px rgba(76,29,149,.16),0 0 0 6px rgba(99,102,241,.18);outline:2px solid rgba(99,102,241,.42)}
-  100%{box-shadow:0 10px 30px rgba(76,29,149,.08),0 0 0 0 rgba(99,102,241,0);outline:2px solid transparent;outline-offset:2px}
-}
+.optionalAdjustments{border-color:#dbe4ef;background:linear-gradient(180deg,#ffffff,#f8fafc);box-shadow:none}
+.optionalAdjustments summary{font-size:15px}
+.optionalGroup{margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+.optionalGroup h4{margin:0 0 8px;font-size:13px;color:#334155;letter-spacing:.02em;text-transform:uppercase}
+.optionalInlineBox{overflow:hidden;max-height:0;opacity:0;transform:translateY(-4px);transition:max-height .28s ease,opacity .2s ease,transform .2s ease;margin-top:0}
+.optionalInlineBox.is-open{max-height:1200px;opacity:1;transform:translateY(0);margin-top:10px}
 
 .cardMini{margin-top:14px;border-radius:14px;border:1px solid var(--stroke);background:#fff;padding:14px}
 .cardMini__header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -319,9 +297,6 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
 .actions--stacked{margin-top:0;display:grid;grid-template-columns:1fr;gap:10px}
 
 .formActionsSecondary .btn--ghost{border-color:#cbd5e1;background:#f8fafc;font-weight:600}
-.btn--pro-cta{border-color:#c7d2fe;background:linear-gradient(180deg,#f8faff,#eef2ff);color:#3730a3;font-weight:700}
-.btn--pro-cta:hover{border-color:#a5b4fc;box-shadow:0 8px 18px rgba(67,56,202,.14);transform:translateY(-1px)}
-.btnProModeGo__microcopy{display:block;margin-top:-4px;color:#64748b;font-size:12px;line-height:1.35}
 
 .marketplaceCard .cardHeader{padding:14px 16px;margin:-1px -1px 10px;border-radius:16px 16px 0 0;border-bottom:1px solid var(--stroke)}
 .marketplaceCard.marketplace-shopee .cardHeader{background:rgba(238,77,45,.08)}
@@ -371,13 +346,6 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
   .segmentMenu__btn{flex:0 0 auto;scroll-snap-align:start;white-space:nowrap}
   .sectionCard{padding:16px}
   .grid,.row2,.affGrid,.advGrid,.stickySummary__actions,.shareBox__actions,.actions,.currentPriceByMarketplace{grid-template-columns:1fr}
-  .pro-mode{padding:16px}
-  .pro-mode.pro-mode--in-wizard{padding:14px}
-  .pro-mode__header h3{font-size:19px}
-  .pro-mode.pro-mode--in-wizard .pro-mode__header h3{font-size:17px}
-  .pro-mode__chips{gap:6px}
-  .pro-chip{font-size:11px}
-  .btnProModeGo__microcopy{margin-top:0}
   .card__inner{padding:16px}
   .cardHeader{flex-wrap:wrap}
   .cardHeader .pill{margin-top:2px}
@@ -398,6 +366,8 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
   .shareBox .btn,.stickySummary .btn,.actions .btn,#pdfButtonContainer .btn{width:100%}
   .formAccordion summary{padding:12px 12px}
   .formAccordion > :not(summary){padding:0 12px 12px}
+  .optionalGroup{padding:10px}
+  .optionalInlineBox.is-open{max-height:1600px}
   .segmented--goal{max-width:none;width:100%}
   .resultList .card,.marketCompareList .card{overflow:visible}
   .topbar__controls .btn{display:none}
@@ -657,7 +627,6 @@ body.theme-dark .resultCard .pill{
 
 @media (prefers-reduced-motion: reduce){
   html,body{scroll-behavior:auto}
-  .pro-mode.pro-attention{animation:none}
 }
 
 .leadCapture{margin-top:14px;border:1px solid var(--stroke);border-radius:14px;background:#fff;padding:14px;box-shadow:var(--shadow-sm)}

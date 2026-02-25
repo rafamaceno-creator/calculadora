@@ -56,11 +56,9 @@ const COMPOSITION_VIEW_KEY = "composition_view_tracked";
 const CURRENT_SAME_PRICE_KEY = "CURRENT_SAME_PRICE";
 const CURRENT_PRICE_GLOBAL_KEY = "CURRENT_PRICE_GLOBAL";
 const CURRENT_PRICE_BY_MKT_KEY = "CURRENT_PRICE_BY_MKT";
-const PRO_MODE_STORAGE_KEY = "PRO_MODE_ENABLED";
 const LEAD_CAPTURE_SESSION_KEY = "lead_capture_dismissed";
 const LEAD_CAPTURE_BLOCK_ID = "leadCaptureBlock";
 
-let PRO_MODE_ENABLED = false;
 
 const CURRENT_PRICE_MARKETPLACE_INPUTS = {
   shopee: "currentPriceShopee",
@@ -139,56 +137,6 @@ function scrollToWithTopbarOffset(target) {
   const y = target.getBoundingClientRect().top + window.pageYOffset - offset;
   window.scrollTo({ top: y, behavior: "smooth" });
 }
-
-function scrollToProMode({ openAccordion = true } = {}) {
-  const proModeContainer = document.querySelector("#pro-mode");
-  const proModeContent = document.querySelector("#proModeContent");
-  const proModeToggle = document.querySelector("#proModeToggle");
-  if (!proModeContainer) return;
-
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const headerH = document.querySelector("header")?.offsetHeight || 0;
-  const elTop = proModeContainer.getBoundingClientRect().top + window.pageYOffset;
-  const targetTop = Math.max(0, elTop - headerH - 12);
-
-  const wasOpen = !!proModeContent?.classList.contains("is-open");
-
-  trackGA4Event("pro_mode_cta_click", { location: "top_card" });
-
-  window.scrollTo({
-    top: targetTop,
-    behavior: reduceMotion ? "auto" : "smooth"
-  });
-
-  const afterScroll = () => {
-    let openedNow = wasOpen;
-
-    if (openAccordion && !wasOpen) {
-      proModeContent?.classList.add("is-open");
-      proModeContent?.setAttribute("aria-hidden", "false");
-      proModeToggle?.setAttribute("aria-expanded", "true");
-      openedNow = true;
-    }
-
-    trackGA4Event("pro_mode_scrolled", { opened: openedNow });
-
-    if (!PRO_MODE_ENABLED) {
-      proModeToggle?.focus({ preventScroll: true });
-    }
-
-    if (!reduceMotion) {
-      proModeContainer.classList.remove("pro-attention");
-      void proModeContainer.offsetWidth;
-      proModeContainer.classList.add("pro-attention");
-      window.setTimeout(() => {
-        proModeContainer.classList.remove("pro-attention");
-      }, 1400);
-    }
-  };
-
-  window.setTimeout(afterScroll, reduceMotion ? 0 : 420);
-}
-
 
 /* ===== SHEIN =====
    Comissão:
@@ -504,7 +452,7 @@ function getAdvancedVars() {
   const pis = pctFrom("#pisToggle", "#pisValue");
   const cofins = pctFrom("#cofinsToggle", "#cofinsValue");
 
-  const affOn = advOn && document.querySelector("#affToggle")?.checked;
+  const affOn = document.querySelector("#affToggle")?.checked;
   const aff = {
     shopee: affOn ? Math.max(0, toNumber(document.querySelector("#affShopee")?.value)) / 100 : 0,
     ml: affOn ? Math.max(0, toNumber(document.querySelector("#affML")?.value)) / 100 : 0,
@@ -1168,90 +1116,7 @@ function initTheme() {
   });
 }
 
-function renderProModeBadgeAndInsight(beforeResults = [], afterResults = []) {
-  const badgeSlot = document.querySelector("#proModeBadgeSlot");
-  const insight = document.querySelector("#proModeInsight");
-
-  if (badgeSlot) {
-    badgeSlot.innerHTML = PRO_MODE_ENABLED ? '<div class="pro-mode-result-badge">🔬 Simulação detalhada ativada</div>' : "";
-  }
-
-  if (!insight) return;
-
-  if (!PRO_MODE_ENABLED) {
-    insight.textContent = "Dica: ajustes profissionais podem mudar seu lucro final.";
-    return;
-  }
-
-  const beforeBest = (beforeResults || []).reduce((best, item) => (!best || (item?.profitBRL || 0) > (best?.profitBRL || 0) ? item : best), null);
-  const afterBest = (afterResults || []).reduce((best, item) => (!best || (item?.profitBRL || 0) > (best?.profitBRL || 0) ? item : best), null);
-
-  if (!beforeBest || !afterBest) {
-    insight.textContent = "Dica: ajustes profissionais podem mudar seu lucro final.";
-    return;
-  }
-
-  const delta = (afterBest.profitBRL || 0) - (beforeBest.profitBRL || 0);
-  insight.textContent = `Seu lucro mudou em ${brl(Math.abs(delta))} após ativar ajustes profissionais.`;
-}
-
-function applyProModeState({ persist = true, recalculate = true } = {}) {
-  document.body.classList.toggle("pro-enabled", PRO_MODE_ENABLED);
-
-  const toggleButton = document.querySelector("#proModeToggle");
-  const proContent = document.querySelector("#proModeContent");
-  const proModeContainer = document.querySelector("#pro-mode");
-  const advToggle = document.querySelector("#advToggle");
-
-  if (toggleButton) {
-    toggleButton.textContent = PRO_MODE_ENABLED ? "Modo Profissional ativado ✅" : "Ativar Modo Profissional";
-    toggleButton.setAttribute("aria-pressed", PRO_MODE_ENABLED ? "true" : "false");
-    toggleButton.setAttribute("aria-expanded", PRO_MODE_ENABLED ? "true" : "false");
-    toggleButton.classList.toggle("is-on", PRO_MODE_ENABLED);
-  }
-
-  if (proContent) {
-    proContent.classList.toggle("is-open", PRO_MODE_ENABLED);
-    proContent.setAttribute("aria-hidden", PRO_MODE_ENABLED ? "false" : "true");
-  }
-
-  if (proModeContainer) {
-    proModeContainer.classList.toggle("is-enabled", PRO_MODE_ENABLED);
-  }
-
-  if (advToggle && !PRO_MODE_ENABLED) {
-    advToggle.checked = false;
-  }
-
-  if (persist) {
-    localStorage.setItem(PRO_MODE_STORAGE_KEY, PRO_MODE_ENABLED ? "1" : "0");
-  }
-
-  if (recalculate) {
-    uxRecalc();
-  }
-}
-
-function initProMode() {
-  PRO_MODE_ENABLED = localStorage.getItem(PRO_MODE_STORAGE_KEY) === "1";
-  applyProModeState({ persist: false, recalculate: false });
-
-  const toggleButton = document.querySelector("#proModeToggle");
-  toggleButton?.addEventListener("click", () => {
-    PRO_MODE_ENABLED = !PRO_MODE_ENABLED;
-    applyProModeState({ persist: true, recalculate: true });
-  });
-}
-
-
-function moveProModeIntoWizard() {
-  const slot = document.querySelector("#proModeWizardSlot");
-  const proModeContainer = document.querySelector("#pro-mode");
-  if (!slot || !proModeContainer || slot.contains(proModeContainer)) return;
-  slot.appendChild(proModeContainer);
-  proModeContainer.classList.add("pro-mode--in-wizard");
-}
-
+function renderResultInsight() {}
 
 function getCalculationConfig() {
   const taxPct = clamp(toNumber(document.querySelector("#tax")?.value), 0, 99);
@@ -1262,9 +1127,9 @@ function getCalculationConfig() {
   const mlClassicPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
   const mlPremiumPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
 
-  const adv = PRO_MODE_ENABLED ? getAdvancedVars() : { pctExtra: 0, fixedBRL: 0, affiliate: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 }, details: { ads: { pct: 0, brl: 0 }, ret: { pct: 0, brl: 0 }, other: { pct: 0, brl: 0 }, costFixed: { pct: 0, brl: 0 }, difal: 0, pis: 0, cofins: 0, aff: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 } } };
+  const adv = getAdvancedVars();
 
-  const weightToggle = PRO_MODE_ENABLED && document.querySelector("#mlWeightToggle")?.checked;
+  const weightToggle = document.querySelector("#mlWeightToggle")?.checked;
   const weightValueRaw = document.querySelector("#mlWeightValue")?.value;
   const weightUnit = document.querySelector("#mlWeightUnit")?.value || "kg";
   const weightData = resolveMarketplaceWeight({ enabled: weightToggle, rawValue: weightValueRaw, unit: weightUnit });
@@ -1484,9 +1349,9 @@ function recalc(options = {}) {
   const mlClassicPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
   const mlPremiumPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
 
-  const adv = PRO_MODE_ENABLED ? getAdvancedVars() : { pctExtra: 0, fixedBRL: 0, affiliate: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 }, details: { ads: { pct: 0, brl: 0 }, ret: { pct: 0, brl: 0 }, other: { pct: 0, brl: 0 }, costFixed: { pct: 0, brl: 0 }, difal: 0, pis: 0, cofins: 0, aff: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 } } };
+  const adv = getAdvancedVars();
 
-  const weightToggle = PRO_MODE_ENABLED && document.querySelector("#mlWeightToggle")?.checked;
+  const weightToggle = document.querySelector("#mlWeightToggle")?.checked;
   const weightValueRaw = document.querySelector("#mlWeightValue")?.value;
   const weightUnit = document.querySelector("#mlWeightUnit")?.value || "kg";
   const weightData = resolveMarketplaceWeight({
@@ -1884,7 +1749,7 @@ function recalc(options = {}) {
       weightData: resolveMarketplaceWeight({ enabled: false, rawValue: "", unit: "kg" })
     }
   }).computedResults;
-  renderProModeBadgeAndInsight(basicResults, computedResults);
+  renderResultInsight(basicResults, computedResults);
 
   renderSamePriceComparison(state);
   renderCurrentPriceAnalysis(state);
@@ -2446,6 +2311,24 @@ function bindInputTracking() {
 }
 
 
+function setInlineBoxVisibility(box, show) {
+  if (!box) return;
+  box.classList.add("optionalInlineBox");
+
+  if (show) {
+    box.classList.remove("is-hidden");
+    window.requestAnimationFrame(() => box.classList.add("is-open"));
+    return;
+  }
+
+  box.classList.remove("is-open");
+  window.setTimeout(() => {
+    if (!box.classList.contains("is-open")) {
+      box.classList.add("is-hidden");
+    }
+  }, 220);
+}
+
 function bind() {
   const $ = (s) => document.querySelector(s);
 
@@ -2454,19 +2337,12 @@ function bind() {
     scrollToWithTopbarOffset(results);
   };
 
-  $("#btnProModeGo")?.addEventListener("click", () => {
-    if (!PRO_MODE_ENABLED) {
-      PRO_MODE_ENABLED = true;
-      applyProModeState({ persist: true, recalculate: false });
-    }
-  });
 
   $("#recalc")?.addEventListener("click", () => {
     recalc({ source: "manual" });
-    const mode = PRO_MODE_ENABLED ? "advanced" : "basic";
-    const hasWeight = !!(PRO_MODE_ENABLED && document.querySelector("#mlWeightToggle")?.checked);
-    const hasAffiliate = !!(PRO_MODE_ENABLED && document.querySelector("#advToggle")?.checked && document.querySelector("#affToggle")?.checked);
-    trackGA4Event("recalc", { section: "button", value: mode, has_weight: hasWeight, has_affiliate: hasAffiliate });
+    const hasWeight = !!document.querySelector("#mlWeightToggle")?.checked;
+    const hasAffiliate = !!(document.querySelector("#advToggle")?.checked && document.querySelector("#affToggle")?.checked);
+    trackGA4Event("recalc", { section: "button", value: "manual", has_weight: hasWeight, has_affiliate: hasAffiliate });
     scrollToResults();
   });
 
@@ -2612,7 +2488,7 @@ function bind() {
   const mlCommissionBox = $("#mlCommissionBox");
   const applyMlCommissionBox = () => {
     if (!mlCommissionToggle || !mlCommissionBox) return;
-    mlCommissionBox.classList.toggle("is-hidden", !mlCommissionToggle.checked);
+    setInlineBoxVisibility(mlCommissionBox, mlCommissionToggle.checked);
   };
   mlCommissionToggle?.addEventListener("change", applyMlCommissionBox);
   applyMlCommissionBox();
@@ -2621,7 +2497,7 @@ function bind() {
   const sheinCommissionBox = $("#sheinCommissionBox");
   const applySheinCommissionBox = () => {
     if (!sheinCommissionToggle || !sheinCommissionBox) return;
-    sheinCommissionBox.classList.toggle("is-hidden", !sheinCommissionToggle.checked);
+    setInlineBoxVisibility(sheinCommissionBox, sheinCommissionToggle.checked);
   };
   sheinCommissionToggle?.addEventListener("change", applySheinCommissionBox);
   applySheinCommissionBox();
@@ -2631,7 +2507,7 @@ function bind() {
   const advBox = $("#advBox");
   const applyAdvBox = () => {
     if (!advToggle || !advBox) return;
-    advBox.classList.toggle("is-hidden", !PRO_MODE_ENABLED || !advToggle.checked);
+    setInlineBoxVisibility(advBox, advToggle.checked);
   };
   advToggle?.addEventListener("change", applyAdvBox);
   applyAdvBox();
@@ -2641,7 +2517,7 @@ function bind() {
   const affBox = $("#affBox");
   const applyAffBox = () => {
     if (!affToggle || !affBox) return;
-    affBox.classList.toggle("is-hidden", !affToggle.checked);
+    setInlineBoxVisibility(affBox, affToggle.checked);
   };
   affToggle?.addEventListener("change", applyAffBox);
   applyAffBox();
@@ -2651,7 +2527,7 @@ function bind() {
   const wBox = $("#mlWeightBox");
   const applyWBox = () => {
     if (!wToggle || !wBox) return;
-    wBox.classList.toggle("is-hidden", !PRO_MODE_ENABLED || !wToggle.checked);
+    setInlineBoxVisibility(wBox, wToggle.checked);
   };
   wToggle?.addEventListener("change", applyWBox);
   applyWBox();
@@ -2660,7 +2536,7 @@ function bind() {
   const amazonBox = $("#amazonDbaBox");
   const applyAmazonBox = () => {
     if (!amazonToggle || !amazonBox) return;
-    amazonBox.classList.toggle("is-hidden", !amazonToggle.checked);
+    setInlineBoxVisibility(amazonBox, amazonToggle.checked);
   };
   amazonToggle?.addEventListener("change", () => {
     applyAmazonBox();
@@ -2970,7 +2846,6 @@ function debounceUxRecalc() {
 function initUxRefactor() {
   buildMarketplaceSelector();
   renderMode1PriceInputs();
-  moveProModeIntoWizard();
 
   const profitValuePct = document.querySelector("#profitValuePct");
   const metaPercent = document.querySelector("#meta_percent");
@@ -3028,21 +2903,6 @@ function initUxRefactor() {
   document.querySelector("#wizardEditData")?.addEventListener("click", () => setWizardStep(3));
   document.querySelector("#wizardNewCalc")?.addEventListener("click", () => setWizardStep(1));
 
-  document.querySelector("#btnProModeGo")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-
-    if (!PRO_MODE_ENABLED) {
-      PRO_MODE_ENABLED = true;
-      applyProModeState({ persist: true, recalculate: false });
-    }
-
-    syncGlobalWeightToAdvancedAll();
-    recalc({ source: "manual_pro" });
-
-    applyWizardResultFilter();
-    setWizardStep(4);
-  });
 
   document.querySelector("#recalc")?.addEventListener("click", (event) => {
     event.preventDefault();
@@ -3079,7 +2939,6 @@ function initApp() {
 
   applySimpleShareParams();
   initTheme();
-  initProMode();
   initUxRefactor();
   loadCurrentPriceState();
   bind();
