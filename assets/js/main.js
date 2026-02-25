@@ -2745,12 +2745,24 @@ function renderMode1PriceInputs() {
 function toggleUxModeSections() {
   const mode = getCalcMode();
   const hasMode = Boolean(mode);
+  const mode1PriceSection = document.querySelector("#mode1PriceSection");
+  const profitGoalSection = document.querySelector("#profitGoalSection");
+  const hint = document.querySelector("#calcModeMicrocopy");
+
+  if (!hasMode) {
+    mode1PriceSection?.classList.add("is-hidden");
+    profitGoalSection?.classList.add("is-hidden");
+    if (hint) hint.textContent = "";
+    return;
+  }
+
+  const isStep2 = wizardStep === 2;
   const isStep3 = wizardStep === 3;
-  document.querySelector("#mode1PriceSection")?.classList.toggle("is-hidden", !(hasMode && mode === "real" && isStep3));
-  document.querySelector("#profitGoalSection")?.classList.toggle("is-hidden", !(hasMode && mode === "ideal" && isStep3));
+  mode1PriceSection?.classList.toggle("is-hidden", !(mode === "real" && isStep2));
+  profitGoalSection?.classList.toggle("is-hidden", !(mode === "ideal" && isStep3));
   const heading = document.querySelector("#profitGoalHeading");
   if (heading) heading.textContent = "Margem desejada";
-  const hint = document.querySelector("#calcModeMicrocopy");
+
   if (hint) {
     hint.textContent = mode === "real"
       ? "Preço pode variar por marketplace. Preencha o valor correspondente a cada canal."
@@ -2784,6 +2796,10 @@ function setWizardStep(step) {
 }
 
 function renderWizardUI() {
+  if (!getCalcMode() && wizardStep > 0) {
+    wizardStep = 0;
+  }
+
   document.querySelectorAll(".wizardStep").forEach((el) => {
     const step = Number(el.dataset.step || 0);
     el.classList.toggle("is-hidden", step !== wizardStep);
@@ -2926,11 +2942,13 @@ function initUxRefactor() {
     el.checked = false;
   });
 
-  toggleUxModeSections();
-
   uxRecalc();
   setWizardStep(0);
   renderWizardUI();
+  window.setTimeout(() => {
+    setWizardStep(0);
+    renderWizardUI();
+  }, 0);
 }
 
 function initApp() {
