@@ -1200,6 +1200,7 @@ function applyProModeState({ persist = true, recalculate = true } = {}) {
 
   const toggleButton = document.querySelector("#proModeToggle");
   const proContent = document.querySelector("#proModeContent");
+  const proModeContainer = document.querySelector("#pro-mode");
   const advToggle = document.querySelector("#advToggle");
 
   if (toggleButton) {
@@ -1212,6 +1213,10 @@ function applyProModeState({ persist = true, recalculate = true } = {}) {
   if (proContent) {
     proContent.classList.toggle("is-open", PRO_MODE_ENABLED);
     proContent.setAttribute("aria-hidden", PRO_MODE_ENABLED ? "false" : "true");
+  }
+
+  if (proModeContainer) {
+    proModeContainer.classList.toggle("is-enabled", PRO_MODE_ENABLED);
   }
 
   if (advToggle && !PRO_MODE_ENABLED) {
@@ -1236,6 +1241,15 @@ function initProMode() {
     PRO_MODE_ENABLED = !PRO_MODE_ENABLED;
     applyProModeState({ persist: true, recalculate: true });
   });
+}
+
+
+function moveProModeIntoWizard() {
+  const slot = document.querySelector("#proModeWizardSlot");
+  const proModeContainer = document.querySelector("#pro-mode");
+  if (!slot || !proModeContainer || slot.contains(proModeContainer)) return;
+  slot.appendChild(proModeContainer);
+  proModeContainer.classList.add("pro-mode--in-wizard");
 }
 
 
@@ -2441,7 +2455,10 @@ function bind() {
   };
 
   $("#btnProModeGo")?.addEventListener("click", () => {
-    scrollToProMode({ openAccordion: true });
+    if (!PRO_MODE_ENABLED) {
+      PRO_MODE_ENABLED = true;
+      applyProModeState({ persist: true, recalculate: false });
+    }
   });
 
   $("#recalc")?.addEventListener("click", () => {
@@ -2953,6 +2970,7 @@ function debounceUxRecalc() {
 function initUxRefactor() {
   buildMarketplaceSelector();
   renderMode1PriceInputs();
+  moveProModeIntoWizard();
 
   const profitValuePct = document.querySelector("#profitValuePct");
   const metaPercent = document.querySelector("#meta_percent");
@@ -3013,6 +3031,11 @@ function initUxRefactor() {
   document.querySelector("#btnProModeGo")?.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();
+
+    if (!PRO_MODE_ENABLED) {
+      PRO_MODE_ENABLED = true;
+      applyProModeState({ persist: true, recalculate: false });
+    }
 
     syncGlobalWeightToAdvancedAll();
     recalc({ source: "manual_pro" });
