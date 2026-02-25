@@ -1137,3 +1137,141 @@ body.theme-dark .stickySummary__actions{background:transparent}
   }
   .mpChip{ flex:0 0 auto; }
 }
+
+/* Marketplace chips with logo */
+.marketplaceChip{
+  --brand-color: var(--accent);
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  min-height:48px;
+  padding:10px 14px;
+  border:1px solid color-mix(in srgb,var(--stroke) 86%,transparent);
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.84),rgba(248,250,252,.7));
+  box-shadow:0 8px 18px rgba(15,23,42,.08);
+  cursor:pointer;
+  transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease,background .18s ease;
+}
+
+.marketplaceChip:hover{
+  transform:translateY(-1px);
+  border-color:color-mix(in srgb,var(--brand-color) 40%, var(--stroke));
+  box-shadow:0 12px 22px rgba(15,23,42,.12);
+}
+
+.marketplaceChip__input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+
+.mpLogo{
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  flex:0 0 28px;
+  display:grid;
+  place-items:center;
+  background:color-mix(in srgb,var(--brand-color) 8%, #fff);
+  color:color-mix(in srgb,var(--brand-color) 70%, #0f172a);
+  overflow:hidden;
+}
+
+.mpLogo img{
+  width:20px;
+  height:20px;
+  display:block;
+  object-fit:contain;
+}
+
+.mpLogo img[data-mono="1"]{color:inherit}
+
+.mpLogo.is-fallback::after{
+  content:attr(data-fallback);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.02em;
+}
+
+.mpName{
+  min-width:0;
+  max-width:220px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:600;
+  color:var(--text);
+}
+
+.mpCheck{
+  margin-left:auto;
+  width:18px;
+  height:18px;
+  border-radius:999px;
+  border:1.5px solid color-mix(in srgb,var(--stroke) 82%,transparent);
+  background:transparent;
+  display:grid;
+  place-items:center;
+  flex:0 0 18px;
+  transition:background .18s ease,border-color .18s ease;
+}
+
+.mpCheck::after{
+  content:"";
+  width:6px;
+  height:10px;
+  border:2px solid transparent;
+  border-top:0;
+  border-left:0;
+  transform:rotate(45deg) translateY(-1px);
+}
+
+.marketplaceChip:has(.marketplaceChip__input:checked){
+  border-color:var(--accent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 12%, #fff),color-mix(in srgb,var(--accent) 6%, #fff));
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%, transparent),0 12px 24px rgba(15,157,146,.12);
+}
+
+.marketplaceChip:has(.marketplaceChip__input:checked) .mpCheck{
+  background:var(--accent);
+  border-color:var(--accent);
+}
+
+.marketplaceChip:has(.marketplaceChip__input:checked) .mpCheck::after{border-color:#fff}
+
+.marketplaceChip:has(.marketplaceChip__input:focus-visible){
+  outline:3px solid color-mix(in srgb,var(--accent) 34%,transparent);
+  outline-offset:3px;
+}
+
+.brand-shopee{--brand-color:#ee4d2d}
+.brand-mlclassic{--brand-color:#fbbf24}
+.brand-mlpremium{--brand-color:#f59e0b}
+.brand-tiktok{--brand-color:#111827}
+.brand-shein{--brand-color:#1f2937}
+.brand-amazon{--brand-color:#f59e0b}
+
+body.theme-dark .marketplaceChip{
+  background:linear-gradient(170deg,rgba(15,23,42,.9),rgba(30,41,59,.65));
+}
+
+@media (max-width:768px){
+  .marketplaceSelector{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    gap:10px;
+    padding-bottom:8px;
+  }
+
+  .marketplaceChip{
+    flex:0 0 auto;
+    max-width:83vw;
+  }
+
+  .mpName{max-width:44vw}
+}
