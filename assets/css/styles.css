@@ -90,6 +90,8 @@ input:hover,select:hover{border-color:#b8c5d7}
 .formBlock__head p{margin:5px 0 0;color:var(--muted);font-size:13px}
 .formDivider{height:1px;background:var(--stroke);margin:20px 0}
 .formBlock--actions{gap:12px}
+.proModeWizardSlot{margin-top:14px}
+
 
 .segmented{display:flex;gap:8px;padding:6px;border:1px solid #dbe4ef;border-radius:12px;background:linear-gradient(180deg,#f8fafc,#f1f5f9)}
 .segmented--goal{max-width:260px}
@@ -110,6 +112,12 @@ input:hover,select:hover{border-color:#b8c5d7}
 .formAccordion__intro{margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.4}
 
 .pro-mode{margin-top:18px;padding:20px;border:1px solid #d9d5ff;border-radius:18px;background:linear-gradient(180deg,#ffffff,#f7f5ff);box-shadow:0 10px 30px rgba(76,29,149,.08)}
+.pro-mode.pro-mode--in-wizard{margin-top:0;padding:16px;border:1px solid var(--stroke);border-radius:15px;background:var(--surface-soft,#f8fafc);box-shadow:none}
+.pro-mode.pro-mode--in-wizard .pro-mode__header h3{font-size:18px}
+.pro-mode.pro-mode--in-wizard .pro-mode__subtitle{margin-top:4px;font-size:13px}
+.pro-mode.pro-mode--in-wizard .pro-mode__microcopy{margin-top:8px;font-size:12px}
+.pro-mode.pro-mode--in-wizard .pro-mode__chips{margin-top:10px}
+.pro-mode.pro-mode--in-wizard .pro-mode__content.is-open{max-height:2800px}
 .pro-mode__header h3{margin:0;font-size:22px;letter-spacing:-.01em}
 .pro-mode__subtitle{margin:6px 0 0;font-weight:600;color:#4338ca}
 .pro-mode__microcopy{margin:10px 0 0;color:#475569;line-height:1.45}
@@ -364,7 +372,9 @@ body.theme-dark .btn--ghost,body.theme-dark input,body.theme-dark select,body.th
   .sectionCard{padding:16px}
   .grid,.row2,.affGrid,.advGrid,.stickySummary__actions,.shareBox__actions,.actions,.currentPriceByMarketplace{grid-template-columns:1fr}
   .pro-mode{padding:16px}
+  .pro-mode.pro-mode--in-wizard{padding:14px}
   .pro-mode__header h3{font-size:19px}
+  .pro-mode.pro-mode--in-wizard .pro-mode__header h3{font-size:17px}
   .pro-mode__chips{gap:6px}
   .pro-chip{font-size:11px}
   .btnProModeGo__microcopy{margin-top:0}
