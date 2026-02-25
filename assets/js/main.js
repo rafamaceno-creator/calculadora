@@ -2744,8 +2744,9 @@ function renderMode1PriceInputs() {
 
 function toggleUxModeSections() {
   const mode = getCalcMode();
-  document.querySelector("#mode1PriceSection")?.classList.toggle("is-hidden", mode !== "real");
-  document.querySelector("#profitGoalSection")?.classList.toggle("is-hidden", mode === "real");
+  const isStep3 = wizardStep === 3;
+  document.querySelector("#mode1PriceSection")?.classList.toggle("is-hidden", !(mode === "real" && isStep3));
+  document.querySelector("#profitGoalSection")?.classList.toggle("is-hidden", !(mode !== "real" && isStep3));
   const heading = document.querySelector("#profitGoalHeading");
   if (heading) heading.textContent = "Margem desejada";
   const hint = document.querySelector("#calcModeMicrocopy");
