@@ -1418,6 +1418,9 @@ const Bulk = {
 
 
 function bindBulk() {
+  const bulkRows = document.querySelector("#bulkRows");
+  if (!bulkRows) return;
+
   Bulk.init();
 
   document.querySelector("#bulkAddRow")?.addEventListener("click", () => Bulk.addRow());
@@ -2482,7 +2485,7 @@ function bind() {
   });
 
   // Auto recalcular em input/change
-  document.querySelectorAll("#sec-precificacao input, #sec-precificacao select, #sec-comparar input, #sec-lucro input, #sec-escala input").forEach((el) => {
+  document.querySelectorAll("#sec-precificacao input, #sec-precificacao select").forEach((el) => {
     el.addEventListener("input", () => recalc({ source: "auto" }));
     el.addEventListener("change", () => recalc({ source: "auto" }));
   });
@@ -2723,34 +2726,39 @@ function bindSegmentMenuActiveState() {
 
 
 function bindSmoothScroll() {
+  const DEFAULT_SECTION = "#sec-precificacao";
   const sectionMap = {
-    "#sec-precificacao": "precificacao",
-    "#sec-comparar": "comparar_preco",
-    "#sec-lucro": "lucro_atual",
-    "#sec-escala": "escala",
-    "#sec-bulk": "massa"
+    [DEFAULT_SECTION]: "precificacao"
   };
 
-  const resolveAndScroll = (selector, { updateHash = true } = {}) => {
-    if (!selector || !selector.startsWith("#")) return false;
+  const resolveSelector = (selector) => {
+    if (!selector || !selector.startsWith("#")) return DEFAULT_SECTION;
 
-    let target;
     try {
-      target = document.querySelector(selector);
+      return document.querySelector(selector) ? selector : DEFAULT_SECTION;
     } catch (error) {
       logActionError(`Seletor inválido para scroll: ${selector}`, error);
-      return false;
+      return DEFAULT_SECTION;
     }
+  };
 
+  const resolveAndScroll = (selector, { updateHash = true, replaceHash = false } = {}) => {
+    const safeSelector = resolveSelector(selector);
+    const target = document.querySelector(safeSelector);
     if (!target) return false;
 
     scrollToWithTopbarOffset(target);
-    if (updateHash && window.location.hash !== selector && typeof window.history?.pushState === "function") {
-      window.history.pushState(null, "", selector);
+
+    if (updateHash && window.location.hash !== safeSelector) {
+      if (replaceHash && typeof window.history?.replaceState === "function") {
+        window.history.replaceState(null, "", safeSelector);
+      } else if (typeof window.history?.pushState === "function") {
+        window.history.pushState(null, "", safeSelector);
+      }
     }
 
-    if (selector in sectionMap) {
-      setActiveSegmentButton(selector);
+    if (safeSelector in sectionMap) {
+      setActiveSegmentButton(safeSelector);
     }
 
     return true;
@@ -2761,24 +2769,21 @@ function bindSmoothScroll() {
       const selector = getTriggerSelector(trigger);
       if (!selector || !selector.startsWith("#")) return;
 
-      const didScroll = resolveAndScroll(selector, { updateHash: true });
-      if (!didScroll) return;
-
       event.preventDefault();
+      const safeSelector = resolveSelector(selector);
+      resolveAndScroll(safeSelector, { updateHash: true });
 
-      const section = sectionMap[selector];
+      const section = sectionMap[safeSelector];
       if (section && trigger.classList.contains("segmentMenu__btn")) {
         trackGA4Event("click_tab", { section, value: "menu_top" });
       }
     });
   });
 
-  if (!resolveAndScroll(window.location.hash, { updateHash: false })) {
-    setActiveSegmentButton("#sec-precificacao");
-  }
+  resolveAndScroll(window.location.hash, { updateHash: true, replaceHash: true });
 
   window.addEventListener("popstate", () => {
-    resolveAndScroll(window.location.hash, { updateHash: false });
+    resolveAndScroll(window.location.hash, { updateHash: true, replaceHash: true });
   });
 }
 
