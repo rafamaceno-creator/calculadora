@@ -684,3 +684,295 @@ body.theme-dark .leadCapture__head p{color:#94a3b8}
   .marketplaceSelector{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:10px;padding-bottom:8px;scrollbar-width:thin}
   .marketplaceChip{flex:0 0 auto}
 }
+
+/* ===== Premium WOW Refresh (visual only) ===== */
+:root{
+  --bg:#edf2ff;
+  --surface:rgba(255,255,255,.78);
+  --surface-soft:rgba(255,255,255,.56);
+  --stroke:rgba(148,163,184,.34);
+  --text:#0f172a;
+  --muted:#526177;
+  --accent:#0f9d92;
+  --accent-2:#7c3aed;
+  --ring:0 0 0 3px color-mix(in srgb,var(--accent) 24%, transparent);
+  --glass-blur:16px;
+  --radius-sm:12px;
+  --radius-md:18px;
+  --radius-lg:24px;
+  --shadow-sm:0 8px 24px rgba(15,23,42,.08);
+  --shadow-md:0 16px 38px rgba(15,23,42,.12);
+  --shadow-lg:0 30px 70px rgba(15,23,42,.18);
+}
+
+body{
+  background:
+    radial-gradient(1200px 700px at -10% -15%,rgba(15,157,146,.18),transparent 55%),
+    radial-gradient(900px 550px at 100% 0%,rgba(124,58,237,.16),transparent 58%),
+    linear-gradient(160deg,#eef2ff 0%,#f5f8ff 50%,#eef8fb 100%);
+  letter-spacing:-.004em;
+}
+body::before,
+body::after{
+  content:"";
+  position:fixed;
+  inset:auto;
+  width:36vmax;
+  height:36vmax;
+  border-radius:50%;
+  filter:blur(80px);
+  opacity:.2;
+  pointer-events:none;
+  z-index:-2;
+}
+body::before{top:-10vmax;left:-10vmax;background:#16a394}
+body::after{right:-12vmax;bottom:-12vmax;background:#7c3aed}
+
+.appShell{position:relative;z-index:1}
+.appShell::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background-image:radial-gradient(rgba(15,23,42,.032) .7px,transparent .8px);
+  background-size:2.5px 2.5px;
+  pointer-events:none;
+  z-index:-1;
+}
+
+.topbar,
+.sectionCard,
+.card,
+.leadCapture,
+details,
+.shareBox,
+.hint{
+  background:var(--surface);
+  backdrop-filter:blur(var(--glass-blur));
+  -webkit-backdrop-filter:blur(var(--glass-blur));
+  border-color:var(--stroke);
+}
+
+.hero h1{line-height:1.02;letter-spacing:-.03em}
+.hero p{line-height:1.62;color:var(--muted)}
+
+.sectionCard,
+.card{border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
+.sectionCard:hover,
+.card:hover{box-shadow:var(--shadow-md)}
+.pricingCard{position:relative;overflow:hidden}
+.pricingCard::before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto 0;
+  height:140px;
+  background:linear-gradient(130deg,rgba(15,157,146,.12),rgba(124,58,237,.12));
+  pointer-events:none;
+}
+.pricingCard .card__inner{position:relative;z-index:1}
+
+.btn{
+  border-radius:14px;
+  box-shadow:0 6px 16px rgba(15,23,42,.07);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(15,23,42,.12)}
+.btn:active{transform:translateY(1px) scale(.995);box-shadow:0 5px 12px rgba(15,23,42,.09)}
+.btn--primary{background:linear-gradient(135deg,var(--accent),#0ea5a4 60%,#14b8a6)}
+
+.field{margin-bottom:16px}
+.label{font-size:12px;letter-spacing:.02em;color:#334155}
+input,select{background:rgba(255,255,255,.8);border:1px solid rgba(148,163,184,.4);border-radius:13px}
+input:focus-visible,select:focus-visible,.segmented label:focus-visible{outline:none;box-shadow:var(--ring);border-color:color-mix(in srgb,var(--accent) 45%, #fff 55%)}
+input::placeholder{color:#95a0b2}
+
+.segmented{
+  padding:5px;
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(226,232,240,.65),rgba(255,255,255,.8));
+  border:1px solid rgba(148,163,184,.34);
+}
+.segmented label{border-radius:11px;font-weight:700}
+.segmented input[type="radio"]:checked + label{
+  border:1px solid color-mix(in srgb,var(--accent) 36%, transparent);
+  color:#0b766e;
+  box-shadow:0 8px 20px rgba(15,157,146,.14);
+}
+
+.pricingCard .card__inner{--wizard-step:0}
+.pricingCard .card__inner:has(.wizardStep[data-step="1"]:not(.is-hidden)){--wizard-step:1}
+.pricingCard .card__inner:has(.wizardStep[data-step="2"]:not(.is-hidden)){--wizard-step:2}
+.pricingCard .card__inner:has(.wizardStep[data-step="3"]:not(.is-hidden)){--wizard-step:3}
+.pricingCard .card__inner:has(.wizardStep[data-step="4"]:not(.is-hidden)){--wizard-step:4}
+
+.wizardProgress{
+  position:relative;
+  margin-bottom:18px;
+  min-height:62px;
+  padding:12px 14px;
+  border-radius:16px;
+  border:1px solid rgba(148,163,184,.35);
+  background:linear-gradient(170deg,rgba(255,255,255,.85),rgba(241,245,249,.8));
+  color:transparent;
+  overflow:hidden;
+}
+.wizardProgress::before{
+  content:"";
+  position:absolute;
+  left:16px;
+  right:16px;
+  top:22px;
+  height:2px;
+  background:
+    linear-gradient(90deg,
+      var(--accent) 0 calc(var(--wizard-step) * 25%),
+      rgba(148,163,184,.35) calc(var(--wizard-step) * 25%) 100%);
+}
+.wizardProgress::after{
+  content:"Passo " attr(data-step-label);
+  position:absolute;
+  left:16px;
+  bottom:10px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--muted);
+  letter-spacing:.02em;
+}
+.wizardProgress{
+  --dot-a:color-mix(in srgb,var(--accent) calc((var(--wizard-step) >= 1)*100%),rgba(148,163,184,.35));
+}
+.wizardProgress > *{display:none}
+.wizardProgress{
+  background-image:
+    radial-gradient(circle at 16px 22px, color-mix(in srgb,var(--accent) calc(min(var(--wizard-step),1)*100%), rgba(148,163,184,.45)) 0 6px, transparent 7px),
+    radial-gradient(circle at calc(33.33% + 5px) 22px, color-mix(in srgb,var(--accent) calc(min(max(var(--wizard-step) - 1,0),1)*100%), rgba(148,163,184,.45)) 0 6px, transparent 7px),
+    radial-gradient(circle at calc(66.66% - 5px) 22px, color-mix(in srgb,var(--accent) calc(min(max(var(--wizard-step) - 2,0),1)*100%), rgba(148,163,184,.45)) 0 6px, transparent 7px),
+    radial-gradient(circle at calc(100% - 16px) 22px, color-mix(in srgb,var(--accent) calc(min(max(var(--wizard-step) - 3,0),1)*100%), rgba(148,163,184,.45)) 0 6px, transparent 7px),
+    linear-gradient(170deg,rgba(255,255,255,.85),rgba(241,245,249,.8));
+}
+.pricingCard .card__inner:has(.wizardStep[data-step="0"]:not(.is-hidden)) .wizardProgress::after{content:"Passo 0/4 • Escolha o modo"}
+.pricingCard .card__inner:has(.wizardStep[data-step="1"]:not(.is-hidden)) .wizardProgress::after{content:"Passo 1/4 • Marketplaces"}
+.pricingCard .card__inner:has(.wizardStep[data-step="2"]:not(.is-hidden)) .wizardProgress::after{content:"Passo 2/4 • Dados"}
+.pricingCard .card__inner:has(.wizardStep[data-step="3"]:not(.is-hidden)) .wizardProgress::after{content:"Passo 3/4 • Meta e ajustes"}
+.pricingCard .card__inner:has(.wizardStep[data-step="4"]:not(.is-hidden)) .wizardProgress::after{content:"Passo 4/4 • Resultado"}
+
+.modeCards{gap:12px}
+.modeCard{
+  position:relative;
+  border-radius:18px;
+  border:1px solid rgba(148,163,184,.34);
+  background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(248,250,252,.75));
+  box-shadow:var(--shadow-sm);
+}
+.modeCard::before{
+  content:"";
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  background:linear-gradient(135deg,rgba(15,157,146,.18),rgba(124,58,237,.12));
+}
+.modeCard strong{font-size:19px;position:relative;z-index:1}
+.modeCard p{color:#5f7086}
+.modeCard:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+.modeCard.is-selected{border-color:color-mix(in srgb,var(--accent) 50%,transparent);box-shadow:0 0 0 3px rgba(15,157,146,.14),var(--shadow-md)}
+
+.marketplaceSelector{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.marketplaceChip{
+  border-radius:999px;
+  border:1px solid rgba(148,163,184,.45);
+  background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(248,250,252,.76));
+  box-shadow:0 6px 14px rgba(15,23,42,.06);
+  padding:10px 15px;
+}
+.marketplaceChip:hover{box-shadow:0 10px 20px rgba(15,23,42,.12);border-color:color-mix(in srgb,var(--accent) 42%, transparent)}
+.marketplaceChip:has(input:checked){
+  border-color:color-mix(in srgb,var(--accent) 58%, transparent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 16%, #fff),color-mix(in srgb,var(--accent) 7%, #fff));
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%, transparent),0 10px 20px rgba(15,157,146,.15);
+}
+
+.resultCard{
+  border-radius:20px;
+  box-shadow:0 14px 28px rgba(15,23,42,.12);
+  animation:resultEnter .36s ease both;
+}
+.resultAccordion__label{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.resultAccordion__priceValue,.heroValue{letter-spacing:-.03em}
+.pill{border-radius:999px}
+
+@keyframes resultEnter{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.stickyOpen{
+  width:58px;
+  height:58px;
+  padding:0;
+  border-radius:50%;
+  border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);
+  background:radial-gradient(circle at 30% 20%,#fff, color-mix(in srgb,var(--accent) 16%, #fff));
+  color:#0a6f69;
+  box-shadow:var(--shadow-lg);
+  font-size:11px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.stickyOpen:hover{transform:translateY(-2px)}
+
+@media (max-width:768px){
+  .wizardProgress{min-height:56px}
+  .wizardProgress::after{font-size:11px}
+  .marketplaceSelector{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    mask-image:linear-gradient(to right,transparent,black 10%,black 90%,transparent);
+  }
+  .marketplaceChip{flex:0 0 auto;scroll-snap-align:center}
+  .btn,.wizardActions .btn,.actions .btn{width:100%}
+}
+
+body.theme-dark{
+  --bg:#070d1f;
+  --surface:rgba(15,23,42,.72);
+  --surface-soft:rgba(15,23,42,.58);
+  --stroke:rgba(148,163,184,.28);
+  --text:#e2e8f0;
+  --muted:#a8b4c7;
+  --accent:#2dd4bf;
+  --accent-2:#a78bfa;
+  --shadow-sm:0 10px 24px rgba(2,6,23,.5);
+  --shadow-md:0 18px 40px rgba(2,6,23,.56);
+  --shadow-lg:0 28px 70px rgba(2,6,23,.62);
+}
+body.theme-dark{
+  background:
+    radial-gradient(1000px 600px at -10% -10%,rgba(45,212,191,.16),transparent 60%),
+    radial-gradient(900px 520px at 110% 0%,rgba(167,139,250,.14),transparent 60%),
+    linear-gradient(160deg,#020617,#0b1228 55%,#071327 100%);
+}
+body.theme-dark .btn--ghost,
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark .card,
+body.theme-dark .sectionCard,
+body.theme-dark .hint,
+body.theme-dark .shareBox,
+body.theme-dark details{background:var(--surface);color:var(--text)}
+body.theme-dark .wizardProgress,
+body.theme-dark .modeCard,
+body.theme-dark .marketplaceChip{background:linear-gradient(170deg,rgba(15,23,42,.86),rgba(30,41,59,.62))}
+body.theme-dark .stickySummary__top,
+body.theme-dark .stickySummary__actions{background:transparent}
+
+@media (prefers-reduced-motion: reduce){
+  .resultCard,.modeCard,.btn{animation:none;transition:none}
+}
