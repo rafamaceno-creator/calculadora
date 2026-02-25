@@ -112,9 +112,9 @@
       <div class="grid">
       <div class="card pricingCard">
         <div class="card__inner">
-          <div class="wizardProgress" id="wizardProgress" aria-live="polite">Passo 1 de 4</div>
+          <div class="wizardProgress" id="wizardProgress" aria-live="polite">Passo 0 de 4</div>
 
-          <section class="formBlock wizardStep" data-step="1">
+          <section class="formBlock wizardStep" data-step="0">
             <div class="formBlock__head">
               <h3>Escolha como deseja calcular</h3>
             </div>
@@ -140,7 +140,7 @@
             </div>
           </section>
 
-          <section class="formBlock wizardStep is-hidden" data-step="2">
+          <section class="formBlock wizardStep is-hidden" data-step="1">
             <div class="formBlock__head">
               <h3>Selecione marketplaces</h3>
               <p>Selecione 1 ou mais marketplaces.</p>
@@ -156,7 +156,7 @@
             </div>
           </section>
 
-          <section class="formBlock wizardStep is-hidden" data-step="3">
+          <section class="formBlock wizardStep is-hidden" data-step="2">
             <div class="formBlock__head">
               <h3>Dados do produto</h3>
               <p>Use apenas os dados essenciais para iniciar.</p>
@@ -212,6 +212,13 @@
           </section>
 
           <div class="formDivider wizardStep is-hidden" data-step="3"></div>
+
+          <section class="formBlock wizardStep is-hidden" data-step="2">
+            <div class="actions wizardActions">
+              <button id="wizardBackStepData" class="btn btn--ghost" type="button">Voltar</button>
+              <button id="wizardNextStepData" class="btn btn--primary" type="button">Continuar</button>
+            </div>
+          </section>
 
           <section class="formBlock wizardStep is-hidden" data-step="3" id="profitGoalSection">
             <div class="formBlock__head">

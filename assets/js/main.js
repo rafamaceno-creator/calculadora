@@ -2704,10 +2704,10 @@ const MARKETPLACE_TITLE_TO_KEY = {
 let UX_SELECTED_MARKETPLACES = UX_MARKETPLACES.map((mp) => mp.key);
 const UX_PRICE_VALUES = {};
 let UX_RECALC_TIMER = null;
-let wizardStep = 1;
+let wizardStep = 0;
 
 function getCalcMode() {
-  return document.querySelector('input[name="calcMode"]:checked')?.value || "real";
+  return document.querySelector('input[name="calcMode"]:checked')?.value || "";
 }
 
 function getSelectedMarketplaces() {
@@ -2744,9 +2744,10 @@ function renderMode1PriceInputs() {
 
 function toggleUxModeSections() {
   const mode = getCalcMode();
+  const hasMode = Boolean(mode);
   const isStep3 = wizardStep === 3;
-  document.querySelector("#mode1PriceSection")?.classList.toggle("is-hidden", !(mode === "real" && isStep3));
-  document.querySelector("#profitGoalSection")?.classList.toggle("is-hidden", !(mode !== "real" && isStep3));
+  document.querySelector("#mode1PriceSection")?.classList.toggle("is-hidden", !(hasMode && mode === "real" && isStep3));
+  document.querySelector("#profitGoalSection")?.classList.toggle("is-hidden", !(hasMode && mode === "ideal" && isStep3));
   const heading = document.querySelector("#profitGoalHeading");
   if (heading) heading.textContent = "Margem desejada";
   const hint = document.querySelector("#calcModeMicrocopy");
@@ -2758,7 +2759,7 @@ function toggleUxModeSections() {
 }
 
 function validateStep(step) {
-  if (step === 2) {
+  if (step === 1) {
     return getSelectedMarketplaces().length > 0;
   }
   return true;
@@ -2778,7 +2779,7 @@ function applyWizardResultFilter() {
 }
 
 function setWizardStep(step) {
-  wizardStep = clamp(step, 1, 4);
+  wizardStep = clamp(step, 0, 4);
   renderWizardUI();
 }
 
@@ -2792,7 +2793,7 @@ function renderWizardUI() {
   if (progress) progress.textContent = `Passo ${wizardStep} de 4`;
 
   const nextStep2 = document.querySelector("#wizardNextStep2");
-  if (nextStep2) nextStep2.disabled = !validateStep(2);
+  if (nextStep2) nextStep2.disabled = !validateStep(1);
 
   const resultsContainer = document.querySelector(".wizardResultsContainer");
   if (resultsContainer) {
@@ -2812,7 +2813,7 @@ function renderWizardUI() {
 }
 
 function handleNext() {
-  if (wizardStep === 2 && !validateStep(2)) return;
+  if (wizardStep === 1 && !validateStep(1)) return;
   setWizardStep(wizardStep + 1);
 }
 
@@ -2868,7 +2869,7 @@ function initUxRefactor() {
     if (mode === "real" && real) real.checked = true;
     if (mode === "ideal" && ideal) ideal.checked = true;
     toggleUxModeSections();
-    setWizardStep(2);
+    setWizardStep(1);
   });
 
   document.querySelector("#mode1PriceInputs")?.addEventListener("input", (event) => {
@@ -2897,12 +2898,19 @@ function initUxRefactor() {
 
   document.querySelector("#wizardBackStep2")?.addEventListener("click", handleBack);
   document.querySelector("#wizardNextStep2")?.addEventListener("click", () => {
-    if (!validateStep(2)) return;
-    setWizardStep(3);
+    if (!validateStep(1)) return;
+    setWizardStep(2);
   });
+  document.querySelector("#wizardBackStepData")?.addEventListener("click", handleBack);
+  document.querySelector("#wizardNextStepData")?.addEventListener("click", () => setWizardStep(3));
   document.querySelector("#wizardBackStep3")?.addEventListener("click", handleBack);
   document.querySelector("#wizardEditData")?.addEventListener("click", () => setWizardStep(3));
-  document.querySelector("#wizardNewCalc")?.addEventListener("click", () => setWizardStep(1));
+  document.querySelector("#wizardNewCalc")?.addEventListener("click", () => {
+    document.querySelectorAll('input[name="calcMode"]').forEach((el) => {
+      el.checked = false;
+    });
+    setWizardStep(0);
+  });
 
 
   document.querySelector("#recalc")?.addEventListener("click", (event) => {
@@ -2914,15 +2922,14 @@ function initUxRefactor() {
     setWizardStep(4);
   });
 
-  if (!document.querySelector('input[name="calcMode"]:checked')) {
-    const defaultMode = document.querySelector("#mode_real");
-    if (defaultMode) defaultMode.checked = true;
-  }
+  document.querySelectorAll('input[name="calcMode"]').forEach((el) => {
+    el.checked = false;
+  });
 
   toggleUxModeSections();
 
   uxRecalc();
-  setWizardStep(1);
+  setWizardStep(0);
   renderWizardUI();
 }
 
