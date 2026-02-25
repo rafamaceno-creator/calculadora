@@ -884,13 +884,51 @@ input::placeholder{color:#95a0b2}
   flex-wrap:wrap;
 }
 .marketplaceChip{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  min-height:44px;
   border-radius:999px;
   border:1px solid rgba(148,163,184,.45);
   background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(248,250,252,.76));
   box-shadow:0 6px 14px rgba(15,23,42,.06);
-  padding:10px 15px;
+  padding:10px 14px;
 }
 .marketplaceChip:hover{box-shadow:0 10px 20px rgba(15,23,42,.12);border-color:color-mix(in srgb,var(--accent) 42%, transparent)}
+.marketplaceChip input[type="checkbox"]{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  width:16px !important;
+  height:16px !important;
+  min-width:16px !important;
+  min-height:16px !important;
+  border:1.5px solid var(--stroke) !important;
+  border-radius:4px !important;
+  background:transparent !important;
+  margin:0 !important;
+  flex:0 0 auto !important;
+  display:inline-block !important;
+}
+.marketplaceChip input[type="checkbox"]:checked{
+  background:var(--accent) !important;
+  border-color:var(--accent) !important;
+}
+.marketplaceChip input[type="checkbox"]:checked::after{
+  content:"" !important;
+  display:block !important;
+  width:6px !important;
+  height:10px !important;
+  border:2px solid #fff !important;
+  border-top:0 !important;
+  border-left:0 !important;
+  transform:translate(4px,1px) rotate(45deg) !important;
+}
+.marketplaceChip span{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
 .marketplaceChip:has(input:checked){
   border-color:color-mix(in srgb,var(--accent) 58%, transparent);
   background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 16%, #fff),color-mix(in srgb,var(--accent) 7%, #fff));
@@ -932,6 +970,7 @@ input::placeholder{color:#95a0b2}
   .marketplaceSelector{
     flex-wrap:nowrap;
     overflow-x:auto;
+    scrollbar-width:thin;
     scroll-snap-type:x mandatory;
     -webkit-overflow-scrolling:touch;
     mask-image:linear-gradient(to right,transparent,black 10%,black 90%,transparent);
