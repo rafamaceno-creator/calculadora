@@ -2684,12 +2684,12 @@ function bindSmoothScroll() {
 
 
 const UX_MARKETPLACES = [
-  { key: "shopee", title: "Shopee", icon: "🟠" },
-  { key: "mlClassic", title: "Mercado Livre — Clássico", icon: "🟨" },
-  { key: "mlPremium", title: "Mercado Livre — Premium", icon: "🟨" },
-  { key: "tiktok", title: "TikTok Shop", icon: "🎵" },
-  { key: "shein", title: "SHEIN", icon: "⚫" },
-  { key: "amazon", title: "Amazon (DBA)", icon: "🟤" }
+  { key: "shopee", title: "Shopee", logo: "assets/img/marketplaces/shopee.svg", brandClass: "brand-shopee", mono: true, initials: "S" },
+  { key: "mlClassic", title: "Mercado Livre — Clássico", logo: "assets/img/marketplaces/mercadolivre.svg", brandClass: "brand-mlclassic", mono: true, initials: "ML" },
+  { key: "mlPremium", title: "Mercado Livre — Premium", logo: "assets/img/marketplaces/mercadolivre.svg", brandClass: "brand-mlpremium", mono: true, initials: "ML" },
+  { key: "tiktok", title: "TikTok Shop", logo: "assets/img/marketplaces/tiktok.svg", brandClass: "brand-tiktok", mono: true, initials: "TT" },
+  { key: "shein", title: "SHEIN", logo: "assets/img/marketplaces/shein.svg", brandClass: "brand-shein", mono: true, initials: "SH" },
+  { key: "amazon", title: "Amazon (DBA)", logo: "assets/img/marketplaces/amazon.svg", brandClass: "brand-amazon", mono: true, initials: "AZ" }
 ];
 
 const MARKETPLACE_TITLE_TO_KEY = {
@@ -2718,15 +2718,22 @@ function buildMarketplaceSelector() {
   const wrap = document.querySelector("#marketplaceSelector");
   if (!wrap) return;
   wrap.innerHTML = UX_MARKETPLACES.map((mp) => `
-    <label class="mpChip" data-mp="${mp.key}">
-      <input class="mpChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
-      <span class="mpChip__box" aria-hidden="true"></span>
-      <span class="mpChip__content">
-        <span class="mpChip__icon">${mp.icon}</span>
-        <span class="mpChip__label">${mp.title}</span>
+    <label class="marketplaceChip ${mp.brandClass || ""}" data-mp="${mp.key}">
+      <input class="marketplaceChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
+      <span class="mpLogo" aria-hidden="true" data-fallback="${mp.initials || "MP"}">
+        <img src="${mp.logo}" alt="" loading="lazy" decoding="async" data-mono="${mp.mono ? "1" : "0"}" />
       </span>
+      <span class="mpName">${mp.title}</span>
+      <span class="mpCheck" aria-hidden="true"></span>
     </label>
   `).join("");
+
+  wrap.querySelectorAll(".mpLogo img").forEach((img) => {
+    img.addEventListener("error", () => {
+      img.closest(".mpLogo")?.classList.add("is-fallback");
+      img.style.display = "none";
+    }, { once: true });
+  });
 }
 
 function renderMode1PriceInputs() {
@@ -2904,6 +2911,14 @@ function initUxRefactor() {
     renderMode1PriceInputs();
     renderWizardUI();
     uxRecalc();
+  });
+
+  document.querySelector("#marketplaceSelector")?.addEventListener("keydown", (event) => {
+    const checkbox = event.target.closest('.marketplaceChip__input[type="checkbox"]');
+    if (!checkbox || event.key !== "Enter") return;
+    event.preventDefault();
+    checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
   document.querySelectorAll('input[name="calcMode"]').forEach((el) => el.addEventListener("change", () => {
