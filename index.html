@@ -112,26 +112,54 @@
       <div class="grid">
       <div class="card pricingCard">
         <div class="card__inner">
-          <section class="formBlock">
+          <div class="wizardProgress" id="wizardProgress" aria-live="polite">Passo 1 de 4</div>
+
+          <section class="formBlock wizardStep" data-step="1">
             <div class="formBlock__head">
-              <h3>Dados do produto</h3>
-              <p>Use apenas os dados essenciais para iniciar.</p>
+              <h3>Escolha como deseja calcular</h3>
             </div>
 
-            <div class="field" id="calcModeField">
-              <div class="label">Modo de cálculo</div>
+            <div id="calcModeCards" class="modeCards" role="group" aria-label="Escolher modo de cálculo">
+              <button class="modeCard" type="button" data-mode="real">
+                <strong>🟢 Lucro Real</strong>
+                <p>"Descubra quanto você realmente ganha por venda com o preço atual. Inclui comissão, taxas e custos reais do marketplace."</p>
+              </button>
+              <button class="modeCard" type="button" data-mode="ideal">
+                <strong>🔵 Preço Ideal</strong>
+                <p>"Descubra por quanto você deve vender para atingir a margem que deseja. O sistema calcula o preço necessário para cada marketplace."</p>
+              </button>
+            </div>
+
+            <div class="field is-hidden" id="calcModeField">
               <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo de cálculo">
-                <input id="mode_real" type="radio" name="calcMode" value="real" checked />
+                <input id="mode_real" type="radio" name="calcMode" value="real" />
                 <label for="mode_real">Lucro real</label>
                 <input id="mode_ideal" type="radio" name="calcMode" value="ideal" />
                 <label for="mode_ideal">Preço ideal</label>
               </div>
             </div>
+          </section>
+
+          <section class="formBlock wizardStep is-hidden" data-step="2">
+            <div class="formBlock__head">
+              <h3>Selecione marketplaces</h3>
+              <p>Selecione 1 ou mais marketplaces.</p>
+            </div>
 
             <div class="field">
-              <div class="label">Marketplaces</div>
               <div id="marketplaceSelector" class="marketplaceSelector" aria-label="Selecionar marketplaces"></div>
-              <p id="calcModeMicrocopy" class="fieldHint">Descubra o lucro real pelo preço informado em cada marketplace selecionado.</p>
+            </div>
+
+            <div class="actions wizardActions">
+              <button id="wizardBackStep2" class="btn btn--ghost" type="button">Voltar</button>
+              <button id="wizardNextStep2" class="btn btn--primary" type="button" disabled>Continuar</button>
+            </div>
+          </section>
+
+          <section class="formBlock wizardStep is-hidden" data-step="3">
+            <div class="formBlock__head">
+              <h3>Dados do produto</h3>
+              <p>Use apenas os dados essenciais para iniciar.</p>
             </div>
 
             <div class="field">
@@ -230,7 +258,7 @@
           <section class="formBlock" id="mode1PriceSection">
             <div class="formBlock__head">
               <h3>Preço de venda por marketplace</h3>
-              <p>Preencha apenas os marketplaces selecionados.</p>
+              <p id="calcModeMicrocopy">Preço pode variar por marketplace. Preencha o valor correspondente a cada canal.</p>
             </div>
             <div id="mode1PriceInputs" class="modeInputs"></div>
           </section>
@@ -243,7 +271,10 @@
           <div class="formDivider"></div>
 
           <section class="formBlock formBlock--actions">
-            <button id="recalc" class="btn btn--primary btn--wide" type="button">Calcular</button>
+            <div class="actions wizardActions">
+              <button id="wizardBackStep3" class="btn btn--ghost" type="button">Voltar</button>
+              <button id="recalc" class="btn btn--primary" type="button">Calcular</button>
+            </div>
 
             <button id="btnProModeGo" class="btn btn--ghost btn--wide btn--pro-cta" type="button">Calcular no Modo Profissional</button>
             <small class="btnProModeGo__microcopy">Inclui taxas e detalhes que mudam seu lucro real.</small>
@@ -253,6 +284,19 @@
               <select id="savedSimulations" aria-label="Simulações salvas">
                 <option value="">Simulações salvas</option>
               </select>
+            </div>
+          </section>
+
+          </section>
+
+          <section class="formBlock wizardStep is-hidden" data-step="4">
+            <div class="formBlock__head">
+              <h3>Resultado</h3>
+              <p>Confira o resultado por marketplace selecionado.</p>
+            </div>
+            <div class="actions wizardActions">
+              <button id="wizardEditData" class="btn btn--ghost" type="button">Editar dados</button>
+              <button id="wizardNewCalc" class="btn btn--primary" type="button">Novo cálculo</button>
             </div>
           </section>
 
@@ -352,6 +396,7 @@
         </div>
       </div>
 
+      <div class="wizardResultsContainer is-hidden">
       <div class="card stickyResultsCard">
         <div class="card__inner">
           <h2>Resultados</h2>
@@ -387,6 +432,7 @@
 
           <p class="footnote">Sem spam. Só conteúdo útil para vendedor de marketplace.</p>
         </div>
+      </div>
       </div>
       </div>
 
