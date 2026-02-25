@@ -2718,9 +2718,13 @@ function buildMarketplaceSelector() {
   const wrap = document.querySelector("#marketplaceSelector");
   if (!wrap) return;
   wrap.innerHTML = UX_MARKETPLACES.map((mp) => `
-    <label class="marketplaceChip">
-      <input type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
-      <span>${mp.icon} ${mp.title}</span>
+    <label class="mpChip" data-mp="${mp.key}">
+      <input class="mpChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
+      <span class="mpChip__box" aria-hidden="true"></span>
+      <span class="mpChip__content">
+        <span class="mpChip__icon">${mp.icon}</span>
+        <span class="mpChip__label">${mp.title}</span>
+      </span>
     </label>
   `).join("");
 }
