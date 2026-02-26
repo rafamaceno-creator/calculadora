@@ -62,8 +62,6 @@ function sanitizeMarketplaceSummaries(array $items): array
 function buildSummaryEmailBody(string $nome, string $marketplace, float $precoMinimo, float $precoIdeal, array $marketplacePrices = []): string
 {
     $nomeSeguro = $nome !== '' ? htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') : '';
-    $marketplaceSeguro = htmlspecialchars($marketplace, ENT_QUOTES, 'UTF-8');
-
     $saudacao = $nomeSeguro !== '' ? "Olá, {$nomeSeguro}!" : 'Olá!';
     $sanitizedPrices = sanitizeMarketplaceSummaries($marketplacePrices);
 
@@ -72,30 +70,21 @@ function buildSummaryEmailBody(string $nome, string $marketplace, float $precoMi
         $priceRows .= '<tr>'
             . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8') . '</td>'
             . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . formatBrl((float) $item['precoIdeal']) . '</td>'
-            . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . formatBrl((float) $item['lucro']) . '</td>'
-            . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . number_format((float) $item['margem'], 2, ',', '.') . '%</td>'
             . '</tr>';
     }
 
     $priceListHtml = $priceRows !== ''
-        ? '<p style="margin:0 0 10px"><strong>Resumo completo por marketplace:</strong></p>'
+        ? '<p style="margin:0 0 10px"><strong>Preço de venda por marketplace:</strong></p>'
             . '<table style="border-collapse:collapse;width:100%;margin:0 0 20px">'
             . '<thead><tr>'
             . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Marketplace</th>'
-            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Preço ideal</th>'
-            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Lucro</th>'
-            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Margem</th>'
+            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Preço de venda</th>'
             . '</tr></thead><tbody>' . $priceRows . '</tbody></table>'
         : '';
 
     return '<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:24px;color:#111827;line-height:1.5">'
         . '<h2 style="margin:0 0 16px;font-size:22px;color:#111827">Seu resumo de precificação</h2>'
         . '<p style="margin:0 0 16px">' . $saudacao . '</p>'
-        . '<ul style="padding-left:18px;margin:0 0 20px">'
-        . '<li><strong>Marketplace de referência:</strong> ' . $marketplaceSeguro . '</li>'
-        . '<li><strong>Preço mínimo:</strong> ' . formatBrl($precoMinimo) . '</li>'
-        . '<li><strong>Preço ideal (maior lucro):</strong> ' . formatBrl($precoIdeal) . '</li>'
-        . '</ul>'
         . $priceListHtml
         . '<p style="margin:0 0 20px"><a href="https://precificacao.rafamaceno.com.br">https://precificacao.rafamaceno.com.br</a></p>'
         . '<p style="margin:24px 0 0">Rafa Maceno</p>'
@@ -124,19 +113,15 @@ function buildSummaryPdf(string $nome, string $marketplace, float $precoMinimo, 
         '',
         $firstLine,
         '',
-        'Marketplace de referencia: ' . normalizePdfText($marketplace),
-        'Preco minimo: ' . normalizePdfText(formatBrl($precoMinimo)),
-        'Preco ideal (maior lucro): ' . normalizePdfText(formatBrl($precoIdeal)),
+        'Preco de venda por marketplace',
         '',
     ];
 
     if ($sanitizedPrices !== []) {
-        $lines[] = 'Resumo completo por marketplace:';
+        $lines[] = 'Preco de venda por marketplace:';
         foreach ($sanitizedPrices as $item) {
             $lines[] = '- ' . normalizePdfText($item['title']);
-            $lines[] = '  Preco ideal: ' . normalizePdfText(formatBrl((float) $item['precoIdeal']));
-            $lines[] = '  Lucro: ' . normalizePdfText(formatBrl((float) $item['lucro']));
-            $lines[] = '  Margem: ' . normalizePdfText(number_format((float) $item['margem'], 2, ',', '.') . '%');
+            $lines[] = '  Preco de venda: ' . normalizePdfText(formatBrl((float) $item['precoIdeal']));
         }
         $lines[] = '';
     }
