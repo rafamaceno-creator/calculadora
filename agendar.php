@@ -99,7 +99,37 @@ foreach ($tokens as $index => $entry) {
       </style>
     </head>
     <body>
+      <div id="sessionTimer" style="text-align:center;margin:20px;color:#ff9f1c;font-weight:bold;">
+        Você tem 10 minutos para concluir seu agendamento.
+        <div id="sessionCountdown"></div>
+      </div>
       <iframe src="<?= htmlspecialchars($calendarUrl, ENT_QUOTES, 'UTF-8'); ?>" allow="fullscreen"></iframe>
+      <script>
+        let sessionTime = 600;
+        const countdownEl = document.getElementById("sessionCountdown");
+        const iframe = document.querySelector("iframe");
+
+        function updateSessionTimer() {
+          if (sessionTime <= 0) {
+            if (iframe) iframe.remove();
+            document.getElementById("sessionTimer").innerHTML =
+              "Sessão encerrada. Caso precise reagendar, compre um novo acesso.<br><br>" +
+              "<a href='/a-hora-com-o-especialista' style='background:#000;color:#fff;padding:12px 20px;text-decoration:none;border-radius:6px;'>Comprar acesso</a>";
+            return;
+          }
+
+          const minutes = Math.floor(sessionTime / 60);
+          const seconds = sessionTime % 60;
+          countdownEl.innerText =
+            String(minutes).padStart(2, "0") + ":" +
+            String(seconds).padStart(2, "0");
+
+          sessionTime--;
+        }
+
+        setInterval(updateSessionTimer, 1000);
+        updateSessionTimer();
+      </script>
     </body>
     </html>
     <?php

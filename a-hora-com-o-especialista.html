@@ -1,117 +1,183 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>A Hora com o Especialista | Precificação Marketplaces</title>
-  <meta name="description" content="Sessão estratégica 1:1 para corrigir margem, destravar operação e escalar com plano claro em marketplaces." />
-  <link rel="stylesheet" href="assets/css/styles.css" data-asset="true" />
-  <script>
-    const now = new Date();
-    const APP_VERSION = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
-    window.versionAssetPath = function(path){ const url = new URL(path, window.location.href); url.searchParams.set("v", APP_VERSION); return url.pathname + url.search; };
-    (function(){ document.querySelectorAll('[data-asset="true"]').forEach((el)=>{ const attr = el.tagName === "LINK" ? "href" : "src"; el.setAttribute(attr, window.versionAssetPath(el.getAttribute(attr))); }); })();
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Hora com o Especialista | Maceno Strategy</title>
+
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0;
+  background: #0f0f12;
+  color: #ffffff;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 20px;
+}
+
+h1 {
+  font-size: 2.4rem;
+  line-height: 1.3;
+}
+
+p {
+  font-size: 1.1rem;
+  opacity: 0.85;
+}
+
+.price {
+  font-size: 2rem;
+  margin-top: 30px;
+}
+
+.timer {
+  margin-top: 15px;
+  font-size: 1rem;
+  color: #ff4d4f;
+}
+
+button {
+  margin-top: 30px;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  padding: 18px 35px;
+  font-size: 1.1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.section {
+  margin-top: 80px;
+}
+
+ul {
+  margin-top: 20px;
+  padding-left: 20px;
+}
+</style>
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="container topbar__inner">
-      <div class="brand">
-        <span class="brand__dot" aria-hidden="true"></span>
-        <div><strong>Precificação</strong><br /><small>Marketplaces</small></div>
-      </div>
-      <div class="topbar__controls">
-        <a class="btn btn--outline" href="index.html">Voltar para a Calculadora</a>
-        <button id="mobileMenuToggle" class="mobileMenuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="topbarNav">☰</button>
-      </div>
-      <nav id="topbarNav" class="nav" aria-label="Navegação">
-        <a href="index.html">← Calculadora</a>
-        <a class="btn btn--primary btn--cta" data-action="cta-specialist" data-from="hora-nav" href="#agenda">A Hora com o Especialista</a>
-      </nav>
-    </div>
-  </header>
 
-  <main class="container specialistPage">
-    <p class="breadcrumb"><a href="index.html">← Calculadora</a></p>
+<div class="container">
 
-    <section class="sectionCard specialistHero">
-      <span class="kicker">Sessão estratégica 1:1</span>
-      <h1>A Hora com o Especialista</h1>
-      <p><strong>Investimento: R$ 997</strong>. Você recebe uma análise direta da sua operação para parar de vender no escuro, corrigir margem e construir um plano executável para escalar com segurança.</p>
-    </section>
+<h1>Se o seu negócio está travado, em 1 hora eu te mostro onde está o erro.</h1>
 
-    <section class="sectionCard">
-      <h2>O que você leva na prática</h2>
-      <ul class="specialistList">
-        <li>Diagnóstico completo de margem por canal (taxas, impostos, custos e lucro real).</li>
-        <li>Revisão de precificação com prioridades de ajuste para os próximos 7 dias.</li>
-        <li>Análise dos gargalos que travam crescimento (anúncio, ticket, mix e operação).</li>
-        <li>Plano de ação claro: o que manter, o que cortar e o que acelerar.</li>
-      </ul>
-    </section>
+<p>
+Sem teoria.<br>
+Sem enrolação.<br>
+Sem promessa mágica.<br><br>
+Diagnóstico direto. Plano claro. Decisão prática.
+</p>
 
-    <section class="sectionCard" id="agenda">
-      <h2>Como funciona</h2>
-      <ol>
-        <li>Você clica para garantir sua sessão.</li>
-        <li>Após a confirmação, liberamos o link de agendamento.</li>
-        <li>Na reunião, destravamos os pontos críticos da sua operação.</li>
-      </ol>
-      <p class="sectionMicrocopy">Clareza de decisão para proteger caixa e crescer com margem.</p>
-    </section>
+<div class="price">
+Investimento: <strong>R$ 997</strong>
+</div>
 
-    <section class="sectionCard strategicCta" style="margin-bottom:40px;">
-      <h2>Investimento: R$ 997</h2>
-      <p>Se você quer tratar seu negócio como operação profissional, essa é a conversa certa.</p>
-      <button id="checkoutBtn" class="btn btn--primary" type="button">Garanti minha hora por R$ 997</button>
-      <a class="btn btn--ghost" href="index.html" style="margin-top:10px;">Voltar para a Calculadora</a>
-      <p id="checkoutFeedback" class="sectionMicrocopy" style="margin-top:12px;"></p>
-    </section>
-  </main>
+<div class="timer">
+⏳ Oferta disponível por: <span id="countdown"></span>
+</div>
 
-  <script>
-    (function(){
-      const toggle = document.querySelector('#mobileMenuToggle');
-      const nav = document.querySelector('#topbarNav');
-      const checkoutBtn = document.querySelector('#checkoutBtn');
-      const feedback = document.querySelector('#checkoutFeedback');
+<button id="checkoutBtn">🔒 Resolver isso agora por R$ 997</button>
 
-      if (toggle && nav) {
-        toggle.addEventListener('click', () => {
-          const open = nav.classList.toggle('is-open');
-          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        });
-      }
+<div class="section">
+<h2>Essa sessão é para você se:</h2>
+<ul>
+<li>Já vende ou quer vender em marketplace</li>
+<li>Está travado em margem ou escala</li>
+<li>Não sabe se o problema é preço, tráfego ou estrutura</li>
+<li>Está cansado de tentar ajustar sozinho</li>
+<li>Quer clareza estratégica imediata</li>
+</ul>
+</div>
 
-      async function startCheckout() {
-        if (!checkoutBtn) return;
-        checkoutBtn.disabled = true;
-        feedback.textContent = 'Redirecionando para o pagamento seguro...';
+<div class="section">
+<h2>O que acontece na hora:</h2>
+<ul>
+<li>Identificação do gargalo real</li>
+<li>Ajuste de margem e precificação</li>
+<li>Direcionamento estratégico de tráfego</li>
+<li>Plano claro de próximos passos</li>
+</ul>
+</div>
 
-        try {
-          const response = await fetch('/api/create-checkout-session.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-            body: new URLSearchParams({ utm_query: window.location.search }).toString(),
-          });
+<div class="section">
+<h2>R$ 997 é menos que:</h2>
+<ul>
+<li>Um mês rodando tráfego errado</li>
+<li>Um lote comprado com margem negativa</li>
+<li>Uma campanha mal estruturada</li>
+<li>Um erro tributário não percebido</li>
+</ul>
+</div>
 
-          const payload = await response.json();
-          if (!response.ok || !payload.url) {
-            throw new Error('Falha ao criar sessão de checkout');
-          }
+</div>
 
-          window.location.href = payload.url;
-        } catch (error) {
-          console.error(error);
-          feedback.textContent = 'Não foi possível iniciar o pagamento agora. Tente novamente em instantes.';
-          checkoutBtn.disabled = false;
-        }
-      }
+<script>
+// TIMER 24H PERSISTENTE
+const storageKey = "horaEspecialistaTimer";
+let endTime = localStorage.getItem(storageKey);
 
-      if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', startCheckout);
-      }
-    })();
-  </script>
+if (!endTime) {
+  endTime = Date.now() + 24 * 60 * 60 * 1000;
+  localStorage.setItem(storageKey, endTime);
+}
+
+const countdown = document.getElementById("countdown");
+const button = document.getElementById("checkoutBtn");
+
+function updateTimer() {
+  const now = Date.now();
+  const distance = endTime - now;
+
+  if (distance <= 0) {
+    countdown.innerHTML = "00:00:00";
+    button.disabled = true;
+    button.innerText = "Agenda temporariamente fechada";
+    return;
+  }
+
+  const hours = Math.floor((distance / (1000 * 60 * 60)));
+  const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+  countdown.innerHTML =
+    String(hours).padStart(2, "0") + ":" +
+    String(minutes).padStart(2, "0") + ":" +
+    String(seconds).padStart(2, "0");
+}
+
+setInterval(updateTimer, 1000);
+updateTimer();
+
+// CHECKOUT
+button.addEventListener("click", async () => {
+  if (button.disabled) return;
+
+  const response = await fetch("/api/create-checkout-session.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      utm_query: window.location.search
+    })
+  });
+
+  const data = await response.json();
+  if (data.url) {
+    window.location.href = data.url;
+  }
+});
+</script>
+
 </body>
 </html>
