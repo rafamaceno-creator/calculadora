@@ -686,33 +686,6 @@ function compareCardHTML(title, data) {
   `;
 }
 
-function updateStickySummary(results) {
-  const wrap = document.querySelector("#stickySummaryContent");
-  if (!wrap) return;
-
-  if (!Array.isArray(results) || !results.length) {
-    wrap.textContent = "Preencha os dados para ver o resumo estratégico.";
-    return;
-  }
-
-  const sorted = [...results].sort((a, b) => (b?.profitBRL || 0) - (a?.profitBRL || 0));
-  const first = sorted[0];
-  const second = sorted[1] || sorted[0];
-  const diffPct = (first?.profitBRL || 0) > 0
-    ? (((first?.profitBRL || 0) - (second?.profitBRL || 0)) / (first?.profitBRL || 1)) * 100
-    : 0;
-
-  let indicator = "🟡 Apertado";
-  if (diffPct >= 10) indicator = "🟢 Saudável";
-  if (diffPct < 3) indicator = "🔴 Risco";
-
-  wrap.innerHTML = `
-    <div><strong>Marketplace mais lucrativo:</strong> ${first.title}</div>
-    <div><strong>Diferença percentual (1º x 2º):</strong> ${diffPct.toFixed(2)}%</div>
-    <div><strong>Indicador:</strong> ${indicator}</div>
-  `;
-}
-
 function updateReportRoot() {
   const reportRoot = document.querySelector("#reportRoot");
   const results = document.querySelector("#results");
@@ -884,7 +857,7 @@ function resultCardHTML(
 
 
 async function shareFallback() {
-  const summaryText = document.querySelector("#stickySummaryContent")?.innerText?.trim() || "Resumo indisponível.";
+  const summaryText = "Confira seus preços por marketplace em https://precificacao.rafamaceno.com.br";
   try {
     await navigator.clipboard.writeText(summaryText);
     trackGA4Event("copy_link", { section: "summary_text" });
@@ -1002,36 +975,6 @@ function bindTooltipSystem() {
     closeTooltip();
   });
 }
-
-function bindStickySummaryVisibility() {
-  const sticky = document.querySelector("#stickySummary");
-  const closeBtn = document.querySelector("#stickyClose");
-  const openBtn = document.querySelector("#stickyOpen");
-  if (!sticky || !closeBtn || !openBtn) return;
-
-  if (window.matchMedia("(max-width: 768px)").matches && localStorage.getItem("stickyHidden") === null) {
-    localStorage.setItem("stickyHidden", "1");
-  }
-
-  const applyState = () => {
-    const hidden = localStorage.getItem("stickyHidden") === "1";
-    sticky.classList.toggle("is-hidden", hidden);
-    openBtn.classList.toggle("is-visible", hidden);
-  };
-
-  closeBtn.addEventListener("click", () => {
-    localStorage.setItem("stickyHidden", "1");
-    applyState();
-  });
-
-  openBtn.addEventListener("click", () => {
-    localStorage.setItem("stickyHidden", "0");
-    applyState();
-  });
-
-  applyState();
-}
-
 
 function renderRankingInsights(items) {
   const el = document.querySelector("#rankingInsights");
@@ -1725,14 +1668,6 @@ function recalc(options = {}) {
     shouldDisplay: cost > 0,
     computedResults
   });
-  updateStickySummary([
-    { title: "Shopee", received: shopee.received, profitBRL: shopee.profitBRL, profitPctReal: shopee.profitPctReal },
-    { title: "TikTok Shop", received: tiktok.received, profitBRL: tiktok.profitBRL, profitPctReal: tiktok.profitPctReal },
-    { title: "SHEIN", received: shein.received, profitBRL: shein.profitBRL, profitPctReal: shein.profitPctReal },
-    ...(amazonDbaEnabled && amazonData ? [{ title: "Amazon (DBA)", received: amazonData.result.received, profitBRL: amazonData.result.profitBRL, profitPctReal: amazonData.result.profitPctReal }] : []),
-    { title: "Mercado Livre — Clássico", received: mlClassic.r.received, profitBRL: mlClassic.r.profitBRL, profitPctReal: mlClassic.r.profitPctReal },
-    { title: "Mercado Livre — Premium", received: mlPremium.r.received, profitBRL: mlPremium.r.profitBRL, profitPctReal: mlPremium.r.profitPctReal }
-  ]);
   updateReportRoot();
   trackPerfilTicket(shopee.price);
   trackGA4Event("recalc", { section: source || "auto", value: Number(shopee.price || 0) });
@@ -1741,13 +1676,6 @@ function recalc(options = {}) {
   const y = document.querySelector("#year");
   if (y) y.textContent = String(new Date().getFullYear());
 
-  if (window.matchMedia("(max-width: 768px)").matches && source === "manual") {
-    localStorage.setItem("stickyHidden", "0");
-    const sticky = document.querySelector("#stickySummary");
-    const openBtn = document.querySelector("#stickyOpen");
-    sticky?.classList.remove("is-hidden");
-    openBtn?.classList.remove("is-visible");
-  }
 }
 
 
@@ -2970,7 +2898,6 @@ function initApp() {
   bindMobileMenu();
   bindInputTracking();
   bindTooltipSystem();
-  bindStickySummaryVisibility();
   bindSmoothScroll();
   bindSegmentMenuActiveState();
   bindBulk();
