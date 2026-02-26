@@ -42,6 +42,7 @@ $userAgent = trim((string) ($input['user_agent'] ?? ''));
 $resultado = $input['resultado'] ?? [];
 $precoMinimo = (float) ($resultado['precoMinimo'] ?? 0);
 $precoIdeal = (float) ($resultado['precoIdeal'] ?? 0);
+$marketplacePrices = is_array($resultado['marketplaces'] ?? null) ? $resultado['marketplaces'] : [];
 $utm = $input['utm'] ?? [];
 
 if ($company !== '') {
@@ -80,9 +81,9 @@ try {
     respond(['success' => false, 'message' => 'lead_not_saved'], 500);
 }
 
-$summaryBody = buildSummaryEmailBody($nome, $marketplace, $precoMinimo, $precoIdeal);
+$summaryBody = buildSummaryEmailBody($nome, $marketplace, $precoMinimo, $precoIdeal, $marketplacePrices);
 $subject = 'Seu resumo de precificação — ' . $marketplace;
-$pdfContent = buildSummaryPdf($nome, $marketplace, $precoMinimo, $precoIdeal);
+$pdfContent = buildSummaryPdf($nome, $marketplace, $precoMinimo, $precoIdeal, $marketplacePrices);
 $attachments = [[
     'content' => $pdfContent,
     'name' => 'resumo-precificacao.pdf',

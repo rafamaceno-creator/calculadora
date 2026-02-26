@@ -883,40 +883,6 @@ function resultCardHTML(
 /* ===== Main calc ===== */
 
 
-function runExportPDF(from = "card", triggerButton = null) {
-  const button = triggerButton instanceof HTMLElement ? triggerButton : null;
-  const originalLabel = button ? button.innerHTML : "";
-
-  if (button) {
-    button.disabled = true;
-    button.classList.add("is-loading");
-    button.innerHTML = "Gerando relatório...";
-    button.setAttribute("aria-busy", "true");
-  }
-
-  try {
-    recalc({ source: "export" });
-    if (typeof window.generatePDF === "function") {
-      window.generatePDF();
-      trackGA4Event("export_pdf", {
-        section: from,
-        value: window.innerWidth < 768 ? "mobile" : "desktop"
-      });
-      return;
-    }
-    logActionError("generatePDF indisponível");
-  } catch (error) {
-    logActionError("falha ao exportar PDF", error);
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.classList.remove("is-loading");
-      button.innerHTML = originalLabel;
-      button.removeAttribute("aria-busy");
-    }
-  }
-}
-
 async function shareFallback() {
   const summaryText = document.querySelector("#stickySummaryContent")?.innerText?.trim() || "Resumo indisponível.";
   try {
@@ -1771,12 +1737,6 @@ function recalc(options = {}) {
   trackPerfilTicket(shopee.price);
   trackGA4Event("recalc", { section: source || "auto", value: Number(shopee.price || 0) });
 
-  // Mostrar botão de PDF
-  const pdfContainer = document.querySelector("#pdfButtonContainer");
-  if (pdfContainer) {
-    pdfContainer.innerHTML = `<button class="btn btn--ghost btn-export-pdf" data-action="export-pdf" data-from="card" type="button" style="width: 100%;">📥 Gerar Relatório</button>`;
-  }
-
 
   const y = document.querySelector("#year");
   if (y) y.textContent = String(new Date().getFullYear());
@@ -2007,6 +1967,7 @@ const leadCaptureState = {
   status: "idle",
   result: { precoMinimo: 0, precoIdeal: 0 },
   marketplace: "unknown",
+  marketplacePrices: [],
   utm: { utm_source: "", utm_medium: "", utm_campaign: "", utm_content: "", utm_term: "" }
 };
 
@@ -2039,7 +2000,7 @@ function setLeadCaptureStatus(status, message = "") {
   if (submitBtn) {
     submitBtn.disabled = status === "loading" || status === "success";
     submitBtn.classList.toggle("is-loading", status === "loading");
-    submitBtn.textContent = status === "loading" ? "Enviando..." : "Receber resumo";
+    submitBtn.textContent = status === "loading" ? "Enviando..." : "Receber PDF por e-mail";
   }
 
   if (feedback) {
@@ -2060,7 +2021,7 @@ async function submitLeadCaptureForm(event) {
   const company = String(companyInput?.value || "").trim();
 
   if (!isValidLeadEmail(email)) {
-    setLeadCaptureStatus("error", "Informe um email válido para receber o resumo.");
+    setLeadCaptureStatus("error", "Informe um email válido para receber o PDF.");
     emailInput?.focus();
     return;
   }
@@ -2072,7 +2033,8 @@ async function submitLeadCaptureForm(event) {
     marketplace: leadCaptureState.marketplace || "unknown",
     resultado: {
       precoMinimo: leadCaptureState.result.precoMinimo || 0,
-      precoIdeal: leadCaptureState.result.precoIdeal || 0
+      precoIdeal: leadCaptureState.result.precoIdeal || 0,
+      marketplaces: leadCaptureState.marketplacePrices
     },
     utm: { ...leadCaptureState.utm },
     page_url: window.location.href,
@@ -2094,7 +2056,7 @@ async function submitLeadCaptureForm(event) {
       throw new Error(data.message || "lead_not_saved");
     }
 
-    setLeadCaptureStatus("success", "Pronto! Resumo registrado. Verifique seu email em instantes.");
+    setLeadCaptureStatus("success", "Pronto! PDF enviado para seu email com os preços ideais.");
 
     if (typeof window.gtag === "function") {
       window.gtag("event", "generate_lead", {
@@ -2128,7 +2090,7 @@ function ensureLeadCaptureBlock() {
       <div class="leadCapture__head">
         <div>
           <h3>Quer salvar esse cálculo?</h3>
-          <p>Receba um resumo com custos, taxas e preço ideal no seu email. 100% gratuito.</p>
+          <p>Receba no seu email o PDF com os preços ideais por marketplace, custos e taxas. 100% gratuito.</p>
         </div>
         <button class="leadCapture__close" type="button" aria-label="Fechar captura" data-action="dismiss-lead">✕</button>
       </div>
@@ -2138,7 +2100,7 @@ function ensureLeadCaptureBlock() {
           <input type="email" name="email" required placeholder="Seu melhor email" autocomplete="email" />
         </div>
         <input class="leadCapture__honeypot" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
-        <button class="btn btn--primary" type="submit" data-action="submit-lead">Receber resumo</button>
+        <button class="btn btn--primary" type="submit" data-action="submit-lead">Receber PDF por e-mail</button>
         <p class="leadCapture__feedback is-hidden" aria-live="polite"></p>
       </form>
     `;
@@ -2165,6 +2127,15 @@ function updateLeadCaptureAfterRecalc({ shouldDisplay = false, computedResults =
   leadCaptureState.result.precoMinimo = sortedByPrice[0]?.price || 0;
   leadCaptureState.result.precoIdeal = sortedByProfit[0]?.price || 0;
   leadCaptureState.marketplace = sortedByProfit[0]?.key || "unknown";
+  leadCaptureState.marketplacePrices = computedResults
+    .filter((item) => Number.isFinite(item?.price))
+    .map((item) => ({
+      key: item.key || "unknown",
+      title: item.title || item.key || "Marketplace",
+      precoIdeal: Number(item.price) || 0,
+      lucro: Number(item.profitBRL) || 0,
+      margem: Number(item.marginPct) || 0
+    }));
 
   const block = ensureLeadCaptureBlock();
   if (!block) return;
@@ -2199,9 +2170,17 @@ function bindActionButtons() {
     const action = target.getAttribute("data-action");
 
     try {
-      if (action === "export-pdf") {
+      if (action === "focus-lead-capture") {
         event.preventDefault();
-        runExportPDF(target.getAttribute("data-from") || "card", target);
+        const block = ensureLeadCaptureBlock();
+        if (block) {
+          block.classList.remove("is-hidden");
+          block.scrollIntoView({ behavior: "smooth", block: "center" });
+          const emailField = block.querySelector('input[name="email"]');
+          if (emailField) {
+            setTimeout(() => emailField.focus(), 280);
+          }
+        }
         return;
       }
 

@@ -32,21 +32,65 @@ function smtpConfigPresent(): bool
     return true;
 }
 
-function buildSummaryEmailBody(string $nome, string $marketplace, float $precoMinimo, float $precoIdeal): string
+
+
+function sanitizeMarketplacePrices(array $items): array
+{
+    $sanitized = [];
+
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+
+        $title = trim((string) ($item['title'] ?? $item['key'] ?? 'Marketplace'));
+        $precoIdeal = (float) ($item['precoIdeal'] ?? 0);
+
+        if ($title === '' || $precoIdeal <= 0) {
+            continue;
+        }
+
+        $sanitized[] = [
+            'title' => $title,
+            'precoIdeal' => $precoIdeal,
+        ];
+    }
+
+    usort($sanitized, static fn(array $a, array $b): int => $a['precoIdeal'] <=> $b['precoIdeal']);
+
+    return array_slice($sanitized, 0, 12);
+}
+
+function buildSummaryEmailBody(string $nome, string $marketplace, float $precoMinimo, float $precoIdeal, array $marketplacePrices = []): string
 {
     $nomeSeguro = $nome !== '' ? htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') : '';
     $marketplaceSeguro = htmlspecialchars($marketplace, ENT_QUOTES, 'UTF-8');
 
     $saudacao = $nomeSeguro !== '' ? "Olá, {$nomeSeguro}!" : 'Olá!';
+    $sanitizedPrices = sanitizeMarketplacePrices($marketplacePrices);
+
+    $priceRows = '';
+    foreach ($sanitizedPrices as $item) {
+        $priceRows .= '<li><strong>'
+            . htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8')
+            . ':</strong> '
+            . formatBrl((float) $item['precoIdeal'])
+            . '</li>';
+    }
+
+    $priceListHtml = $priceRows !== ''
+        ? '<p style="margin:0 0 10px"><strong>Preços ideais por marketplace:</strong></p><ul style="padding-left:18px;margin:0 0 20px">' . $priceRows . '</ul>'
+        : '';
 
     return '<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:24px;color:#111827;line-height:1.5">'
         . '<h2 style="margin:0 0 16px;font-size:22px;color:#111827">Seu resumo de precificação</h2>'
         . '<p style="margin:0 0 16px">' . $saudacao . '</p>'
         . '<ul style="padding-left:18px;margin:0 0 20px">'
-        . '<li><strong>Marketplace:</strong> ' . $marketplaceSeguro . '</li>'
+        . '<li><strong>Marketplace de referência:</strong> ' . $marketplaceSeguro . '</li>'
         . '<li><strong>Preço mínimo:</strong> ' . formatBrl($precoMinimo) . '</li>'
-        . '<li><strong>Preço ideal:</strong> ' . formatBrl($precoIdeal) . '</li>'
+        . '<li><strong>Preço ideal (maior lucro):</strong> ' . formatBrl($precoIdeal) . '</li>'
         . '</ul>'
+        . $priceListHtml
         . '<p style="margin:0 0 20px"><a href="https://precificacao.rafamaceno.com.br">https://precificacao.rafamaceno.com.br</a></p>'
         . '<p style="margin:24px 0 0">Rafa Maceno</p>'
         . '</div>';
@@ -64,28 +108,42 @@ function escapePdfText(string $value): string
     return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $value);
 }
 
-function buildSummaryPdf(string $nome, string $marketplace, float $precoMinimo, float $precoIdeal): string
+function buildSummaryPdf(string $nome, string $marketplace, float $precoMinimo, float $precoIdeal, array $marketplacePrices = []): string
 {
     $firstLine = $nome !== '' ? sprintf('Ola, %s!', normalizePdfText($nome)) : 'Ola!';
+    $sanitizedPrices = sanitizeMarketplacePrices($marketplacePrices);
+
     $lines = [
         'Resumo de precificacao',
         '',
         $firstLine,
         '',
-        'Marketplace: ' . normalizePdfText($marketplace),
+        'Marketplace de referencia: ' . normalizePdfText($marketplace),
         'Preco minimo: ' . normalizePdfText(formatBrl($precoMinimo)),
-        'Preco ideal: ' . normalizePdfText(formatBrl($precoIdeal)),
+        'Preco ideal (maior lucro): ' . normalizePdfText(formatBrl($precoIdeal)),
         '',
-        'https://precificacao.rafamaceno.com.br',
-        '',
-        'Rafa Maceno',
     ];
 
+    if ($sanitizedPrices !== []) {
+        $lines[] = 'Precos ideais por marketplace:';
+        foreach ($sanitizedPrices as $item) {
+            $lines[] = '- ' . normalizePdfText($item['title']) . ': ' . normalizePdfText(formatBrl((float) $item['precoIdeal']));
+        }
+        $lines[] = '';
+    }
+
+    $lines[] = 'https://precificacao.rafamaceno.com.br';
+    $lines[] = '';
+    $lines[] = 'Rafa Maceno';
+
     $y = 780;
-    $commands = ['BT', '/F1 14 Tf'];
+    $commands = ['BT', '/F1 12 Tf'];
     foreach ($lines as $line) {
         $commands[] = sprintf('1 0 0 1 56 %d Tm (%s) Tj', $y, escapePdfText($line));
-        $y -= 24;
+        $y -= 20;
+        if ($y < 60) {
+            break;
+        }
     }
     $commands[] = 'ET';
 

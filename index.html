@@ -544,7 +544,7 @@
             </div>
             <div id="stickySummaryContent" class="stickySummary__content">Preencha os dados para ver o resumo principal.</div>
             <div class="stickySummary__actions">
-              <button id="stickyExportPDF" class="btn btn--primary" data-action="export-pdf" data-from="sticky" type="button">Exportar PDF</button>
+              <button id="stickyLeadCapture" class="btn btn--primary" data-action="focus-lead-capture" type="button">Receber PDF por e-mail</button>
               <button id="stickyShare" class="btn btn--ghost" data-action="share-whatsapp" type="button">Compartilhar</button>
             </div>
           </aside>
@@ -552,7 +552,6 @@
           <button id="stickyOpen" class="stickyOpen" type="button">Resumo</button>
 
           <div id="shareBox" class="shareBox"></div>
-          <div id="pdfButtonContainer" style="margin-top: 15px;"></div>
 
           <div class="hr"></div>
 
@@ -708,7 +707,6 @@
     (function loadVersionedScripts() {
       const scripts = [
         "assets/js/storage.js",
-        "assets/js/pdf-export.js",
         "assets/js/main.js"
       ];
 
