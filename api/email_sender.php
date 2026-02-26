@@ -34,7 +34,7 @@ function smtpConfigPresent(): bool
 
 
 
-function sanitizeMarketplacePrices(array $items): array
+function sanitizeMarketplaceSummaries(array $items): array
 {
     $sanitized = [];
 
@@ -44,21 +44,19 @@ function sanitizeMarketplacePrices(array $items): array
         }
 
         $title = trim((string) ($item['title'] ?? $item['key'] ?? 'Marketplace'));
-        $precoIdeal = (float) ($item['precoIdeal'] ?? 0);
-
-        if ($title === '' || $precoIdeal <= 0) {
+        if ($title === '') {
             continue;
         }
 
         $sanitized[] = [
             'title' => $title,
-            'precoIdeal' => $precoIdeal,
+            'precoIdeal' => (float) ($item['precoIdeal'] ?? 0),
+            'lucro' => (float) ($item['lucro'] ?? 0),
+            'margem' => (float) ($item['margem'] ?? 0),
         ];
     }
 
-    usort($sanitized, static fn(array $a, array $b): int => $a['precoIdeal'] <=> $b['precoIdeal']);
-
-    return array_slice($sanitized, 0, 12);
+    return $sanitized;
 }
 
 function buildSummaryEmailBody(string $nome, string $marketplace, float $precoMinimo, float $precoIdeal, array $marketplacePrices = []): string
@@ -67,19 +65,27 @@ function buildSummaryEmailBody(string $nome, string $marketplace, float $precoMi
     $marketplaceSeguro = htmlspecialchars($marketplace, ENT_QUOTES, 'UTF-8');
 
     $saudacao = $nomeSeguro !== '' ? "Olá, {$nomeSeguro}!" : 'Olá!';
-    $sanitizedPrices = sanitizeMarketplacePrices($marketplacePrices);
+    $sanitizedPrices = sanitizeMarketplaceSummaries($marketplacePrices);
 
     $priceRows = '';
     foreach ($sanitizedPrices as $item) {
-        $priceRows .= '<li><strong>'
-            . htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8')
-            . ':</strong> '
-            . formatBrl((float) $item['precoIdeal'])
-            . '</li>';
+        $priceRows .= '<tr>'
+            . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8') . '</td>'
+            . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . formatBrl((float) $item['precoIdeal']) . '</td>'
+            . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . formatBrl((float) $item['lucro']) . '</td>'
+            . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . number_format((float) $item['margem'], 2, ',', '.') . '%</td>'
+            . '</tr>';
     }
 
     $priceListHtml = $priceRows !== ''
-        ? '<p style="margin:0 0 10px"><strong>Preços ideais por marketplace:</strong></p><ul style="padding-left:18px;margin:0 0 20px">' . $priceRows . '</ul>'
+        ? '<p style="margin:0 0 10px"><strong>Resumo completo por marketplace:</strong></p>'
+            . '<table style="border-collapse:collapse;width:100%;margin:0 0 20px">'
+            . '<thead><tr>'
+            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Marketplace</th>'
+            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Preço ideal</th>'
+            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Lucro</th>'
+            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Margem</th>'
+            . '</tr></thead><tbody>' . $priceRows . '</tbody></table>'
         : '';
 
     return '<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:24px;color:#111827;line-height:1.5">'
@@ -111,7 +117,7 @@ function escapePdfText(string $value): string
 function buildSummaryPdf(string $nome, string $marketplace, float $precoMinimo, float $precoIdeal, array $marketplacePrices = []): string
 {
     $firstLine = $nome !== '' ? sprintf('Ola, %s!', normalizePdfText($nome)) : 'Ola!';
-    $sanitizedPrices = sanitizeMarketplacePrices($marketplacePrices);
+    $sanitizedPrices = sanitizeMarketplaceSummaries($marketplacePrices);
 
     $lines = [
         'Resumo de precificacao',
@@ -125,9 +131,12 @@ function buildSummaryPdf(string $nome, string $marketplace, float $precoMinimo, 
     ];
 
     if ($sanitizedPrices !== []) {
-        $lines[] = 'Precos ideais por marketplace:';
+        $lines[] = 'Resumo completo por marketplace:';
         foreach ($sanitizedPrices as $item) {
-            $lines[] = '- ' . normalizePdfText($item['title']) . ': ' . normalizePdfText(formatBrl((float) $item['precoIdeal']));
+            $lines[] = '- ' . normalizePdfText($item['title']);
+            $lines[] = '  Preco ideal: ' . normalizePdfText(formatBrl((float) $item['precoIdeal']));
+            $lines[] = '  Lucro: ' . normalizePdfText(formatBrl((float) $item['lucro']));
+            $lines[] = '  Margem: ' . normalizePdfText(number_format((float) $item['margem'], 2, ',', '.') . '%');
         }
         $lines[] = '';
     }
@@ -136,26 +145,56 @@ function buildSummaryPdf(string $nome, string $marketplace, float $precoMinimo, 
     $lines[] = '';
     $lines[] = 'Rafa Maceno';
 
-    $y = 780;
-    $commands = ['BT', '/F1 12 Tf'];
-    foreach ($lines as $line) {
-        $commands[] = sprintf('1 0 0 1 56 %d Tm (%s) Tj', $y, escapePdfText($line));
-        $y -= 20;
-        if ($y < 60) {
-            break;
+    $buildPageStream = static function (array $pageLines): string {
+        $y = 780;
+        $commands = ['BT', '/F1 12 Tf'];
+        foreach ($pageLines as $line) {
+            $commands[] = sprintf('1 0 0 1 56 %d Tm (%s) Tj', $y, escapePdfText($line));
+            $y -= 20;
         }
-    }
-    $commands[] = 'ET';
+        $commands[] = 'ET';
 
-    $stream = implode("\n", $commands) . "\n";
+        return implode("\n", $commands) . "\n";
+    };
+
+    $linesPerPage = 35;
+    $pages = array_chunk($lines, $linesPerPage);
+    if ($pages === []) {
+        $pages = [['Resumo de precificacao']];
+    }
+
+    $pageCount = count($pages);
+    $fontObjectNumber = 3 + ($pageCount * 2);
 
     $objects = [
         '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
-        '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
-        '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj',
-        '4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj',
-        sprintf("5 0 obj << /Length %d >> stream\n%sendstream endobj", strlen($stream), $stream),
     ];
+
+    $pageRefs = [];
+    for ($i = 0; $i < $pageCount; $i++) {
+        $pageObjectNumber = 3 + ($i * 2);
+        $contentObjectNumber = $pageObjectNumber + 1;
+        $pageRefs[] = $pageObjectNumber . ' 0 R';
+
+        $objects[] = sprintf(
+            '%d 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 %d 0 R >> >> /Contents %d 0 R >> endobj',
+            $pageObjectNumber,
+            $fontObjectNumber,
+            $contentObjectNumber
+        );
+
+        $stream = $buildPageStream($pages[$i]);
+        $objects[] = sprintf("%d 0 obj << /Length %d >> stream\n%sendstream endobj", $contentObjectNumber, strlen($stream), $stream);
+    }
+
+    array_splice(
+        $objects,
+        1,
+        0,
+        sprintf('2 0 obj << /Type /Pages /Kids [%s] /Count %d >> endobj', implode(' ', $pageRefs), $pageCount)
+    );
+
+    $objects[] = sprintf('%d 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj', $fontObjectNumber);
 
     $pdf = "%PDF-1.4\n";
     $offsets = [0];
