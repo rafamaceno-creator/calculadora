@@ -1,0 +1,6 @@
+RewriteEngine On
+
+RewriteRule ^a-hora-com-o-especialista/?$ /a-hora-com-o-especialista.html [L]
+RewriteRule ^obrigado/?$ /obrigado.php [L]
+RewriteRule ^agendar/?$ /agendar.php [L]
+RewriteRule ^api/ - [L]

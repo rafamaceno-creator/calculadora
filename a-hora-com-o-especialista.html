@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A Hora com o Especialista | Precificação Marketplaces</title>
+  <meta name="description" content="Sessão estratégica 1:1 para corrigir margem, destravar operação e escalar com plano claro em marketplaces." />
+  <link rel="stylesheet" href="assets/css/styles.css" data-asset="true" />
+  <script>
+    const now = new Date();
+    const APP_VERSION = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
+    window.versionAssetPath = function(path){ const url = new URL(path, window.location.href); url.searchParams.set("v", APP_VERSION); return url.pathname + url.search; };
+    (function(){ document.querySelectorAll('[data-asset="true"]').forEach((el)=>{ const attr = el.tagName === "LINK" ? "href" : "src"; el.setAttribute(attr, window.versionAssetPath(el.getAttribute(attr))); }); })();
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <div class="brand">
+        <span class="brand__dot" aria-hidden="true"></span>
+        <div><strong>Precificação</strong><br /><small>Marketplaces</small></div>
+      </div>
+      <div class="topbar__controls">
+        <a class="btn btn--outline" href="index.html">Voltar para a Calculadora</a>
+        <button id="mobileMenuToggle" class="mobileMenuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="topbarNav">☰</button>
+      </div>
+      <nav id="topbarNav" class="nav" aria-label="Navegação">
+        <a href="index.html">← Calculadora</a>
+        <a class="btn btn--primary btn--cta" data-action="cta-specialist" data-from="hora-nav" href="#agenda">A Hora com o Especialista</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container specialistPage">
+    <p class="breadcrumb"><a href="index.html">← Calculadora</a></p>
+
+    <section class="sectionCard specialistHero">
+      <span class="kicker">Sessão estratégica 1:1</span>
+      <h1>A Hora com o Especialista</h1>
+      <p><strong>Investimento: R$ 997</strong>. Você recebe uma análise direta da sua operação para parar de vender no escuro, corrigir margem e construir um plano executável para escalar com segurança.</p>
+    </section>
+
+    <section class="sectionCard">
+      <h2>O que você leva na prática</h2>
+      <ul class="specialistList">
+        <li>Diagnóstico completo de margem por canal (taxas, impostos, custos e lucro real).</li>
+        <li>Revisão de precificação com prioridades de ajuste para os próximos 7 dias.</li>
+        <li>Análise dos gargalos que travam crescimento (anúncio, ticket, mix e operação).</li>
+        <li>Plano de ação claro: o que manter, o que cortar e o que acelerar.</li>
+      </ul>
+    </section>
+
+    <section class="sectionCard" id="agenda">
+      <h2>Como funciona</h2>
+      <ol>
+        <li>Você clica para garantir sua sessão.</li>
+        <li>Após a confirmação, liberamos o link de agendamento.</li>
+        <li>Na reunião, destravamos os pontos críticos da sua operação.</li>
+      </ol>
+      <p class="sectionMicrocopy">Clareza de decisão para proteger caixa e crescer com margem.</p>
+    </section>
+
+    <section class="sectionCard strategicCta" style="margin-bottom:40px;">
+      <h2>Investimento: R$ 997</h2>
+      <p>Se você quer tratar seu negócio como operação profissional, essa é a conversa certa.</p>
+      <button id="checkoutBtn" class="btn btn--primary" type="button">Garanti minha hora por R$ 997</button>
+      <a class="btn btn--ghost" href="index.html" style="margin-top:10px;">Voltar para a Calculadora</a>
+      <p id="checkoutFeedback" class="sectionMicrocopy" style="margin-top:12px;"></p>
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const toggle = document.querySelector('#mobileMenuToggle');
+      const nav = document.querySelector('#topbarNav');
+      const checkoutBtn = document.querySelector('#checkoutBtn');
+      const feedback = document.querySelector('#checkoutFeedback');
+
+      if (toggle && nav) {
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('is-open');
+          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      }
+
+      async function startCheckout() {
+        if (!checkoutBtn) return;
+        checkoutBtn.disabled = true;
+        feedback.textContent = 'Redirecionando para o pagamento seguro...';
+
+        try {
+          const response = await fetch('/api/create-checkout-session.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body: new URLSearchParams({ utm_query: window.location.search }).toString(),
+          });
+
+          const payload = await response.json();
+          if (!response.ok || !payload.url) {
+            throw new Error('Falha ao criar sessão de checkout');
+          }
+
+          window.location.href = payload.url;
+        } catch (error) {
+          console.error(error);
+          feedback.textContent = 'Não foi possível iniciar o pagamento agora. Tente novamente em instantes.';
+          checkoutBtn.disabled = false;
+        }
+      }
+
+      if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', startCheckout);
+      }
+    })();
+  </script>
+</body>
+</html>
