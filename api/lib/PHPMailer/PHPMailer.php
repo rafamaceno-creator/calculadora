@@ -8,6 +8,7 @@ class PHPMailer
 {
     public const ENCRYPTION_STARTTLS = 'tls';
     public const ENCRYPTION_SMTPS = 'ssl';
+    public const ENCODING_BASE64 = 'base64';
 
     public bool $SMTPAuth = true;
     public string $Host = '';
@@ -25,6 +26,9 @@ class PHPMailer
 
     /** @var array<int, array{email: string, name: string}> */
     private array $to = [];
+
+    /** @var array<int, array{content: string, name: string, encoding: string, type: string}> */
+    private array $attachments = [];
 
     public function isSMTP(): void
     {
@@ -45,6 +49,16 @@ class PHPMailer
     public function isHTML(bool $isHtml = true): void
     {
         $this->isHtml = $isHtml;
+    }
+
+    public function addStringAttachment(string $string, string $filename, string $encoding = self::ENCODING_BASE64, string $type = 'application/octet-stream'): void
+    {
+        $this->attachments[] = [
+            'content' => $string,
+            'name' => $filename,
+            'encoding' => $encoding,
+            'type' => $type,
+        ];
     }
 
     public function send(): bool
@@ -101,11 +115,40 @@ class PHPMailer
             'To: ' . implode(', ', $toHeader),
             'Subject: ' . $this->encodeHeader($this->Subject),
             'MIME-Version: 1.0',
-            'Content-Type: ' . ($this->isHtml ? 'text/html' : 'text/plain') . '; charset=UTF-8',
-            'Content-Transfer-Encoding: 8bit',
         ];
 
-        return implode("\r\n", $headers) . "\r\n\r\n" . $this->Body;
+        if ($this->attachments === []) {
+            $headers[] = 'Content-Type: ' . ($this->isHtml ? 'text/html' : 'text/plain') . '; charset=UTF-8';
+            $headers[] = 'Content-Transfer-Encoding: 8bit';
+            return implode("\r\n", $headers) . "\r\n\r\n" . $this->Body;
+        }
+
+        $boundary = 'b=' . bin2hex(random_bytes(16));
+        $headers[] = 'Content-Type: multipart/mixed; boundary="' . $boundary . '"';
+
+        $parts = [];
+        $parts[] = '--' . $boundary;
+        $parts[] = 'Content-Type: ' . ($this->isHtml ? 'text/html' : 'text/plain') . '; charset=UTF-8';
+        $parts[] = 'Content-Transfer-Encoding: 8bit';
+        $parts[] = '';
+        $parts[] = $this->Body;
+
+        foreach ($this->attachments as $attachment) {
+            $filename = addcslashes($attachment['name'], '"\\');
+            $encodedContent = chunk_split(base64_encode($attachment['content']), 76, "\r\n");
+
+            $parts[] = '--' . $boundary;
+            $parts[] = 'Content-Type: ' . $attachment['type'] . '; name="' . $filename . '"';
+            $parts[] = 'Content-Transfer-Encoding: base64';
+            $parts[] = 'Content-Disposition: attachment; filename="' . $filename . '"';
+            $parts[] = '';
+            $parts[] = rtrim($encodedContent, "\r\n");
+        }
+
+        $parts[] = '--' . $boundary . '--';
+        $parts[] = '';
+
+        return implode("\r\n", $headers) . "\r\n\r\n" . implode("\r\n", $parts);
     }
 
     private function formatAddress(string $email, string $name = ''): string
