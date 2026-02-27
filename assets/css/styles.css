@@ -862,6 +862,8 @@ input::placeholder{color:#95a0b2}
   border:1px solid rgba(148,163,184,.34);
   background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(248,250,252,.75));
   box-shadow:var(--shadow-sm);
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
 }
 .modeCard::before{
   content:"";
@@ -872,6 +874,7 @@ input::placeholder{color:#95a0b2}
   height:40px;
   border-radius:12px;
   background:linear-gradient(135deg,rgba(15,157,146,.18),rgba(124,58,237,.12));
+  pointer-events:none;
 }
 .modeCard strong{font-size:19px;position:relative;z-index:1}
 .modeCard p{color:#5f7086}
