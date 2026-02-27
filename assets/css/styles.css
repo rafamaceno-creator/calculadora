@@ -1346,3 +1346,94 @@ body.theme-dark .mpLogoWrap{
     max-width:none;
   }
 }
+
+/* ===== Mobile responsiveness refinement (visual only) ===== */
+@media (max-width:768px){
+  body{padding-bottom:calc(12px + env(safe-area-inset-bottom));}
+
+  .hero{padding:14px 0 10px;}
+  .kicker{padding:5px 10px;font-size:11px;}
+  .hero h1{margin:10px 0 8px;font-size:clamp(21px,6.2vw,28px);line-height:1.12;max-width:20ch;}
+  .hero p{font-size:14px;line-height:1.45;}
+  .hero__microcopy{margin-top:4px;font-size:12px;}
+  .hero__actions{margin-top:12px;gap:8px;}
+
+  .sectionCard{padding:14px;margin-bottom:14px;}
+  .sectionMicrocopy{margin:6px 0 12px;}
+  .card__inner,.pricingCard .card__inner{padding:14px;}
+  .formBlock__head{margin-bottom:6px;}
+  .formBlock__head h3{font-size:17px;}
+  .formBlock__head p{font-size:13px;line-height:1.35;}
+  .field{margin-bottom:10px;}
+  .formDivider{margin:12px 0;}
+
+  .wizardProgress{
+    min-height:44px;
+    margin-bottom:12px;
+    padding:7px 10px;
+    border-radius:12px;
+    background-image:
+      radial-gradient(circle at 12px 14px, color-mix(in srgb,var(--accent) calc(min(var(--wizard-step),1)*100%), rgba(148,163,184,.45)) 0 4px, transparent 5px),
+      radial-gradient(circle at calc(33.33% + 2px) 14px, color-mix(in srgb,var(--accent) calc(min(max(var(--wizard-step) - 1,0),1)*100%), rgba(148,163,184,.45)) 0 4px, transparent 5px),
+      radial-gradient(circle at calc(66.66% - 2px) 14px, color-mix(in srgb,var(--accent) calc(min(max(var(--wizard-step) - 2,0),1)*100%), rgba(148,163,184,.45)) 0 4px, transparent 5px),
+      radial-gradient(circle at calc(100% - 12px) 14px, color-mix(in srgb,var(--accent) calc(min(max(var(--wizard-step) - 3,0),1)*100%), rgba(148,163,184,.45)) 0 4px, transparent 5px),
+      linear-gradient(170deg,rgba(255,255,255,.86),rgba(241,245,249,.72));
+  }
+  .wizardProgress::before{left:12px;right:12px;top:14px;height:1.5px;}
+  .wizardProgress::after{left:10px;bottom:6px;font-size:11px;content:"Passo " attr(data-step-label);}
+
+  .modeCards{grid-template-columns:1fr;gap:8px;}
+  .modeCard{padding:14px;min-height:96px;border-radius:14px;}
+  .modeCard::before{width:28px;height:28px;top:10px;right:10px;border-radius:9px;}
+  .modeCard strong{margin-bottom:4px;font-size:18px;line-height:1.2;}
+  .modeCard p{font-size:13px;line-height:1.35;padding-right:4px;}
+
+  .wizardActions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;}
+  .wizardActions .btn{min-height:44px;}
+  .wizardActions .btn--primary{flex:1 1 190px;}
+  #wizardBackStep2,#wizardBackStepData,#wizardBackStep3{
+    order:-1;
+    flex:0 0 auto;
+    width:auto;
+    max-width:none;
+    min-width:0;
+    height:44px;
+    padding:0 14px;
+    border-radius:12px;
+    background:transparent;
+    border:1px solid color-mix(in srgb,var(--stroke) 88%, transparent);
+    box-shadow:none;
+    font-weight:600;
+    justify-content:flex-start;
+  }
+  #wizardBackStep2::before,#wizardBackStepData::before,#wizardBackStep3::before{content:"←";font-weight:700;}
+
+  #marketplaceSelector.marketplaceSelector{
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scroll-snap-type:x mandatory;
+    gap:8px;
+    padding:2px 2px 8px;
+  }
+  #marketplaceSelector .marketplaceChip{
+    flex:0 0 auto;
+    scroll-snap-align:start;
+    min-height:44px;
+    max-width:78vw;
+    padding:9px 12px;
+    border-radius:14px;
+    box-shadow:none;
+  }
+  #marketplaceSelector .mpLogoWrap{width:22px;height:22px;flex-basis:22px;}
+  #marketplaceSelector .mpName{font-size:12px;line-height:1.2;max-width:46vw;white-space:nowrap;}
+  #marketplaceSelector .mpCheck{width:16px;height:16px;flex-basis:16px;}
+}
+
+@media (max-width:480px){
+  .topbar{position:sticky;top:0;}
+  .pricingCard .card__inner{padding:12px;}
+  .wizardProgress{margin-bottom:10px;}
+  .wizardActions .btn--primary{position:sticky;bottom:8px;z-index:3;padding-bottom:calc(12px + env(safe-area-inset-bottom));}
+}
