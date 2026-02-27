@@ -2592,8 +2592,8 @@ function bindSmoothScroll() {
 
 const UX_MARKETPLACES = [
   { key: "shopee", title: "Shopee", logo: "assets/img/marketplaces/shopee.svg", brandClass: "brand-shopee", mono: true, initials: "S" },
-  { key: "mlClassic", title: "Mercado Livre — Clássico", logo: "assets/img/marketplaces/mercadolivre.svg", brandClass: "brand-mlclassic", mono: true, initials: "ML" },
-  { key: "mlPremium", title: "Mercado Livre — Premium", logo: "assets/img/marketplaces/mercadolivre.svg", brandClass: "brand-mlpremium", mono: true, initials: "ML" },
+  { key: "mlClassic", title: "Mercado Livre — Clássico", logo: "assets/img/marketplaces/mercado-livre.svg", brandClass: "brand-mlclassic", mono: true, initials: "ML" },
+  { key: "mlPremium", title: "Mercado Livre — Premium", logo: "assets/img/marketplaces/mercado-livre.svg", brandClass: "brand-mlpremium", mono: true, initials: "ML" },
   { key: "tiktok", title: "TikTok Shop", logo: "assets/img/marketplaces/tiktok.svg", brandClass: "brand-tiktok", mono: true, initials: "TT" },
   { key: "shein", title: "SHEIN", logo: "assets/img/marketplaces/shein.svg", brandClass: "brand-shein", mono: true, initials: "SH" },
   { key: "amazon", title: "Amazon (DBA)", logo: "assets/img/marketplaces/amazon.svg", brandClass: "brand-amazon", mono: true, initials: "AZ" }
