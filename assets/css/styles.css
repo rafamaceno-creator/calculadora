@@ -1296,3 +1296,53 @@ body.theme-dark .mpLogoWrap{
 
   .mpName{max-width:44vw}
 }
+
+/* Mobile UX fix: keep step 2 marketplaces fully visible and buttons more fluid */
+@media (max-width:768px){
+  #marketplaceSelector.marketplaceSelector{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    overflow:visible;
+    padding-bottom:0;
+  }
+
+  #marketplaceSelector .marketplaceChip{
+    width:100%;
+    max-width:none;
+    min-width:0;
+    padding:10px 12px;
+  }
+
+  #marketplaceSelector .mpName{
+    max-width:none;
+    white-space:normal;
+    line-height:1.2;
+  }
+
+  .wizardActions{
+    flex-direction:row;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    gap:8px;
+  }
+
+  .wizardActions .btn{
+    width:auto;
+    flex:0 1 auto;
+    min-width:132px;
+    max-width:48%;
+    min-height:40px;
+    padding:9px 12px;
+    font-size:14px;
+    border-radius:11px;
+  }
+}
+
+@media (max-width:420px){
+  #marketplaceSelector.marketplaceSelector{grid-template-columns:1fr;}
+  .wizardActions .btn{
+    flex:1 1 auto;
+    max-width:none;
+  }
+}
