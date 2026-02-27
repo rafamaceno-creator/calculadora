@@ -2707,6 +2707,10 @@ function setWizardStep(step) {
 }
 
 function renderWizardUI() {
+  if (wizardStep === 0 && getCalcMode()) {
+    wizardStep = 1;
+  }
+
   if (!getCalcMode() && wizardStep > 0) {
     wizardStep = 0;
   }
@@ -2787,17 +2791,30 @@ function initUxRefactor() {
     document.querySelector("#profitFieldPCT")?.classList.remove("is-hidden");
   }
 
-  document.querySelector("#calcModeCards")?.addEventListener("click", (event) => {
-    const card = event.target.closest(".modeCard");
-    if (!card) return;
-    const mode = card.dataset.mode;
+  const selectCalcMode = (mode) => {
+    if (!mode) return;
     const real = document.querySelector("#mode_real");
     const ideal = document.querySelector("#mode_ideal");
-    if (mode === "real" && real) real.checked = true;
-    if (mode === "ideal" && ideal) ideal.checked = true;
-    toggleUxModeSections();
+    if (mode === "real" && real) {
+      real.checked = true;
+      real.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    if (mode === "ideal" && ideal) {
+      ideal.checked = true;
+      ideal.dispatchEvent(new Event("change", { bubbles: true }));
+    }
     setWizardStep(1);
-  });
+  };
+
+  const calcModeCards = document.querySelector("#calcModeCards");
+  const handleCalcModeCardInteraction = (event) => {
+    const card = event.target.closest?.(".modeCard");
+    if (!card) return;
+    selectCalcMode(card.dataset.mode);
+  };
+
+  calcModeCards?.addEventListener("click", handleCalcModeCardInteraction);
+  calcModeCards?.addEventListener("pointerup", handleCalcModeCardInteraction);
 
   document.querySelector("#mode1PriceInputs")?.addEventListener("input", (event) => {
     const input = event.target.closest("[data-ux-price-marketplace]");
@@ -2824,6 +2841,10 @@ function initUxRefactor() {
   });
 
   document.querySelectorAll('input[name="calcMode"]').forEach((el) => el.addEventListener("change", () => {
+    if (wizardStep === 0 && getCalcMode()) {
+      setWizardStep(1);
+      return;
+    }
     toggleUxModeSections();
     renderWizardUI();
   }));
