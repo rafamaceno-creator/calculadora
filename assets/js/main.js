@@ -965,7 +965,7 @@ function bindTooltipSystem() {
     if (activeTrigger) placeTooltip(activeTrigger);
   }, { passive: true });
 
-  document.addEventListener("keydown", (event) => {
+  document.addEventListener("keyup", (event) => {
     if (event.key === "Escape") closeTooltip();
   });
 
@@ -2591,12 +2591,12 @@ function bindSmoothScroll() {
 
 
 const UX_MARKETPLACES = [
-  { key: "shopee", title: "Shopee", logo: "assets/img/marketplaces/shopee.svg", brandClass: "brand-shopee", mono: true, initials: "S" },
-  { key: "mlClassic", title: "Mercado Livre — Clássico", logo: "assets/img/marketplaces/mercado-livre.svg", brandClass: "brand-mlclassic", mono: true, initials: "ML" },
-  { key: "mlPremium", title: "Mercado Livre — Premium", logo: "assets/img/marketplaces/mercado-livre.svg", brandClass: "brand-mlpremium", mono: true, initials: "ML" },
-  { key: "tiktok", title: "TikTok Shop", logo: "assets/img/marketplaces/tiktok.svg", brandClass: "brand-tiktok", mono: true, initials: "TT" },
-  { key: "shein", title: "SHEIN", logo: "assets/img/marketplaces/shein.svg", brandClass: "brand-shein", mono: true, initials: "SH" },
-  { key: "amazon", title: "Amazon (DBA)", logo: "assets/img/marketplaces/amazon.svg", brandClass: "brand-amazon", mono: true, initials: "AZ" }
+  { key: "shopee", title: "Shopee", monogram: "S", brandClass: "brand-shopee" },
+  { key: "mlClassic", title: "Mercado Livre — Clássico", monogram: "ML", brandClass: "brand-ml" },
+  { key: "mlPremium", title: "Mercado Livre — Premium", monogram: "ML", brandClass: "brand-ml" },
+  { key: "tiktok", title: "TikTok Shop", monogram: "♪", brandClass: "brand-tiktok" },
+  { key: "shein", title: "SHEIN", monogram: "S", brandClass: "brand-shein" },
+  { key: "amazon", title: "Amazon (DBA)", monogram: "a", brandClass: "brand-amazon" }
 ];
 
 const MARKETPLACE_TITLE_TO_KEY = {
@@ -2625,22 +2625,15 @@ function buildMarketplaceSelector() {
   const wrap = document.querySelector("#marketplaceSelector");
   if (!wrap) return;
   wrap.innerHTML = UX_MARKETPLACES.map((mp) => `
-    <label class="marketplaceChip ${mp.brandClass || ""}" data-mp="${mp.key}">
+    <label class="marketplaceChip ${mp.brandClass || ""}" data-mp="${mp.key}" tabindex="0">
       <input class="marketplaceChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
-      <span class="mpLogo" aria-hidden="true" data-fallback="${mp.initials || "MP"}">
-        <img src="${mp.logo}" alt="" loading="lazy" decoding="async" data-mono="${mp.mono ? "1" : "0"}" />
+      <span class="mpLogoWrap ${mp.brandClass || ""}">
+        <span class="mpMonogram" aria-hidden="true">${mp.monogram || "MP"}</span>
       </span>
       <span class="mpName">${mp.title}</span>
       <span class="mpCheck" aria-hidden="true"></span>
     </label>
   `).join("");
-
-  wrap.querySelectorAll(".mpLogo img").forEach((img) => {
-    img.addEventListener("error", () => {
-      img.closest(".mpLogo")?.classList.add("is-fallback");
-      img.style.display = "none";
-    }, { once: true });
-  });
 }
 
 function renderMode1PriceInputs() {
@@ -2821,8 +2814,10 @@ function initUxRefactor() {
   });
 
   document.querySelector("#marketplaceSelector")?.addEventListener("keydown", (event) => {
-    const checkbox = event.target.closest('.marketplaceChip__input[type="checkbox"]');
-    if (!checkbox || event.key !== "Enter") return;
+    const chip = event.target.closest('.marketplaceChip');
+    const checkbox = chip?.querySelector('.marketplaceChip__input[type="checkbox"]');
+    const isToggleKey = event.key === "Enter" || event.key === " " || event.code === "Space";
+    if (!checkbox || !isToggleKey) return;
     event.preventDefault();
     checkbox.checked = !checkbox.checked;
     checkbox.dispatchEvent(new Event("change", { bubbles: true }));
