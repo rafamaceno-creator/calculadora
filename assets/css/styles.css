@@ -1138,9 +1138,12 @@ body.theme-dark .stickySummary__actions{background:transparent}
   .mpChip{ flex:0 0 auto; }
 }
 
-/* Marketplace chips with logo */
+/* Marketplace chips with monogram badge */
 .marketplaceChip{
   --brand-color: var(--accent);
+  --brand-bg: color-mix(in srgb,var(--brand-color) 8%, rgba(255,255,255,.94));
+  --brand-border: color-mix(in srgb,var(--brand-color) 24%, var(--stroke));
+  --brand-ink: color-mix(in srgb,var(--brand-color) 68%, #0f172a);
   position:relative;
   display:inline-flex;
   align-items:center;
@@ -1162,38 +1165,35 @@ body.theme-dark .stickySummary__actions{background:transparent}
   box-shadow:0 12px 22px rgba(15,23,42,.12);
 }
 
+.marketplaceChip:hover .mpLogoWrap{
+  border-color:color-mix(in srgb,var(--brand-color) 35%, var(--stroke));
+}
+
 .marketplaceChip__input{
   position:absolute;
   opacity:0;
   pointer-events:none;
 }
 
-.mpLogo{
-  width:28px;
-  height:28px;
+.mpLogoWrap{
+  width:26px;
+  height:26px;
   border-radius:8px;
-  flex:0 0 28px;
+  flex:0 0 26px;
   display:grid;
   place-items:center;
-  background:color-mix(in srgb,var(--brand-color) 8%, #fff);
-  color:color-mix(in srgb,var(--brand-color) 70%, #0f172a);
-  overflow:hidden;
+  border:1px solid var(--brand-border);
+  background:linear-gradient(160deg,var(--brand-bg),color-mix(in srgb,var(--brand-bg) 72%, transparent));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.48);
 }
 
-.mpLogo img{
-  width:20px;
-  height:20px;
-  display:block;
-  object-fit:contain;
-}
-
-.mpLogo img[data-mono="1"]{color:inherit}
-
-.mpLogo.is-fallback::after{
-  content:attr(data-fallback);
-  font-size:11px;
-  font-weight:700;
+.mpMonogram{
+  font-weight:800;
+  font-size:12.5px;
+  line-height:1;
   letter-spacing:.02em;
+  text-transform:uppercase;
+  color:var(--brand-ink);
 }
 
 .mpName{
@@ -1241,22 +1241,40 @@ body.theme-dark .stickySummary__actions{background:transparent}
   border-color:var(--accent);
 }
 
+.marketplaceChip:has(.marketplaceChip__input:checked) .mpLogoWrap{
+  border-color:color-mix(in srgb,var(--brand-color) 42%, var(--stroke));
+  background:linear-gradient(160deg,color-mix(in srgb,var(--brand-bg) 88%, #fff),color-mix(in srgb,var(--brand-color) 14%, #fff));
+}
+
 .marketplaceChip:has(.marketplaceChip__input:checked) .mpCheck::after{border-color:#fff}
+
+.marketplaceChip:focus-visible{
+  outline:3px solid color-mix(in srgb,var(--accent) 34%,transparent);
+  outline-offset:3px;
+}
 
 .marketplaceChip:has(.marketplaceChip__input:focus-visible){
   outline:3px solid color-mix(in srgb,var(--accent) 34%,transparent);
   outline-offset:3px;
 }
 
-.brand-shopee{--brand-color:#ee4d2d}
-.brand-mlclassic{--brand-color:#fbbf24}
-.brand-mlpremium{--brand-color:#f59e0b}
-.brand-tiktok{--brand-color:#111827}
-.brand-shein{--brand-color:#1f2937}
-.brand-amazon{--brand-color:#f59e0b}
+.marketplaceChip:has(.marketplaceChip__input:focus-visible) .mpLogoWrap{
+  border-color:color-mix(in srgb,var(--brand-color) 36%, var(--stroke));
+}
+
+
+.brand-shopee{--brand-color:#ee4d2d;--brand-bg:color-mix(in srgb,#ee4d2d 10%, rgba(255,255,255,.96));--brand-border:color-mix(in srgb,#ee4d2d 22%, var(--stroke))}
+.brand-ml{--brand-color:#fbbf24;--brand-bg:color-mix(in srgb,#fbbf24 12%, rgba(255,255,255,.96));--brand-border:color-mix(in srgb,#fbbf24 24%, var(--stroke))}
+.brand-tiktok{--brand-color:#111827;--brand-bg:color-mix(in srgb,#111827 8%, rgba(255,255,255,.96));--brand-border:color-mix(in srgb,#111827 26%, var(--stroke))}
+.brand-shein{--brand-color:#1f2937;--brand-bg:color-mix(in srgb,#1f2937 8%, rgba(255,255,255,.96));--brand-border:color-mix(in srgb,#1f2937 24%, var(--stroke))}
+.brand-amazon{--brand-color:#f59e0b;--brand-bg:color-mix(in srgb,#f59e0b 12%, rgba(255,255,255,.96));--brand-border:color-mix(in srgb,#f59e0b 24%, var(--stroke))}
 
 body.theme-dark .marketplaceChip{
   background:linear-gradient(170deg,rgba(15,23,42,.9),rgba(30,41,59,.65));
+}
+
+body.theme-dark .mpLogoWrap{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
 }
 
 @media (max-width:768px){
