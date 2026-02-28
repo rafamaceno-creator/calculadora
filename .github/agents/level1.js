@@ -38,6 +38,13 @@ const fs = require("fs");
     return data.choices?.[0]?.message?.content?.trim() || "";
   }
 
+  // Prevent markdown fence breakage inside a fenced block
+  function sanitizeCodeFences(text) {
+    if (!text) return text;
+    // Replace any triple-backtick fences with triple-tilde to avoid breaking outer ```txt block
+    return text.replace(/```/g, "~~~");
+  }
+
   // 1) Generator pass (strict JSON)
   const systemGen = `
 Você é um orquestrador multi-agente para melhorias incrementais no projeto.
@@ -73,14 +80,12 @@ REGRAS CRÍTICAS:
 - PROIBIDO alterar fórmulas/cálculos/custos/comissões/taxas/regras financeiras.
 - Mudanças mínimas e incrementais.
 - NÃO inventar caminhos/arquivos. Se precisar mencionar arquivos, exija que o Codex localize no repo com busca.
-- O codex_prompt DEVE conter uma seção 'COMO LOCALIZAR NO REPO' com comandos de busca (exemplos: ripgrep/grep):
+- O codex_prompt DEVE conter uma seção 'COMO LOCALIZAR NO REPO' com comandos de busca (exemplos):
   - rg -n "marketplace|Marketplaces|Selecione marketplaces|Shopee|Mercado Livre|SHEIN|Amazon|TikTok"
   - rg -n "marketplaceChip|mpIcon|mpCheck|chip"
   - find . -iname "*.svg"
-- O codex_prompt deve preferir solução acessível nativa:
-  - checkbox/radio input + label (chip inteiro clicável) OU button real.
-  - Evitar role="button" quando for possível usar elemento nativo.
-- O codex_prompt deve incluir critérios de aceite e roteiro de teste.
+- Preferir HTML acessível nativo: <button> OU <input + label> (evitar role="button").
+- IMPORTANTE: NÃO use blocos de código markdown (não use ```). Use apenas texto normal.
 `.trim();
 
   let rawGen = await chat(
@@ -101,7 +106,7 @@ REGRAS CRÍTICAS:
       "⚠️ O modelo retornou fora do formato JSON. Resposta bruta:",
       "",
       "```txt",
-      rawGen || "(vazio)",
+      sanitizeCodeFences(rawGen || "(vazio)"),
       "```"
     ].join("\n");
 
@@ -114,7 +119,7 @@ REGRAS CRÍTICAS:
     return;
   }
 
-  // 2) Critic pass: enforce "no invented paths" + force search commands + prefer native controls
+  // 2) Critic pass: rewrite codex_prompt as plain text (no ```), no invented paths, must include search commands
   const systemCritic = `
 Você é um revisor MUITO exigente de prompts para Codex.
 
@@ -125,13 +130,14 @@ REGRAS ABSOLUTAS:
 - NÃO pode violar AGENTS_RULES.md.
 - PROIBIDO alterar cálculos/fórmulas/custos/comissões/taxas/regras financeiras.
 - PROIBIDO inventar arquivos ou paths (NÃO use "provavelmente em src/...").
-- Se precisar apontar arquivos, obrigue o Codex a localizar via busca no repo (rg/grep/find).
-- Preferir HTML acessível nativo: <button> OU <input + label> (evitar role="button" se houver alternativa).
-- O prompt final deve ter estrutura:
+- O prompt deve incluir 'COMO LOCALIZAR NO REPO' com comandos (rg/find).
+- Preferir HTML acessível nativo: <button> OU <input + label>.
+- NÃO use blocos de código markdown (NÃO use ```). Se precisar mostrar comandos, escreva como texto simples com prefixo "$ ".
+- Estrutura obrigatória:
   1) OBJETIVO (P0)
   2) RESTRIÇÕES
-  3) COMO LOCALIZAR NO REPO (com comandos)
-  4) IMPLEMENTAÇÃO (passos claros)
+  3) COMO LOCALIZAR NO REPO
+  4) IMPLEMENTAÇÃO
   5) CRITÉRIOS DE ACEITE
   6) ROTEIRO DE TESTE MANUAL
 Retorne APENAS o prompt final (texto puro).
@@ -141,7 +147,7 @@ Retorne APENAS o prompt final (texto puro).
 Repo: ${repoUrl}
 Issue: ${issueTitle}
 
-PROMPT ATUAL (ruim ou genérico -> reescreva inteiro):
+PROMPT ATUAL:
 ${gen.codex_prompt}
 `.trim();
 
@@ -155,7 +161,10 @@ ${gen.codex_prompt}
 
   gen.codex_prompt = improvedPrompt;
 
-  // 3) Post comment
+  // Sanitize any accidental fences anyway
+  const safeCodexPrompt = sanitizeCodeFences(gen.codex_prompt || "(vazio)");
+
+  // 3) Post comment with ONE single fenced block for Codex prompt
   const body = [
     "## 🤖 Agents – Improvement Plan (Level 1)",
     "",
@@ -173,7 +182,7 @@ ${gen.codex_prompt}
     "---",
     "### 🚀 PROMPT PARA O CODEX (copie e cole)",
     "```txt",
-    gen.codex_prompt || "(vazio)",
+    safeCodexPrompt,
     "```"
   ].join("\n");
 
