@@ -1,12 +1,7 @@
 import fs from "fs";
 
-function sanitizeCodeFences(text) {
-  if (!text) return text;
-  return text.replace(/```/g, "~~~");
-}
-
-async function chat({ apiKey, messages, temperature = 0.2 }) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+async function openaiChat({ apiKey, messages }) {
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -14,176 +9,101 @@ async function chat({ apiKey, messages, temperature = 0.2 }) {
     },
     body: JSON.stringify({
       model: "gpt-4.1-mini",
-      temperature,
+      temperature: 0.2,
       messages,
     }),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(`OpenAI API error ${res.status}: ${JSON.stringify(data)}`);
-  return data.choices?.[0]?.message?.content?.trim() || "";
+  const data = await resp.json();
+  if (!resp.ok) {
+    throw new Error(`OpenAI error ${resp.status}: ${JSON.stringify(data)}`);
+  }
+  return (data.choices?.[0]?.message?.content || "").trim();
+}
+
+function safeBlock(text) {
+  const t = (text || "").trim();
+  // Evita quebrar markdown do comentário se o modelo soltar ```
+  return t.replace(/```/g, "~~~");
 }
 
 export async function run({ github, context, core, apiKey }) {
-  if (!apiKey) {
-    core.setFailed("Missing OPENAI_API_KEY. Add it in Settings → Secrets and variables → Actions.");
-    return;
-  }
+  try {
+    if (!apiKey) throw new Error("Missing OPENAI_API_KEY. Add it in repo Secrets (Actions).");
 
-  const rulesPath = "AGENTS_RULES.md";
-  if (!fs.existsSync(rulesPath)) {
-    core.setFailed("AGENTS_RULES.md not found in repo root.");
-    return;
-  }
-  const rules = fs.readFileSync(rulesPath, "utf8");
+    const rulesPath = "AGENTS_RULES.md";
+    if (!fs.existsSync(rulesPath)) throw new Error("AGENTS_RULES.md not found in repo root.");
 
-  const issueTitle = context.payload.issue?.title || "";
-  const issueBody = context.payload.issue?.body || "";
-  const issueNumber = context.payload.issue?.number;
-  const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
+    const rules = fs.readFileSync(rulesPath, "utf8");
 
-  // 1) Generator (JSON only)
-  const systemGen = `
-Você é um orquestrador multi-agente para melhorias incrementais no projeto.
+    const issue = context.payload.issue;
+    if (!issue) throw new Error("No issue payload found.");
 
-FONTE DE VERDADE: siga as regras abaixo SEM EXCEÇÃO.
+    const title = issue.title || "";
+    const body = issue.body || "";
+    const issue_number = issue.number;
 
-========================
-AGENTS_RULES.md
-========================
+    const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
+
+    const system = `
+Você é um assistente de engenharia para gerar UM prompt perfeito para Codex, com foco em utilidade e simplicidade.
+
+REGRAS (obrigatório seguir):
 ${rules}
 
-FORMATO: responda APENAS JSON válido (sem markdown).
+FORMATO OBRIGATÓRIO:
+Você DEVE retornar somente o texto do prompt final (texto puro), com estas seções nesta ordem:
+
+1) OBJETIVO (P0)
+2) RESTRIÇÕES
+3) COMO LOCALIZAR NO REPO  (com comandos começando com "$ ", sem blocos de código markdown)
+4) IMPLEMENTAÇÃO
+5) CRITÉRIOS DE ACEITE
+6) ROTEIRO DE TESTE MANUAL
+
+REGRAS IMPORTANTES:
+- NÃO use blocos de código markdown (não use ```).
+- NÃO invente caminhos/arquivos. Exija que o Codex localize no repo com busca.
+- PROIBIDO alterar fórmulas/cálculos/custos/comissões/taxas/regras financeiras.
+- Preferir HTML acessível nativo: <button> OU <input + label>.
 `.trim();
 
-  const userGen = `
+    const user = `
 Repo: ${repoUrl}
 
-ISSUE
-Título: ${issueTitle}
+ISSUE:
+Título: ${title}
 
 Descrição:
-${issueBody}
+${body}
 
-SAÍDA OBRIGATÓRIA (JSON válido, sem markdown):
-{
-  "ux": "Lista priorizada (P0/P1) com solução mínima e impacto/esforço",
-  "frontend": "Escopo técnico com passos concretos",
-  "qa": "Checklist de testes + não-regressão",
-  "codex_prompt": "UM PROMPT ÚNICO, pronto pra copiar/colar no Codex"
-}
-
-REGRAS CRÍTICAS:
-- PROIBIDO alterar fórmulas/cálculos/custos/comissões/taxas/regras financeiras.
-- Mudanças mínimas e incrementais.
-- NÃO inventar caminhos/arquivos. Se precisar mencionar arquivos, exija que o Codex localize no repo com busca.
-- O codex_prompt DEVE conter uma seção 'COMO LOCALIZAR NO REPO' com comandos (escreva como texto, sem ```):
-  - $ rg -n "marketplace|Marketplaces|Selecione marketplaces|Shopee|Mercado Livre|SHEIN|Amazon|TikTok"
-  - $ rg -n "marketplaceChip|mpIcon|mpCheck|chip"
-  - $ find . -iname "*.svg"
-- Preferir HTML acessível nativo: <button> OU <input + label> (evitar role="button").
-- IMPORTANTE: NÃO use blocos de código markdown (não use ```).
+Agora gere o PROMPT FINAL para o Codex seguindo o formato obrigatório.
 `.trim();
 
-  let rawGen = await chat({
-    apiKey,
-    messages: [
-      { role: "system", content: systemGen },
-      { role: "user", content: userGen },
-    ],
-    temperature: 0.2,
-  });
+    const promptFinal = await openaiChat({
+      apiKey,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    });
 
-  let gen;
-  try {
-    gen = JSON.parse(rawGen);
-  } catch (e) {
-    const body = [
+    const comment = [
       "## 🤖 Agents – Improvement Plan (Level 1)",
       "",
-      "⚠️ O modelo retornou fora do formato JSON. Resposta bruta:",
-      "",
+      "### 🚀 PROMPT PARA O CODEX (copie e cole)",
       "```txt",
-      sanitizeCodeFences(rawGen || "(vazio)"),
+      safeBlock(promptFinal || "(vazio)"),
       "```",
     ].join("\n");
 
     await github.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
-      issue_number: issueNumber,
-      body,
+      issue_number,
+      body: comment,
     });
-    return;
+  } catch (err) {
+    core.setFailed(err?.message || String(err));
   }
-
-  // 2) Critic (rewrite prompt to be executable, no invented paths, no markdown fences)
-  const systemCritic = `
-Você é um revisor MUITO exigente de prompts para Codex.
-
-REGRAS ABSOLUTAS:
-- NÃO violar AGENTS_RULES.md.
-- PROIBIDO alterar cálculos/fórmulas/custos/comissões/taxas/regras financeiras.
-- PROIBIDO inventar arquivos/paths (NÃO use "provavelmente em src/...").
-- Deve conter 'COMO LOCALIZAR NO REPO' com comandos (como texto com "$ ", sem ```).
-- Preferir HTML acessível nativo: <button> OU <input + label>.
-- NÃO use blocos de código markdown (NÃO use ```).
-- Estrutura obrigatória:
-  1) OBJETIVO (P0)
-  2) RESTRIÇÕES
-  3) COMO LOCALIZAR NO REPO
-  4) IMPLEMENTAÇÃO
-  5) CRITÉRIOS DE ACEITE
-  6) ROTEIRO DE TESTE MANUAL
-Retorne APENAS o prompt final (texto puro).
-`.trim();
-
-  const userCritic = `
-Repo: ${repoUrl}
-Issue: ${issueTitle}
-
-PROMPT ATUAL:
-${gen.codex_prompt}
-`.trim();
-
-  const improvedPrompt = await chat({
-    apiKey,
-    messages: [
-      { role: "system", content: systemCritic },
-      { role: "user", content: userCritic },
-    ],
-    temperature: 0.2,
-  });
-
-  gen.codex_prompt = improvedPrompt;
-
-  const safeCodexPrompt = sanitizeCodeFences(gen.codex_prompt || "(vazio)");
-
-  const body = [
-    "## 🤖 Agents – Improvement Plan (Level 1)",
-    "",
-    "### 🧠 UX",
-    gen.ux || "(vazio)",
-    "",
-    "---",
-    "### 🛠️ Front-end",
-    gen.frontend || "(vazio)",
-    "",
-    "---",
-    "### 🧪 QA",
-    gen.qa || "(vazio)",
-    "",
-    "---",
-    "### 🚀 PROMPT PARA O CODEX (copie e cole)",
-    "```txt",
-    safeCodexPrompt,
-    "```",
-  ].join("\n");
-
-  await github.rest.issues.createComment({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    issue_number: issueNumber,
-    body,
-  });
 }
