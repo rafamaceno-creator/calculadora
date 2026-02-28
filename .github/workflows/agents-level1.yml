@@ -1,0 +1,131 @@
+name: Agents – Improvement Plan (Level 1)
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  run-agents:
+    if: github.event.label.name == 'improve'
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build agents plan
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          node << 'EOF'
+          import fetch from "node-fetch";
+
+          const contextBase = `
+          Repo: ${process.env.REPO_URL}
+
+          Objetivo:
+          - MAIS ÚTIL
+          - MAIS SIMPLES
+          - MAIS INTUITIVO
+          Beleza é secundária.
+
+          Regras:
+          - NÃO alterar fórmulas, custos, comissões, taxas ou cálculos.
+          - Revisão de cálculo = apenas AUDIT (issue separada).
+          - Fluxo/wizard pode mudar SOMENTE para simplificar.
+          - PR pequeno, mudanças mínimas.
+          - Ler e seguir AGENTS_RULES.md obrigatoriamente.
+          `;
+
+          const issue = `
+          TÍTULO:
+          ${process.env.ISSUE_TITLE}
+
+          DESCRIÇÃO:
+          ${process.env.ISSUE_BODY}
+          `;
+
+          async function callLLM(role, task) {
+            const res = await fetch("https://api.openai.com/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                model: "gpt-4.1-mini",
+                temperature: 0.2,
+                messages: [
+                  { role: "system", content: `Você é o ${role}.` },
+                  { role: "user", content: contextBase + issue + task }
+                ]
+              })
+            });
+
+            const data = await res.json();
+            return data.choices[0].message.content;
+          }
+
+          const ux = await callLLM(
+            "Agente UX",
+            "Liste os principais problemas de usabilidade e soluções mínimas focadas em utilidade."
+          );
+
+          const fe = await callLLM(
+            "Agente Front-end",
+            "Transforme os pontos do UX em plano técnico de implementação mínima, sem mexer em cálculos."
+          );
+
+          const qa = await callLLM(
+            "Agente QA",
+            "Crie checklist de testes e cenários de não-regressão de cálculo."
+          );
+
+          const release = await callLLM(
+            "Release Captain",
+            `
+            Consolide tudo e gere:
+            1) Escopo fechado do PR #1
+            2) Prompt FINAL para o Codex gerar o PR
+            `
+          );
+
+          const comment = `
+          ## 🤖 Agents – Improvement Plan
+
+          ### 🧠 UX
+          ${ux}
+
+          ---
+          ### 🛠️ Front-end
+          ${fe}
+
+          ---
+          ### 🧪 QA
+          ${qa}
+
+          ---
+          ### 🚀 Release Captain (PROMPT DO CODEX)
+          ${release}
+          `;
+
+          console.log(comment);
+          EOF
+
+      - name: Comment on issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: process.env.NODE_OUTPUT
+            })
