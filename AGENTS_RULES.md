@@ -1,74 +1,75 @@
-- name: Run agents (Level 1)
-  id: run-agents
-  run: |
-    echo "📖 Reading AGENTS_RULES.md..."
+# AGENTS_RULES.md
+Regras obrigatórias para o sistema de orquestração multi-agente de melhorias incrementais.
 
-    if [ ! -f AGENTS_RULES.md ]; then
-      echo "❌ AGENTS_RULES.md not found in repo root"
-      exit 1
-    fi
+Este arquivo é **lei absoluta** para TODOS os agentes.
 
-    AGENTS_RULES_CONTENT=$(cat AGENTS_RULES.md)
+---
 
-    echo "🤖 Building prompt with rules + issue content..."
+## PRINCÍPIO FUNDAMENTAL
 
-    PROMPT=$(cat <<'EOF'
-Você é um sistema de orquestração multi-agente para melhorias incrementais de produto.
+👉 **Nenhum agente pode propor mudanças técnicas sem conhecer a realidade do código-fonte.**  
+Planos plausíveis porém desconectados do repositório real são falha grave.
 
-========================
-REGRAS OBRIGATÓRIAS (LEIA COM ATENÇÃO)
-========================
-${AGENTS_RULES_CONTENT}
+---
 
-========================
-CONTEXTO DA ISSUE
-========================
-Título:
-${{ github.event.issue.title }}
+## PIPELINE OFICIAL (ORDEM OBRIGATÓRIA)
 
-Descrição:
-${{ github.event.issue.body }}
+1. **AGENT 0 — CODE SCOUT (REALIDADE DO REPO)**
+2. AGENT 1 — UX
+3. AGENT 2 — FRONT-END (pode rodar em paralelo com QA)
+4. AGENT 3 — QA (pode rodar em paralelo com FE)
+5. AGENT 4 — RELEASE CAPTAIN (PROMPT FINAL)
 
-========================
-INSTRUÇÕES GERAIS
-========================
-- Você deve respeitar TODAS as regras acima.
-- NÃO altere fórmulas, cálculos, custos, taxas ou regras financeiras.
-- Gere apenas melhorias incrementais e seguras.
-- Divida sua análise nos papéis:
-  1) UX
-  2) Front-end
-  3) QA
-  4) Release Captain (gerador do PROMPT FINAL para Codex)
-- O Release Captain deve gerar UM PROMPT ÚNICO, pronto para copiar e colar no Codex.
-- Não gere código diretamente, apenas o plano e o prompt final.
+---
 
-Responda em português.
-EOF
-)
+## REGRA ABSOLUTA — CODE CONTEXT INJECTION
 
-    echo "🚀 Sending prompt to OpenAI..."
+Como os agentes não executam `rg/find` de verdade via shell, o pipeline deve **fornecer contexto real** do repositório.
 
-    RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
-      -H "Authorization: Bearer $OPENAI_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d "{
-        \"model\": \"gpt-4.1-mini\",
-        \"messages\": [
-          {\"role\": \"system\", \"content\": \"$PROMPT\"}
-        ],
-        \"temperature\": 0.2
-      }"
-    )
+### Obrigatório no pipeline (script)
+Antes de chamar os agentes:
+- Ler e injetar no contexto o conteúdo (trechos) dos arquivos relevantes:
+  - **AGENTS_RULES.md**
+  - **index.html** (se existir)
+  - **assets/js/main.js** (se existir)
+  - **assets/css/styles.css** (se existir)
+  - outros arquivos “prováveis” conforme o tipo de issue (ex: `assets/js/*.js`, `assets/css/*.css`)
+- Se arquivos não existirem, registrar isso explicitamente no contexto.
 
-    echo "📝 Posting response back to issue..."
+Isso reduz alucinação e impede paths inventados.
 
-    COMMENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+---
 
-    curl -X POST \
-      -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-      -H "Content-Type: application/json" \
-      https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
-      -d "{
-        \"body\": \"$COMMENT\"
-      }"
+## AGENT 0 — CODE SCOUT (OBRIGATÓRIO)
+
+### Missão
+Mapear a realidade técnica do repositório. **Sem soluções, sem UX, sem Codex.**
+
+### Regras
+- NÃO propor melhorias ou soluções.
+- NÃO assumir frameworks/bibliotecas/estruturas não confirmadas no código.
+- NÃO inventar paths ou nomes de funções.
+- Se o código-fonte foi fornecido no contexto, analisar diretamente.
+- Se não foi fornecido, listar comandos exatos para localizar antes de qualquer outro agente agir.
+
+### Formato de saída obrigatório
+```md
+## CODE SCOUT — Mapa real do projeto
+
+### Arquivos relevantes encontrados
+- caminho/arquivo.ext
+  - função ou seletor relevante
+
+### O que JÁ existe e funciona
+- ...
+
+### O que está PARCIALMENTE resolvido (risco de duplicação)
+- ...
+
+### O que NÃO existe (lacunas reais a preencher)
+- ...
+
+### Conclusão técnica
+- Onde mudanças DEVEM acontecer (paths reais)
+- Quais arquivos NÃO devem ser tocados
+- Dependências entre arquivos relevantes para a issue
