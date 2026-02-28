@@ -335,7 +335,7 @@ async function main() {
     `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
     {
       method: "POST",
-      body: JSON.stringify({ body: ensureSingleFenceBlock(finalPrompt) }),
+      body: JSON.stringify({ body: finalPrompt.trim() }),
     }
   );
 }
