@@ -2822,7 +2822,9 @@ function renderWizardUI() {
 
   const mode = getCalcMode();
   document.querySelectorAll(".modeCard").forEach((card) => {
-    card.classList.toggle("is-selected", card.dataset.mode === mode);
+    const isSelected = card.dataset.mode === mode;
+    card.classList.toggle("is-selected", isSelected);
+    card.setAttribute("aria-pressed", String(isSelected));
   });
 
   toggleUxModeSections();
@@ -2902,8 +2904,16 @@ function initUxRefactor() {
     selectCalcMode(card.dataset.mode);
   };
 
+  const handleCalcModeCardKeydown = (event) => {
+    const card = event.target.closest?.(".modeCard");
+    const isActionKey = event.key === "Enter" || event.key === " " || event.code === "Space";
+    if (!card || !isActionKey) return;
+    event.preventDefault();
+    selectCalcMode(card.dataset.mode);
+  };
+
   calcModeCards?.addEventListener("click", handleCalcModeCardInteraction);
-  calcModeCards?.addEventListener("pointerup", handleCalcModeCardInteraction);
+  calcModeCards?.addEventListener("keydown", handleCalcModeCardKeydown);
 
   document.querySelector("#mode1PriceInputs")?.addEventListener("input", (event) => {
     const input = event.target.closest("[data-ux-price-marketplace]");
