@@ -2796,10 +2796,6 @@ function setWizardStep(step) {
 }
 
 function renderWizardUI() {
-  if (wizardStep === 0 && getCalcMode()) {
-    wizardStep = 1;
-  }
-
   if (!getCalcMode() && wizardStep > 0) {
     wizardStep = 0;
   }
