@@ -109,7 +109,7 @@ input:hover,select:hover{border-color:#b8c5d7}
 .formAccordion > :not(summary){padding:0 16px 16px}
 .formAccordion__intro{margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.4}
 
-.optionalAdjustments{border-color:#dbe4ef;background:linear-gradient(180deg,#ffffff,#f8fafc);box-shadow:none}
+.optionalAdjustments{border:2px solid var(--accent);background-color:var(--accent-soft);transition:border-color .3s ease,background-color .3s ease;box-shadow:none}
 .optionalAdjustments summary{font-size:15px}
 .optionalGroup{margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
 .optionalGroup h4{margin:0 0 8px;font-size:13px;color:#334155;letter-spacing:.02em;text-transform:uppercase}
@@ -126,7 +126,7 @@ input:hover,select:hover{border-color:#b8c5d7}
 
 
 .resultAccordion{overflow:hidden;padding:0;border:1px solid var(--stroke);border-radius:14px;background:#fff;box-shadow:var(--shadow-sm)}
-.resultAccordion summary{list-style:none;cursor:pointer;padding:14px 16px}
+.resultAccordion summary{list-style:none;cursor:pointer;padding:14px 16px;background-color:var(--surface);transition:background-color .3s ease}
 .resultAccordion summary::-webkit-details-marker{display:none}
 .resultAccordion__summaryMain{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .resultAccordion__left{min-width:0;flex:1}
@@ -138,6 +138,8 @@ input:hover,select:hover{border-color:#b8c5d7}
 .resultAccordion .pill--subtle{display:inline-flex;margin-top:4px;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--stroke);background:#f8fafc;color:#475569}
 .resultAccordion__body{max-height:0;overflow:hidden;padding:0 16px;opacity:0;border-top:0;transition:max-height .35s ease,opacity .25s ease,padding .2s ease,border-color .2s ease}
 .resultAccordion[open] .resultAccordion__body{max-height:900px;opacity:1;padding:0 16px 16px;border-top:1px solid var(--stroke)}
+.resultAccordion[open] summary{background-color:var(--accent-soft)}
+.resultAccordion summary:hover{background-color:var(--surface-soft)}
 .resultAccordion:hover{background:#f8fafc}
 .resultAccordion[open]{background:#fff}
 
@@ -1437,3 +1439,5 @@ body.theme-dark .marketplaceChip{
   margin: 8px 0 0;
   text-align: center;
 }
+
+.optionalAdjustments:hover{border-color:var(--accent);background-color:var(--surface-soft)}
