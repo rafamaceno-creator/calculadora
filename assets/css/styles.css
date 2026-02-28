@@ -1444,3 +1444,10 @@ body.theme-dark .marketplaceChip{
   .wizardProgress{margin-bottom:10px;}
   .wizardActions .btn--primary{position:sticky;bottom:8px;z-index:3;padding-bottom:calc(12px + env(safe-area-inset-bottom));}
 }
+
+.leadCapture__social {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 8px 0 0;
+  text-align: center;
+}
