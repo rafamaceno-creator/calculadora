@@ -17,7 +17,10 @@ const DEFAULT_MODEL =
     ? OPENAI_MODEL.trim()
     : "gpt-4o-mini";
 
-// Agent 4 precisa sintetizar com precisão
+// Agent 2 (FRONT-END) precisa gerar código literal
+const FE_MODEL = "gpt-4o";
+
+// Agent 4 (síntese final) também usa modelo forte
 const CAPTAIN_MODEL = "gpt-4o";
 
 // =======================
@@ -121,9 +124,11 @@ function buildRepoContext() {
   for (const rel of files) {
     const abs = path.resolve(process.cwd(), rel);
     const maxChars =
-      rel === "assets/js/main.js" ? 48000 :
-      rel === "assets/css/styles.css" ? 24000 :
-      9000;
+      rel === "assets/js/main.js"
+        ? 48000
+        : rel === "assets/css/styles.css"
+        ? 24000
+        : 9000;
 
     const content = safeReadFileHeadTail(abs, maxChars);
     parts.push(
@@ -135,10 +140,13 @@ function buildRepoContext() {
 
   const svgDir = path.resolve(process.cwd(), "assets/img/marketplaces");
   if (fs.existsSync(svgDir)) {
-    const svgs = fs.readdirSync(svgDir).filter(f => f.endsWith(".svg"));
+    const svgs = fs.readdirSync(svgDir).filter((f) =>
+      f.toLowerCase().endsWith(".svg")
+    );
     parts.push(
-      `\n### assets/img/marketplaces (LISTAGEM)\n` +
-      (svgs.length ? svgs.map(s => `- ${s}`).join("\n") : "(sem svgs)")
+      `\n### assets/img/marketplaces (LISTAGEM)\n${
+        svgs.length ? svgs.map((s) => `- ${s}`).join("\n") : "(sem svgs)"
+      }`
     );
   }
 
@@ -164,8 +172,10 @@ async function main() {
   ].join("\n");
 
   const rulesText =
-    safeReadFileHeadTail(path.resolve(process.cwd(), "AGENTS_RULES.md"), 20000) ||
-    "(AGENTS_RULES.md não encontrado)";
+    safeReadFileHeadTail(
+      path.resolve(process.cwd(), "AGENTS_RULES.md"),
+      20000
+    ) || "(AGENTS_RULES.md não encontrado)";
 
   const repoContext = buildRepoContext();
 
@@ -219,37 +229,40 @@ async function main() {
   ]);
 
   // =======================
-  // AGENT 2 — FRONT-END (COM CÓDIGO)
+  // AGENT 2 — FRONT-END (MODELO FORTE)
   // =======================
-  const fe = await openaiChat([
-    { role: "system", content: sharedSystem },
-    {
-      role: "user",
-      content: [
-        "AGENT 2 — FRONT-END",
-        "",
-        "OBRIGATÓRIO:",
-        "- Use SOMENTE paths e seletores confirmados no CODE SCOUT.",
-        "- NÃO parafrasear.",
-        "- Fornecer CÓDIGO EXATO.",
-        "",
-        "FORMATO OBRIGATÓRIO:",
-        "## FE — Arquivos reais a editar",
-        "",
-        "## FE — Código proposto",
-        "Para cada mudança:",
-        "ARQUIVO:",
-        "SELETOR:",
-        "AÇÃO: adicionar | substituir | remover",
-        "```css",
-        "/* código exato */",
-        "```",
-        "",
-        scout,
-        ux,
-      ].join("\n"),
-    },
-  ]);
+  const fe = await openaiChat(
+    [
+      { role: "system", content: sharedSystem },
+      {
+        role: "user",
+        content: [
+          "AGENT 2 — FRONT-END",
+          "",
+          "OBRIGATÓRIO:",
+          "- Use SOMENTE paths e seletores confirmados no CODE SCOUT.",
+          "- NÃO parafrasear.",
+          "- Fornecer CÓDIGO EXATO.",
+          "",
+          "FORMATO OBRIGATÓRIO:",
+          "## FE — Arquivos reais a editar",
+          "",
+          "## FE — Código proposto",
+          "Para cada mudança:",
+          "ARQUIVO:",
+          "SELETOR:",
+          "AÇÃO: adicionar | substituir | remover",
+          "```css",
+          "/* código exato */",
+          "```",
+          "",
+          scout,
+          ux,
+        ].join("\n"),
+      },
+    ],
+    FE_MODEL
+  );
 
   // =======================
   // AGENT 3 — QA
@@ -312,7 +325,7 @@ async function main() {
   );
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
