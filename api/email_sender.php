@@ -62,33 +62,92 @@ function sanitizeMarketplaceSummaries(array $items): array
 function buildSummaryEmailBody(string $nome, string $marketplace, float $precoMinimo, float $precoIdeal, array $marketplacePrices = []): string
 {
     $nomeSeguro = $nome !== '' ? htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') : '';
-    $saudacao = $nomeSeguro !== '' ? "Olá, {$nomeSeguro}!" : 'Olá!';
+    $saudacaoNome = $nomeSeguro !== '' ? ", {$nomeSeguro}" : '';
     $sanitizedPrices = sanitizeMarketplaceSummaries($marketplacePrices);
 
-    $priceRows = '';
+    // Build table rows with margin badge
+    $tableRows = '';
     foreach ($sanitizedPrices as $item) {
-        $priceRows .= '<tr>'
-            . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8') . '</td>'
-            . '<td style="padding:6px 8px;border:1px solid #e5e7eb">' . formatBrl((float) $item['precoIdeal']) . '</td>'
+        $titulo = htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8');
+        $preco  = formatBrl((float) $item['precoIdeal']);
+        $lucro  = formatBrl((float) $item['lucro']);
+        $margem = (float) $item['margem'];
+        $margemFmt = number_format($margem, 1, ',', '.') . '%';
+
+        if ($margem >= 20) {
+            $badgeBg = '#dcfce7'; $badgeColor = '#166534'; $badgeLabel = 'Ótima';
+        } elseif ($margem >= 8) {
+            $badgeBg = '#fef9c3'; $badgeColor = '#854d0e'; $badgeLabel = 'OK';
+        } elseif ($margem >= 0) {
+            $badgeBg = '#ffedd5'; $badgeColor = '#9a3412'; $badgeLabel = 'Apertada';
+        } else {
+            $badgeBg = '#fee2e2'; $badgeColor = '#991b1b'; $badgeLabel = 'Prejuízo';
+        }
+
+        $badge = '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:' . $badgeBg . ';color:' . $badgeColor . '">' . $badgeLabel . '</span>';
+
+        $tableRows .= '<tr>'
+            . '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;font-weight:600;color:#0f172a">' . $titulo . '</td>'
+            . '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#0f172a;white-space:nowrap">' . $preco . '</td>'
+            . '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;color:#334155;white-space:nowrap">' . $lucro . '</td>'
+            . '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;text-align:center">' . $badge . '<br><span style="font-size:11px;color:#64748b">' . $margemFmt . '</span></td>'
             . '</tr>';
     }
 
-    $priceListHtml = $priceRows !== ''
-        ? '<p style="margin:0 0 10px"><strong>Preço de venda por marketplace:</strong></p>'
-            . '<table style="border-collapse:collapse;width:100%;margin:0 0 20px">'
-            . '<thead><tr>'
-            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Marketplace</th>'
-            . '<th style="text-align:left;padding:6px 8px;border:1px solid #e5e7eb;background:#f9fafb">Preço de venda</th>'
-            . '</tr></thead><tbody>' . $priceRows . '</tbody></table>'
-        : '';
+    $tableHtml = '';
+    if ($tableRows !== '') {
+        $tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:14px;margin:0 0 28px">'
+            . '<thead><tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0">'
+            . '<th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Marketplace</th>'
+            . '<th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Vender por</th>'
+            . '<th style="text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Lucro</th>'
+            . '<th style="text-align:center;padding:10px 12px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Margem</th>'
+            . '</tr></thead>'
+            . '<tbody>' . $tableRows . '</tbody>'
+            . '</table>';
+    }
 
-    return '<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:24px;color:#111827;line-height:1.5">'
-        . '<h2 style="margin:0 0 16px;font-size:22px;color:#111827">Seu resumo de precificação</h2>'
-        . '<p style="margin:0 0 16px">' . $saudacao . '</p>'
-        . $priceListHtml
-        . '<p style="margin:0 0 20px"><a href="https://precificacao.rafamaceno.com.br">https://precificacao.rafamaceno.com.br</a></p>'
-        . '<p style="margin:24px 0 0">Rafa Maceno</p>'
-        . '</div>';
+    $toolUrl = 'https://precificacao.rafamaceno.com.br';
+    $ctaUrl  = 'https://precificacao.rafamaceno.com.br/a-hora-com-o-especialista';
+
+    return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif">'
+
+        // Header
+        . '<div style="background:#0f172a;padding:28px 32px;text-align:center">'
+        . '<p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#14b8a6;letter-spacing:.1em;text-transform:uppercase">Calculadora de Precificação</p>'
+        . '<p style="margin:0;font-size:12px;color:#64748b">' . $toolUrl . '</p>'
+        . '</div>'
+
+        // Card wrapper
+        . '<div style="max-width:600px;margin:32px auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,.10)">'
+
+        // Hero
+        . '<div style="padding:32px 32px 24px;border-bottom:1px solid #f1f5f9">'
+        . '<p style="margin:0 0 8px;font-size:24px;font-weight:800;color:#0f172a;line-height:1.2">Seu relatório está pronto' . $saudacaoNome . '!</p>'
+        . '<p style="margin:0;font-size:15px;color:#64748b">Confira os preços calculados para cada marketplace abaixo.</p>'
+        . '</div>'
+
+        // Results table
+        . '<div style="padding:24px 32px">'
+        . ($tableHtml ?: '<p style="color:#64748b;margin:0 0 24px">Acesse a ferramenta para ver seus resultados.</p>')
+
+        // CTA
+        . '<div style="background:#f8fafc;border-radius:12px;padding:24px;text-align:center;margin-bottom:8px">'
+        . '<p style="margin:0 0 6px;font-size:16px;font-weight:700;color:#0f172a">Quer escalar sua operação?</p>'
+        . '<p style="margin:0 0 18px;font-size:14px;color:#64748b">Análise estratégica personalizada da sua conta com Rafa Maceno.</p>'
+        . '<a href="' . $ctaUrl . '" style="display:inline-block;background:#14b8a6;color:#ffffff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none">Agendar Hora com o Especialista →</a>'
+        . '</div>'
+        . '</div>'
+
+        // Footer
+        . '<div style="padding:20px 32px;border-top:1px solid #f1f5f9;text-align:center">'
+        . '<p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#334155">Rafa Maceno</p>'
+        . '<p style="margin:0 0 12px;font-size:12px;color:#94a3b8">Especialista em Escala para Marketplaces</p>'
+        . '<a href="' . $toolUrl . '" style="font-size:12px;color:#14b8a6;text-decoration:none">' . $toolUrl . '</a>'
+        . '</div>'
+
+        . '</div>'
+        . '</body></html>';
 }
 
 function normalizePdfText(string $value): string

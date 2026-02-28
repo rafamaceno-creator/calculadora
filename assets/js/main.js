@@ -2943,7 +2943,10 @@ function initUxRefactor() {
   });
   document.querySelector("#globalWeightUnit")?.addEventListener("change", uxRecalc);
 
-  document.querySelector("#wizardBackStep2")?.addEventListener("click", handleBack);
+  document.querySelector("#wizardBackStep2")?.addEventListener("click", () => {
+    document.querySelectorAll('input[name="calcMode"]').forEach((el) => { el.checked = false; });
+    handleBack();
+  });
   document.querySelector("#wizardNextStep2")?.addEventListener("click", () => {
     if (!validateStep(1)) return;
     setWizardStep(2);

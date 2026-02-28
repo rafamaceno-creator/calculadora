@@ -82,13 +82,7 @@ try {
 }
 
 $summaryBody = buildSummaryEmailBody($nome, $marketplace, $precoMinimo, $precoIdeal, $marketplacePrices);
-$subject = 'Seu resumo de precificação — ' . $marketplace;
-$pdfContent = buildSummaryPdf($nome, $marketplace, $precoMinimo, $precoIdeal, $marketplacePrices);
-$attachments = [[
-    'content' => $pdfContent,
-    'name' => 'resumo-precificacao.pdf',
-    'mime' => 'application/pdf',
-]];
-$emailStatus = sendEmailWithFallback($email, $nome, $subject, $summaryBody, $attachments);
+$subject = 'Seu relatório de precificação — ' . $marketplace;
+$emailStatus = sendEmailWithFallback($email, $nome, $subject, $summaryBody, []);
 
 respond(['success' => true, 'email_sent' => $emailStatus['sent']]);
