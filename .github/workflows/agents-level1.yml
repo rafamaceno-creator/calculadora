@@ -9,147 +9,121 @@ jobs:
     if: github.event.label.name == 'improve'
     runs-on: ubuntu-latest
 
-    permissions:
-      issues: write
-      contents: read
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run agents and comment plan
-        uses: actions/github-script@v7
+      - name: Validate AGENTS_RULES.md exists
+        run: |
+          if [ ! -f AGENTS_RULES.md ]; then
+            echo "❌ AGENTS_RULES.md not found in repo root"
+            exit 1
+          fi
+
+      - name: Read AGENTS_RULES.md
+        id: rules
+        run: |
+          echo "rules<<EOF" >> $GITHUB_OUTPUT
+          cat AGENTS_RULES.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Build prompt
+        id: build-prompt
+        run: |
+          cat <<'EOF' > prompt.txt
+Você é um sistema de orquestração multi-agente para melhorias incrementais de produto.
+
+========================
+REGRAS OBRIGATÓRIAS (FONTE DE VERDADE)
+========================
+${{ steps.rules.outputs.rules }}
+
+========================
+CONTEXTO DA ISSUE
+========================
+Título:
+${{ github.event.issue.title }}
+
+Descrição:
+${{ github.event.issue.body }}
+
+========================
+INSTRUÇÕES GERAIS
+========================
+- Respeite TODAS as regras acima sem exceção.
+- É PROIBIDO alterar fórmulas, cálculos, custos, taxas, comissões ou regras financeiras.
+- Gere apenas melhorias incrementais, seguras e focadas em utilidade.
+- Divida sua resposta obrigatoriamente nos papéis:
+  1) 🧠 UX
+  2) 🛠️ Front-end
+  3) 🧪 QA
+  4) 🚀 Release Captain
+
+REGRAS DO RELEASE CAPTAIN:
+- Deve gerar UM ÚNICO PROMPT FINAL.
+- O prompt deve estar PRONTO PARA COPIAR E COLAR NO CODEX.
+- Não gere código diretamente.
+- Não invente arquivos; instrua o Codex a localizar os pontos corretos.
+- Mantenha PR pequeno e focado.
+- Confirme explicitamente que cálculos não foram alterados.
+
+Formato obrigatório da resposta:
+
+🤖 Agents – Improvement Plan (Level 1)
+
+🧠 UX
+(descrever problemas, impacto, solução mínima)
+
+🛠️ Front-end
+(descrever escopo técnico, arquivos a tocar, sem código)
+
+🧪 QA
+(checklist de testes + não-regressão)
+
+🚀 Release Captain (PROMPT PARA CODEX)
+(aqui deve vir SOMENTE o prompt final)
+
+Responda em português.
+EOF
+
+      - name: Send prompt to OpenAI
+        id: openai
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        with:
-          script: |
-            const apiKey = process.env.OPENAI_API_KEY;
-            if (!apiKey) {
-              core.setFailed("Missing OPENAI_API_KEY secret. Add it in Settings → Secrets and variables → Actions.");
-              return;
-            }
+        run: |
+          RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"model\": \"gpt-4.1-mini\",
+              \"temperature\": 0.2,
+              \"messages\": [
+                {\"role\": \"system\", \"content\": \"$(sed 's/\"/\\\\\"/g' prompt.txt)\"}
+              ]
+            }")
 
-            const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
-            const issueTitle = context.payload.issue.title || "";
-            const issueBody = context.payload.issue.body || "";
+          echo "$RESPONSE" > response.json
 
-            const contextBase = `
-            Repo: ${repoUrl}
+      - name: Extract model response
+        id: extract
+        run: |
+          CONTENT=$(jq -r '.choices[0].message.content' response.json)
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-            Objetivo (ordem):
-            1) MAIS ÚTIL
-            2) MAIS SIMPLES de mexer/manter/alimentar
-            3) MAIS INTUITIVO
-            Beleza é secundária.
+      - name: Post comment on issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY=$(cat <<EOF
+## 🤖 Agents – Improvement Plan (Level 1)
 
-            Regras obrigatórias:
-            - Leia e siga AGENTS_RULES.md (raiz do repo) antes de sugerir qualquer mudança.
-            - NÃO alterar fórmulas/custos/comissões/taxas/regras de cálculo.
-            - Se suspeitar de bug de cálculo: marcar como "AUDIT" e recomendar Issue separada (não corrigir neste PR).
-            - Fluxo/wizard pode mudar SOMENTE para simplificar e reduzir confusão.
-            - PR pequeno e mudanças mínimas.
-            `;
-
-            const issueText = `
-            TÍTULO:
-            ${issueTitle}
-
-            DESCRIÇÃO:
-            ${issueBody}
-            `;
-
-            async function callOpenAI(roleName, task) {
-              const body = {
-                model: "gpt-4.1-mini",
-                temperature: 0.2,
-                messages: [
-                  { role: "system", content: `Você é o ${roleName}. Responda em PT-BR, direto e prático.` },
-                  { role: "user", content: contextBase + "\n\n" + issueText + "\n\n" + task }
-                ]
-              };
-
-              const res = await fetch("https://api.openai.com/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                  "Authorization": `Bearer ${apiKey}`,
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify(body)
-              });
-
-              const data = await res.json();
-              if (!res.ok) {
-                throw new Error(`OpenAI API error: ${res.status} ${JSON.stringify(data)}`);
-              }
-              return data.choices?.[0]?.message?.content?.trim() || "(sem resposta)";
-            }
-
-            const uxTask = `
-            Você é o Agente UX (mobile-first).
-            1) Liste os 7 maiores problemas de usabilidade/clareza no Step 0 do wizard (e arredores imediatos).
-            2) Para cada problema, proponha SOLUÇÃO MÍNIMA (menor mudança possível) que aumenta utilidade e reduz confusão.
-            3) Para cada item: Impacto (alto/médio/baixo), Esforço (P/M/G), Risco.
-            4) Não sugerir mudanças de cálculo. Se notar incoerência, sinalize como "AUDIT" e pare nesse ponto.
-            Formato: P0/P1/P2.
-            `;
-
-            const feTask = `
-            Você é o Agente Front-end Engineer.
-            Use o resultado do UX para montar um plano de 1 PR pequeno:
-            - Lista de mudanças por arquivo (CSS/HTML/JS).
-            - Abordagem mínima e segura (sem refatoração grande).
-            - Ajustes para hover/focus/pressed/selected, área clicável, cursor, acessibilidade teclado.
-            - Não alterar fórmulas/custos/comissões.
-            Formato: Escopo PR #1 + Lista por arquivo + Notas técnicas.
-            `;
-
-            const qaTask = `
-            Você é o Agente QA.
-            - Crie checklist de testes (mobile e desktop).
-            - Crie 5 cenários de não-regressão (confirmar que cálculos não mudaram; pode ser "resultado idêntico antes/depois").
-            - Liste riscos comuns (estado do wizard, seleção, voltar/avançar, responsivo).
-            Formato em checklist.
-            `;
-
-            const releaseTask = `
-            Você é o Release Captain.
-            Consolide UX+FE+QA e entregue:
-            1) Escopo fechado do PR #1 (somente o que cabe em PR pequeno)
-            2) PROMPT ÚNICO pro Codex (ctrl+c/ctrl+v) com:
-               - objetivo
-               - regras (NÃO mexer em cálculos; ler AGENTS_RULES.md)
-               - lista detalhada do que alterar por arquivo
-               - checklist de teste
-               - pedir retorno em diff + resumo + como testar
-            `;
-
-            const ux = await callOpenAI("Agente UX", uxTask);
-            const fe = await callOpenAI("Agente Front-end", `INSUMO UX:\n${ux}\n\n${feTask}`);
-            const qa = await callOpenAI("Agente QA", `PLANO FE:\n${fe}\n\n${qaTask}`);
-            const release = await callOpenAI("Release Captain", `UX:\n${ux}\n\nFE:\n${fe}\n\nQA:\n${qa}\n\n${releaseTask}`);
-
-            const comment = [
-              "## 🤖 Agents – Improvement Plan (Level 1)",
-              "",
-              "### 🧠 UX",
-              ux,
-              "",
-              "---",
-              "### 🛠️ Front-end",
-              fe,
-              "",
-              "---",
-              "### 🧪 QA",
-              qa,
-              "",
-              "---",
-              "### 🚀 Release Captain (PROMPT DO CODEX)",
-              release
-            ].join("\n");
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.issue.number,
-              body: comment
-            });
+${{ steps.extract.outputs.content }}
+EOF
+)
+          curl -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
+            -d "$(jq -n --arg body "$BODY" '{body: $body}')"
