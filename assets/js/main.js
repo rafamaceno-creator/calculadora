@@ -1928,11 +1928,15 @@ function setLeadCaptureStatus(status, message = "") {
   if (submitBtn) {
     submitBtn.disabled = status === "loading" || status === "success";
     submitBtn.classList.toggle("is-loading", status === "loading");
-    submitBtn.textContent = status === "loading" ? "Enviando..." : "Receber PDF por e-mail";
+    submitBtn.textContent = status === "loading" ? "Enviando..." : "Enviar análise gratuita";
   }
 
   if (feedback) {
-    feedback.textContent = message;
+    if (status === "success") {
+      feedback.innerHTML = message;
+    } else {
+      feedback.textContent = message;
+    }
     feedback.classList.toggle("is-hidden", !message);
   }
 }
@@ -1984,7 +1988,7 @@ async function submitLeadCaptureForm(event) {
       throw new Error(data.message || "lead_not_saved");
     }
 
-    setLeadCaptureStatus("success", "Pronto! PDF enviado para seu email com os preços ideais.");
+    setLeadCaptureStatus("success", 'PDF enviado! Quer uma análise personalizada da sua operação? <a href="/a-hora-com-o-especialista" style="font-weight:700;color:inherit;text-decoration:underline">Conheça a Hora com o Especialista →</a>');
 
     if (typeof window.gtag === "function") {
       window.gtag("event", "generate_lead", {
@@ -2017,8 +2021,8 @@ function ensureLeadCaptureBlock() {
     block.innerHTML = `
       <div class="leadCapture__head">
         <div>
-          <h3>Quer salvar esse cálculo?</h3>
-          <p>Receba no seu email o PDF com os preços ideais por marketplace, custos e taxas. 100% gratuito.</p>
+          <h3>Receba sua análise de precificação por email</h3>
+          <p>PDF gratuito com preços mínimos por marketplace, margens reais, composição de custos e taxas — pronto para usar no dia a dia.</p>
         </div>
         <button class="leadCapture__close" type="button" aria-label="Fechar captura" data-action="dismiss-lead">✕</button>
       </div>
@@ -2028,8 +2032,9 @@ function ensureLeadCaptureBlock() {
           <input type="email" name="email" required placeholder="Seu melhor email" autocomplete="email" />
         </div>
         <input class="leadCapture__honeypot" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
-        <button class="btn btn--primary" type="submit" data-action="submit-lead">Receber PDF por e-mail</button>
+        <button class="btn btn--primary" type="submit" data-action="submit-lead">Enviar análise gratuita</button>
         <p class="leadCapture__feedback is-hidden" aria-live="polite"></p>
+        <p class="leadCapture__social">Mais de 15.000 cálculos realizados por vendedores de marketplace.</p>
       </form>
     `;
     resultsEl.insertAdjacentElement("afterend", block);
@@ -2078,6 +2083,24 @@ function updateLeadCaptureAfterRecalc({ shouldDisplay = false, computedResults =
   }
 
   block.classList.remove("is-hidden");
+
+  const bestMargin = sortedByProfit[0]?.marginPct ?? sortedByProfit[0]?.profitPctReal ?? null;
+  if (bestMargin !== null) updateLeadCaptureHeading(block, bestMargin);
+}
+
+function updateLeadCaptureHeading(block, marginPct) {
+  const h3 = block?.querySelector("h3");
+  if (!h3) return;
+
+  if (marginPct < 0) {
+    h3.textContent = "Atenção: você está tendo prejuízo nessa venda.";
+  } else if (marginPct < 8) {
+    h3.textContent = "Margem apertada. Receba dicas para melhorar sua precificação.";
+  } else if (marginPct >= 20) {
+    h3.textContent = "Boa margem! Salve sua análise e veja como escalar.";
+  } else {
+    h3.textContent = "Receba sua análise de precificação por email";
+  }
 }
 
 /* ===== Bindings ===== */
