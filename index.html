@@ -120,6 +120,31 @@
             </div>
             <p class="modeInstruction" id="calcModeInstruction">Escolha um modo para continuar</p>
 
+            <div class="wizardSummary" aria-live="polite">
+              <div class="wizardSummary__head">
+                <h4>Mapa do escopo</h4>
+                <p id="wizardSummaryTime">Tempo estimado: 0 min</p>
+              </div>
+              <ul class="wizardSummary__list" id="wizardSummaryList">
+                <li>
+                  <span>Etapa 1 · Escolha do objetivo</span>
+                  <span class="wizardSummary__badge wizardSummary__badge--required">Obrigatório</span>
+                </li>
+                <li>
+                  <span>Etapa 2 · Seleção de marketplaces</span>
+                  <span class="wizardSummary__badge wizardSummary__badge--required">Obrigatório</span>
+                </li>
+                <li>
+                  <span>Etapa 3 · Dados principais do produto</span>
+                  <span class="wizardSummary__badge wizardSummary__badge--required">Obrigatório</span>
+                </li>
+                <li>
+                  <span>Etapa 4 · Ajustes avançados e meta</span>
+                  <span class="wizardSummary__badge wizardSummary__badge--optional">Opcional</span>
+                </li>
+              </ul>
+            </div>
+
             <div id="calcModeCards" class="modeCards" role="group" aria-label="Escolher modo de cálculo" aria-describedby="calcModeInstruction">
               <button class="modeCard" type="button" data-mode="real" aria-pressed="false">
                 <span class="modeCard__check" aria-hidden="true">
