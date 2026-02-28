@@ -2591,12 +2591,57 @@ function bindSmoothScroll() {
 
 
 const UX_MARKETPLACES = [
-  { key: "shopee", title: "Shopee", monogram: "S", brandClass: "brand-shopee" },
-  { key: "mlClassic", title: "Mercado Livre — Clássico", monogram: "ML", brandClass: "brand-ml" },
-  { key: "mlPremium", title: "Mercado Livre — Premium", monogram: "ML", brandClass: "brand-ml" },
-  { key: "tiktok", title: "TikTok Shop", monogram: "♪", brandClass: "brand-tiktok" },
-  { key: "shein", title: "SHEIN", monogram: "S", brandClass: "brand-shein" },
-  { key: "amazon", title: "Amazon (DBA)", monogram: "a", brandClass: "brand-amazon" }
+  {
+    key: "shopee",
+    title: "Shopee",
+    logoSrc: "assets/img/marketplaces/shopee.svg",
+    logoAlt: "Shopee",
+    fallback: "S",
+    brandClass: "brand-shopee"
+  },
+  {
+    key: "mlClassic",
+    title: "Mercado Livre — Clássico",
+    logoSrc: "assets/img/marketplaces/mercado-livre.svg",
+    logoAlt: "Mercado Livre",
+    fallback: "ML",
+    badge: "Clássico",
+    brandClass: "brand-ml"
+  },
+  {
+    key: "mlPremium",
+    title: "Mercado Livre — Premium",
+    logoSrc: "assets/img/marketplaces/mercado-livre.svg",
+    logoAlt: "Mercado Livre",
+    fallback: "ML",
+    badge: "Premium",
+    badgeClass: "mpBadge--premium",
+    brandClass: "brand-ml"
+  },
+  {
+    key: "tiktok",
+    title: "TikTok Shop",
+    logoSrc: "assets/img/marketplaces/tiktok.svg",
+    logoAlt: "TikTok Shop",
+    fallback: "TT",
+    brandClass: "brand-tiktok"
+  },
+  {
+    key: "shein",
+    title: "SHEIN",
+    logoSrc: "assets/img/marketplaces/shein.svg",
+    logoAlt: "Shein",
+    fallback: "SH",
+    brandClass: "brand-shein"
+  },
+  {
+    key: "amazon",
+    title: "Amazon (DBA)",
+    logoSrc: "assets/img/marketplaces/amazon.svg",
+    logoAlt: "Amazon",
+    fallback: "A",
+    brandClass: "brand-amazon"
+  }
 ];
 
 const MARKETPLACE_TITLE_TO_KEY = {
@@ -2627,13 +2672,34 @@ function buildMarketplaceSelector() {
   wrap.innerHTML = UX_MARKETPLACES.map((mp) => `
     <label class="marketplaceChip ${mp.brandClass || ""}" data-mp="${mp.key}" tabindex="0">
       <input class="marketplaceChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
-      <span class="mpLogoWrap ${mp.brandClass || ""}">
-        <span class="mpMonogram" aria-hidden="true">${mp.monogram || "MP"}</span>
+      <span class="mpIcon">
+        <img class="mpLogo" src="${window.versionAssetPath(mp.logoSrc)}" alt="${mp.logoAlt}" loading="lazy" data-fallback="${mp.fallback || "MP"}" />
       </span>
       <span class="mpName">${mp.title}</span>
+      ${mp.badge ? `<span class="mpBadge ${mp.badgeClass || ""}">${mp.badge}</span>` : ""}
       <span class="mpCheck" aria-hidden="true"></span>
     </label>
   `).join("");
+
+  attachMarketplaceLogoFallbacks(wrap);
+}
+
+function ensureMarketplaceLogoFallback(imgEl) {
+  if (!imgEl || !imgEl.parentElement) return;
+  const iconWrap = imgEl.parentElement;
+  imgEl.style.display = "none";
+  if (iconWrap.querySelector(".mpIconFallback")) return;
+  const fallback = document.createElement("span");
+  fallback.className = "mpIconFallback";
+  fallback.setAttribute("aria-hidden", "true");
+  fallback.textContent = imgEl.dataset.fallback || "MP";
+  iconWrap.appendChild(fallback);
+}
+
+function attachMarketplaceLogoFallbacks(root) {
+  root.querySelectorAll(".mpLogo").forEach((imgEl) => {
+    imgEl.addEventListener("error", () => ensureMarketplaceLogoFallback(imgEl), { once: true });
+  });
 }
 
 function renderMode1PriceInputs() {

@@ -1141,12 +1141,9 @@ body.theme-dark .stickySummary__actions{background:transparent}
   .mpChip{ flex:0 0 auto; }
 }
 
-/* Marketplace chips with monogram badge */
+/* Marketplace chips with official marketplace logos */
 .marketplaceChip{
   --brand-color: var(--accent);
-  --brand-bg: color-mix(in srgb,var(--brand-color) 8%, rgba(255,255,255,.94));
-  --brand-border: color-mix(in srgb,var(--brand-color) 24%, var(--stroke));
-  --brand-ink: color-mix(in srgb,var(--brand-color) 68%, #0f172a);
   position:relative;
   display:inline-flex;
   align-items:center;
@@ -1168,35 +1165,33 @@ body.theme-dark .stickySummary__actions{background:transparent}
   box-shadow:0 12px 22px rgba(15,23,42,.12);
 }
 
-.marketplaceChip:hover .mpLogoWrap{
-  border-color:color-mix(in srgb,var(--brand-color) 35%, var(--stroke));
-}
-
 .marketplaceChip__input{
   position:absolute;
   opacity:0;
   pointer-events:none;
 }
 
-.mpLogoWrap{
-  width:26px;
-  height:26px;
-  border-radius:8px;
-  flex:0 0 26px;
-  display:grid;
-  place-items:center;
-  border:1px solid var(--brand-border);
-  background:linear-gradient(160deg,var(--brand-bg),color-mix(in srgb,var(--brand-bg) 72%, transparent));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.48);
+.mpIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,0.8);
+  border: 1px solid rgba(0,0,0,0.08);
+  flex: 0 0 28px;
 }
 
-.mpMonogram{
-  font-weight:800;
-  font-size:12.5px;
-  line-height:1;
-  letter-spacing:.02em;
-  text-transform:uppercase;
-  color:var(--brand-ink);
+.mpLogo {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+}
+
+.mpIconFallback {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: .8;
 }
 
 .mpName{
@@ -1208,6 +1203,24 @@ body.theme-dark .stickySummary__actions{background:transparent}
   font-size:13px;
   font-weight:600;
   color:var(--text);
+}
+
+.mpBadge{
+  margin-left:2px;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.2;
+  color:#334155;
+  background:rgba(15,23,42,.08);
+  border:1px solid rgba(15,23,42,.14);
+}
+
+.mpBadge--premium{
+  color:#7c2d12;
+  background:rgba(245,158,11,.16);
+  border-color:rgba(245,158,11,.32);
 }
 
 .mpCheck{
@@ -1244,11 +1257,6 @@ body.theme-dark .stickySummary__actions{background:transparent}
   border-color:var(--accent);
 }
 
-.marketplaceChip:has(.marketplaceChip__input:checked) .mpLogoWrap{
-  border-color:color-mix(in srgb,var(--brand-color) 42%, var(--stroke));
-  background:linear-gradient(160deg,color-mix(in srgb,var(--brand-bg) 88%, #fff),color-mix(in srgb,var(--brand-color) 14%, #fff));
-}
-
 .marketplaceChip:has(.marketplaceChip__input:checked) .mpCheck::after{border-color:#fff}
 
 .marketplaceChip:focus-visible{
@@ -1261,11 +1269,6 @@ body.theme-dark .stickySummary__actions{background:transparent}
   outline-offset:3px;
 }
 
-.marketplaceChip:has(.marketplaceChip__input:focus-visible) .mpLogoWrap{
-  border-color:color-mix(in srgb,var(--brand-color) 36%, var(--stroke));
-}
-
-
 .brand-shopee{--brand-color:#ee4d2d;--brand-bg:color-mix(in srgb,#ee4d2d 10%, rgba(255,255,255,.96));--brand-border:color-mix(in srgb,#ee4d2d 22%, var(--stroke))}
 .brand-ml{--brand-color:#fbbf24;--brand-bg:color-mix(in srgb,#fbbf24 12%, rgba(255,255,255,.96));--brand-border:color-mix(in srgb,#fbbf24 24%, var(--stroke))}
 .brand-tiktok{--brand-color:#111827;--brand-bg:color-mix(in srgb,#111827 8%, rgba(255,255,255,.96));--brand-border:color-mix(in srgb,#111827 26%, var(--stroke))}
@@ -1276,8 +1279,12 @@ body.theme-dark .marketplaceChip{
   background:linear-gradient(170deg,rgba(15,23,42,.9),rgba(30,41,59,.65));
 }
 
-body.theme-dark .mpLogoWrap{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+@media (max-width:768px){
+  .mpIcon{
+    width: 24px;
+    height: 24px;
+    flex-basis:24px;
+  }
 }
 
 @media (max-width:768px){
@@ -1426,7 +1433,7 @@ body.theme-dark .mpLogoWrap{
     border-radius:14px;
     box-shadow:none;
   }
-  #marketplaceSelector .mpLogoWrap{width:22px;height:22px;flex-basis:22px;}
+  #marketplaceSelector .mpIcon{width:24px;height:24px;flex-basis:24px;}
   #marketplaceSelector .mpName{font-size:12px;line-height:1.2;max-width:46vw;white-space:nowrap;}
   #marketplaceSelector .mpCheck{width:16px;height:16px;flex-basis:16px;}
 }
