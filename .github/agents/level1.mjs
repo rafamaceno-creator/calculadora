@@ -1,3 +1,11 @@
+
+---
+
+## 2) `level1.mjs` — versão inteira refinada (Agent 0 + injection + FE/QA em paralelo)
+
+Cole **inteiro** em: `.github/agents/level1.mjs`
+
+```js
 import fs from "node:fs";
 import path from "node:path";
 
@@ -22,11 +30,6 @@ mustEnv("GITHUB_TOKEN");
 mustEnv("OPENAI_API_KEY");
 mustEnv("REPO");
 mustEnv("ISSUE_NUMBER");
-
-const rulesPath = path.resolve(process.cwd(), "AGENTS_RULES.md");
-const rulesText = fs.existsSync(rulesPath)
-  ? fs.readFileSync(rulesPath, "utf8")
-  : `(AGENTS_RULES.md não encontrado na raiz.\nCRIE/CONFIRME ESTE ARQUIVO.)`;
 
 async function ghFetch(url, options = {}) {
   const res = await fetch(url, {
@@ -71,15 +74,68 @@ async function openaiChat(messages) {
   return content;
 }
 
+function extractFirstFencedBlock(text) {
+  const s = String(text || "");
+  const m = s.match(/```[\s\S]*?```/);
+  if (m && m[0]) return m[0].trim();
+  return null;
+}
+
 function ensureSingleFenceBlock(text) {
   const trimmed = String(text || "").trim();
-
-  // Se já vier fenced, mantém.
-  if (trimmed.startsWith("```") && trimmed.endsWith("```")) return trimmed;
-  if (trimmed.startsWith("~~~") && trimmed.endsWith("~~~")) return trimmed;
-
-  // Caso contrário, envolve com crases (string normal, NÃO template literal).
+  const first = extractFirstFencedBlock(trimmed);
+  if (first) return first;
   return "```\n" + trimmed + "\n```";
+}
+
+function safeReadFile(p, maxChars = 8000) {
+  try {
+    if (!fs.existsSync(p)) return null;
+    const raw = fs.readFileSync(p, "utf8");
+    const clipped = raw.length > maxChars ? raw.slice(0, maxChars) : raw;
+    return clipped;
+  } catch {
+    return null;
+  }
+}
+
+function buildRepoContext() {
+  // Lista “provável” + segura (ajuste quando quiser)
+  const candidates = [
+    "index.html",
+    "assets/js/main.js",
+    "assets/css/styles.css",
+    "assets/js/app.js",
+    "assets/js/wizard.js",
+    "assets/css/main.css",
+    "assets/css/app.css",
+    "AGENTS_RULES.md",
+  ];
+
+  const parts = [];
+  parts.push("## REPO CONTEXT (TRECHOS REAIS)");
+  parts.push("Observação: estes são trechos lidos diretamente do repositório. Se um arquivo não existir, será informado.");
+
+  for (const rel of candidates) {
+    const abs = path.resolve(process.cwd(), rel);
+    const content = safeReadFile(abs, 9000);
+    if (content === null) {
+      parts.push(`\n### ${rel}\n(NÃO ENCONTRADO)`);
+    } else {
+      parts.push(`\n### ${rel}\n\`\`\`\n${content}\n\`\`\``);
+    }
+  }
+
+  // Opcional: listar SVGs se a pasta existir (sem ler tudo)
+  const svgDir = path.resolve(process.cwd(), "assets/img/marketplaces");
+  if (fs.existsSync(svgDir) && fs.lstatSync(svgDir).isDirectory()) {
+    const svgs = fs.readdirSync(svgDir).filter((f) => f.toLowerCase().endsWith(".svg"));
+    parts.push(`\n### assets/img/marketplaces (LISTAGEM)\n${svgs.length ? svgs.map(s => `- ${s}`).join("\n") : "(sem svgs)"}\n`);
+  } else {
+    parts.push(`\n### assets/img/marketplaces (LISTAGEM)\n(NÃO ENCONTRADO)\n`);
+  }
+
+  return parts.join("\n");
 }
 
 async function main() {
@@ -93,22 +149,29 @@ async function main() {
   const issueTitle = issue.title || "";
   const issueBody = issue.body || "";
 
+  // Lê rules direto (sem depender de env anterior)
+  const rulesPath = path.resolve(process.cwd(), "AGENTS_RULES.md");
+  const rulesText = safeReadFile(rulesPath, 12000) || "(AGENTS_RULES.md não encontrado na raiz.)";
+
+  const repoContext = buildRepoContext();
+
   const sharedSystem = [
-    "Você é parte de um sistema multi-agente que transforma Issues em um PROMPT ÚNICO para Codex gerar PR.",
+    "Você é parte de um sistema multi-agente que transforma uma Issue em um PROMPT ÚNICO para o Codex abrir um PR.",
     "",
     "REGRAS ABSOLUTAS:",
-    "- Obedeça rigorosamente AGENTS_RULES.md (abaixo).",
+    "- Obedeça rigorosamente AGENTS_RULES.md.",
     "- NÃO alterar fórmulas, cálculos, custos, taxas, comissões ou regras financeiras.",
-    "- NÃO inventar paths/arquivos: sempre mandar o Codex localizar com rg/find antes de editar.",
-    "- Melhorias incrementais e seguras.",
-    "- O resultado final precisa ser copiável e utilizável.",
+    "- NÃO inventar paths/arquivos: use somente paths confirmados no CODE SCOUT.",
+    "- Melhorias incrementais e seguras. Sem refatoração grande.",
     "",
-    "AGENTS_RULES.md:",
+    "AGENTS_RULES.md (REAL):",
     rulesText,
+    "",
+    repoContext,
   ].join("\n");
 
   const issueContext = [
-    "ISSUE:",
+    "## ISSUE",
     `Título: ${issueTitle}`,
     "",
     "Descrição:",
@@ -116,7 +179,46 @@ async function main() {
   ].join("\n");
 
   // =========================
-  // AGENT 1 — UX
+  // AGENT 0 — CODE SCOUT
+  // =========================
+  const scout = await openaiChat([
+    { role: "system", content: sharedSystem },
+    {
+      role: "user",
+      content: [
+        "Você é o AGENT 0 (CODE SCOUT).",
+        "Mapeie a realidade técnica do repo baseado no REPO CONTEXT fornecido acima.",
+        "NÃO proponha soluções. NÃO faça UX. NÃO escreva prompt Codex.",
+        "",
+        "Formato obrigatório (copie e preencha):",
+        "## CODE SCOUT — Mapa real do projeto",
+        "",
+        "### Arquivos relevantes encontrados",
+        "- caminho/arquivo.ext",
+        "  - função ou seletor relevante",
+        "",
+        "### O que JÁ existe e funciona",
+        "- ...",
+        "",
+        "### O que está PARCIALMENTE resolvido (risco de duplicação)",
+        "- ...",
+        "",
+        "### O que NÃO existe (lacunas reais a preencher)",
+        "- ...",
+        "",
+        "### Conclusão técnica",
+        "- Onde mudanças DEVEM acontecer (paths reais)",
+        "- Quais arquivos NÃO devem ser tocados",
+        "- Dependências entre arquivos relevantes para a issue",
+        "",
+        "Contexto da issue:",
+        issueContext,
+      ].join("\n"),
+    },
+  ]);
+
+  // =========================
+  // AGENT 1 — UX (depende do scout)
   // =========================
   const ux = await openaiChat([
     { role: "system", content: sharedSystem },
@@ -124,107 +226,95 @@ async function main() {
       role: "user",
       content: [
         "Você é o AGENT 1 (UX).",
-        "Tarefa: produzir um diagnóstico e plano UX prático, enxuto e priorizado.",
-        "Formato obrigatório:",
+        "Baseie-se ESTRITAMENTE no CODE SCOUT e na issue.",
+        "Reconheça explicitamente o que já existe e o que está parcialmente resolvido para evitar duplicação.",
+        "NÃO escreva prompt Codex.",
         "",
+        "Formato obrigatório:",
         "## UX — Diagnóstico",
         "- Problema P0:",
         "- Impacto:",
-        "- Onde acontece (step/tela):",
-        "- O que o usuário sente (1 linha):",
+        "- Onde acontece:",
         "",
         "## UX — Solução mínima (incremental)",
-        "- Mudanças visuais obrigatórias (bullets)",
-        "- Estados: hover / focus / selected / disabled (bullets)",
-        "- Responsivo mobile (bullets)",
-        "- A11y mínima (bullets)",
+        "- ...",
         "",
         "## UX — Critérios de aceite",
         "- [ ] ...",
-        "- [ ] ...",
         "",
-        "Não escrever prompt pro Codex ainda.",
+        "CODE SCOUT:",
+        scout,
         "",
-        "Contexto:",
+        "ISSUE:",
         issueContext,
       ].join("\n"),
     },
   ]);
 
   // =========================
-  // AGENT 2 — FRONT-END
+  // AGENTS 2 e 3 em paralelo (FE + QA)
   // =========================
-  const fe = await openaiChat([
-    { role: "system", content: sharedSystem },
-    {
-      role: "user",
-      content: [
-        "Você é o AGENT 2 (FRONT-END).",
-        "Use o output do UX e traduza para um plano técnico aplicável sem inventar paths.",
-        "",
-        "Formato obrigatório:",
-        "",
-        "## FE — Como localizar no repo (comandos)",
-        "- rg ...",
-        "- rg ...",
-        "- find ...",
-        "",
-        "## FE — Estratégia de implementação (mínima)",
-        "- Estrutura (preferência por input+label ou button nativo):",
-        "- Classes/estilos (o que criar/alterar):",
-        "- A11y (tabindex/aria/label):",
-        "- Responsividade (flex-wrap/line-height/gap):",
-        "",
-        "## FE — Mudanças por arquivos (genérico, sem inventar paths)",
-        "- Arquivo do componente de chips: (localizar via rg)",
-        "  - ...",
-        "- Arquivo(s) de CSS: (localizar via rg)",
-        "  - ...",
-        "- SVGs: (confirmar onde estão via find)",
-        "  - ...",
-        "",
-        "## FE — Riscos técnicos + mitigação",
-        "- Risco:",
-        "  - Mitigação:",
-        "",
-        "Base UX:",
-        ux,
-      ].join("\n"),
-    },
-  ]);
-
-  // =========================
-  // AGENT 3 — QA
-  // =========================
-  const qa = await openaiChat([
-    { role: "system", content: sharedSystem },
-    {
-      role: "user",
-      content: [
-        "Você é o AGENT 3 (QA).",
-        "Crie checklist de teste MANUAL e não-regressão, bem objetivo.",
-        "",
-        "Formato obrigatório:",
-        "",
-        "## QA — Checklist Desktop",
-        "- [ ] ...",
-        "",
-        "## QA — Checklist Mobile",
-        "- [ ] ...",
-        "",
-        "## QA — Acessibilidade (teclado)",
-        "- [ ] ...",
-        "",
-        "## QA — Não-regressão (financeiro)",
-        "- [ ] Confirmar que não mudou cálculo/regras (como validar rapidamente)",
-        "",
-        "Base UX:",
-        ux,
-        "",
-        "Base FE:",
-        fe,
-      ].join("\n"),
-    },
+  const [fe, qa] = await Promise.all([
+    openaiChat([
+      { role: "system", content: sharedSystem },
+      {
+        role: "user",
+        content: [
+          "Você é o AGENT 2 (FRONT-END).",
+          "Crie um plano técnico executável, usando SOMENTE paths/funções/seletores confirmados no CODE SCOUT.",
+          "NÃO inventar paths. NÃO assumir frameworks.",
+          "",
+          "Formato obrigatório:",
+          "## FE — Arquivos reais que serão editados (somente os do CODE SCOUT)",
+          "- ...",
+          "",
+          "## FE — Plano técnico (mínimo)",
+          "- ...",
+          "",
+          "## FE — A11y e estados (focus/hover/selected/disabled)",
+          "- ...",
+          "",
+          "## FE — Riscos + mitigação",
+          "- ...",
+          "",
+          "CODE SCOUT:",
+          scout,
+          "",
+          "UX:",
+          ux,
+        ].join("\n"),
+      },
+    ]),
+    openaiChat([
+      { role: "system", content: sharedSystem },
+      {
+        role: "user",
+        content: [
+          "Você é o AGENT 3 (QA).",
+          "Crie checklist de teste manual e não-regressão financeira.",
+          "Baseie-se no CODE SCOUT + UX.",
+          "",
+          "Formato obrigatório:",
+          "## QA — Desktop",
+          "- [ ] ...",
+          "",
+          "## QA — Mobile",
+          "- [ ] ...",
+          "",
+          "## QA — Teclado/Acessibilidade",
+          "- [ ] ...",
+          "",
+          "## QA — Não-regressão financeira",
+          "- [ ] ... (como validar rapidamente sem mudar fórmulas)",
+          "",
+          "CODE SCOUT:",
+          scout,
+          "",
+          "UX:",
+          ux,
+        ].join("\n"),
+      },
+    ]),
   ]);
 
   // =========================
@@ -236,31 +326,32 @@ async function main() {
       role: "user",
       content: [
         "Você é o AGENT 4 (RELEASE CAPTAIN).",
-        "Tarefa: gerar o PROMPT ÚNICO para colar no Codex e abrir PR.",
+        "Gere o PROMPT ÚNICO para colar no Codex e abrir PR.",
         "",
-        "REGRAS DE FORMATO (OBRIGATÓRIAS):",
-        "- Retorne APENAS 1 bloco fenced de código Markdown (use fence de 3 crases).",
+        "REGRAS DE FORMATO (INVIOLÁVEIS):",
+        "- Retorne APENAS um bloco fenced Markdown com 3 crases.",
         "- Nada fora do bloco.",
-        "- Linguagem PT-BR, estilo ctrl+c / ctrl+v.",
+        "- O prompt DEVE citar paths reais do CODE SCOUT (não inventar).",
         "",
-        "O prompt deve conter:",
+        "O prompt deve conter, nesta ordem:",
         "1) Objetivo (P0)",
-        "2) Restrições (inclui NÃO mexer em finanças e NÃO inventar paths)",
-        "3) Como localizar arquivos (rg/find) — obrigatório",
-        "4) Plano de mudanças (UI/CSS/A11y) com bullets claros",
+        "2) Restrições absolutas",
+        "3) Onde mexer (paths reais + funções/seletores do CODE SCOUT)",
+        "4) Passos (mudanças UI/CSS/JS/A11y) detalhados, incrementais",
         "5) Critérios de aceite (checklist)",
-        "6) Roteiro de teste manual (checklist QA)",
+        "6) Roteiro de teste manual (QA)",
         "7) Pedido de retorno do Codex: mostrar diff + instruções de teste",
         "",
-        "Use como base:",
+        "CODE SCOUT:",
+        scout,
         "",
-        "=== UX ===",
+        "UX:",
         ux,
         "",
-        "=== FE ===",
+        "FE:",
         fe,
         "",
-        "=== QA ===",
+        "QA:",
         qa,
       ].join("\n"),
     },
@@ -268,19 +359,12 @@ async function main() {
 
   const finalPromptBlock = ensureSingleFenceBlock(finalPrompt);
 
-  const commentBody = [
-    "🤖 **Agents – Improvement Plan (Level 1)**",
-    "",
-    "Abaixo está o **PROMPT ÚNICO** pronto para colar no Codex e gerar um PR:",
-    "",
-    finalPromptBlock,
-  ].join("\n");
-
+  // Comentário = só o bloco fenced (evita “metade dentro/metade fora”)
   await ghFetch(
     `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
     {
       method: "POST",
-      body: JSON.stringify({ body: commentBody }),
+      body: JSON.stringify({ body: finalPromptBlock }),
     }
   );
 }
