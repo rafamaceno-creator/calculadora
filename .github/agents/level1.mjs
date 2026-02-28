@@ -9,15 +9,20 @@ const {
   ISSUE_NUMBER,
 } = process.env;
 
-// Models
+// =======================
+// MODELS
+// =======================
 const DEFAULT_MODEL =
   OPENAI_MODEL && OPENAI_MODEL.trim()
     ? OPENAI_MODEL.trim()
     : "gpt-4o-mini";
 
-// Agent 4 (síntese final) usa modelo mais forte
+// Agent 4 precisa sintetizar com precisão
 const CAPTAIN_MODEL = "gpt-4o";
 
+// =======================
+// ENV
+// =======================
 function mustEnv(name) {
   const v = process.env[name];
   if (!v || !String(v).trim()) throw new Error(`Missing env: ${name}`);
@@ -29,9 +34,9 @@ mustEnv("OPENAI_API_KEY");
 mustEnv("REPO");
 mustEnv("ISSUE_NUMBER");
 
-// --------------------
-// GitHub helper
-// --------------------
+// =======================
+// HELPERS
+// =======================
 async function ghFetch(url, options = {}) {
   const res = await fetch(url, {
     ...options,
@@ -50,9 +55,6 @@ async function ghFetch(url, options = {}) {
   return res.json();
 }
 
-// --------------------
-// OpenAI helper
-// --------------------
 async function openaiChat(messages, model = DEFAULT_MODEL) {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -78,21 +80,14 @@ async function openaiChat(messages, model = DEFAULT_MODEL) {
   return content;
 }
 
-// --------------------
-// Utils
-// --------------------
 function extractFirstFencedBlock(text) {
-  const s = String(text || "");
-  const m = s.match(/```[\s\S]*?```/);
-  if (m && m[0]) return m[0].trim();
-  return null;
+  const m = String(text || "").match(/```[\s\S]*?```/);
+  return m ? m[0].trim() : null;
 }
 
 function ensureSingleFenceBlock(text) {
-  const trimmed = String(text || "").trim();
-  const first = extractFirstFencedBlock(trimmed);
-  if (first) return first;
-  return "```\n" + trimmed + "\n```";
+  const first = extractFirstFencedBlock(text);
+  return first ? first : "```\n" + text.trim() + "\n```";
 }
 
 function safeReadFileHeadTail(p, maxChars) {
@@ -100,7 +95,6 @@ function safeReadFileHeadTail(p, maxChars) {
     if (!fs.existsSync(p)) return null;
     const raw = fs.readFileSync(p, "utf8");
     if (raw.length <= maxChars) return raw;
-
     const half = Math.floor(maxChars / 2);
     return (
       raw.slice(0, half) +
@@ -112,61 +106,48 @@ function safeReadFileHeadTail(p, maxChars) {
   }
 }
 
-// --------------------
-// Repo context builder
-// --------------------
+// =======================
+// REPO CONTEXT
+// =======================
 function buildRepoContext() {
-  const candidates = [
+  const files = [
     "index.html",
     "assets/js/main.js",
     "assets/css/styles.css",
   ];
 
-  const parts = [];
-  parts.push("## REPO CONTEXT (TRECHOS REAIS)");
-  parts.push(
-    "Observação: os trechos abaixo foram lidos diretamente do repositório."
-  );
+  const parts = ["## REPO CONTEXT (TRECHOS REAIS)"];
 
-  for (const rel of candidates) {
+  for (const rel of files) {
     const abs = path.resolve(process.cwd(), rel);
-
     const maxChars =
-      rel === "assets/js/main.js"
-        ? 48000
-        : rel === "assets/css/styles.css"
-        ? 24000
-        : 9000;
+      rel === "assets/js/main.js" ? 48000 :
+      rel === "assets/css/styles.css" ? 24000 :
+      9000;
 
     const content = safeReadFileHeadTail(abs, maxChars);
-
-    if (content === null) {
-      parts.push(`\n### ${rel}\n(NÃO ENCONTRADO)`);
-    } else {
-      parts.push(`\n### ${rel}\n\`\`\`\n${content}\n\`\`\``);
-    }
+    parts.push(
+      `\n### ${rel}\n${
+        content ? "```" + "\n" + content + "\n```" : "(NÃO ENCONTRADO)"
+      }`
+    );
   }
 
   const svgDir = path.resolve(process.cwd(), "assets/img/marketplaces");
-  if (fs.existsSync(svgDir) && fs.lstatSync(svgDir).isDirectory()) {
-    const svgs = fs
-      .readdirSync(svgDir)
-      .filter((f) => f.toLowerCase().endsWith(".svg"));
+  if (fs.existsSync(svgDir)) {
+    const svgs = fs.readdirSync(svgDir).filter(f => f.endsWith(".svg"));
     parts.push(
-      `\n### assets/img/marketplaces (LISTAGEM)\n${
-        svgs.length ? svgs.map((s) => `- ${s}`).join("\n") : "(sem svgs)"
-      }\n`
+      `\n### assets/img/marketplaces (LISTAGEM)\n` +
+      (svgs.length ? svgs.map(s => `- ${s}`).join("\n") : "(sem svgs)")
     );
-  } else {
-    parts.push(`\n### assets/img/marketplaces (LISTAGEM)\n(NÃO ENCONTRADO)\n`);
   }
 
   return parts.join("\n");
 }
 
-// --------------------
-// Main
-// --------------------
+// =======================
+// MAIN
+// =======================
 async function main() {
   const [owner, repo] = mustEnv("REPO").split("/");
   const issueNumber = mustEnv("ISSUE_NUMBER");
@@ -179,25 +160,22 @@ async function main() {
     "## ISSUE",
     `Título: ${issue.title || ""}`,
     "",
-    "Descrição:",
     issue.body || "",
   ].join("\n");
 
-  const rulesPath = path.resolve(process.cwd(), "AGENTS_RULES.md");
   const rulesText =
-    safeReadFileHeadTail(rulesPath, 20000) ||
-    "(AGENTS_RULES.md não encontrado na raiz.)";
+    safeReadFileHeadTail(path.resolve(process.cwd(), "AGENTS_RULES.md"), 20000) ||
+    "(AGENTS_RULES.md não encontrado)";
 
   const repoContext = buildRepoContext();
 
   const sharedSystem = [
-    "Você é parte de um sistema multi-agente que transforma uma Issue em um PROMPT OPERACIONAL para o Codex abrir um PR.",
+    "Sistema multi-agente para gerar PROMPT OPERACIONAL para Codex.",
     "",
     "REGRAS ABSOLUTAS:",
-    "- Obedeça rigorosamente AGENTS_RULES.md.",
-    "- NÃO alterar fórmulas, cálculos, custos, taxas, comissões ou regras financeiras.",
-    "- NÃO inventar paths/arquivos.",
-    "- Melhorias incrementais e seguras. Sem refatorações grandes.",
+    "- NÃO alterar fórmulas, cálculos, custos ou regras financeiras.",
+    "- NÃO inventar paths.",
+    "- Usar apenas o que o CODE SCOUT confirmar.",
     "",
     "AGENTS_RULES.md:",
     rulesText,
@@ -205,164 +183,116 @@ async function main() {
     repoContext,
   ].join("\n");
 
-  // =========================
+  // =======================
   // AGENT 0 — CODE SCOUT
-  // =========================
+  // =======================
   const scout = await openaiChat([
     { role: "system", content: sharedSystem },
     {
       role: "user",
       content: [
-        "Você é o AGENT 0 (CODE SCOUT).",
-        "Mapeie a REALIDADE técnica do projeto.",
-        "NÃO proponha soluções. NÃO faça UX.",
-        "",
-        "Formato obrigatório:",
-        "## CODE SCOUT — Mapa real do projeto",
-        "",
-        "### Arquivos relevantes encontrados",
-        "- caminho/arquivo.ext",
-        "",
-        "### O que JÁ existe e funciona",
-        "- ...",
-        "",
-        "### O que está PARCIALMENTE resolvido (risco de duplicação)",
-        "- ...",
-        "",
-        "### O que NÃO existe (lacunas reais)",
-        "- ...",
-        "",
-        "### Conclusão técnica",
-        "- Onde mudanças DEVEM acontecer",
-        "- Quais arquivos NÃO devem ser tocados",
+        "AGENT 0 — CODE SCOUT",
+        "Mapeie a realidade técnica. NÃO proponha soluções.",
         "",
         issueContext,
       ].join("\n"),
     },
   ]);
 
-  // =========================
+  // =======================
   // AGENT 1 — UX
-  // =========================
+  // =======================
   const ux = await openaiChat([
     { role: "system", content: sharedSystem },
     {
       role: "user",
       content: [
-        "Você é o AGENT 1 (UX).",
-        "Baseie-se ESTRITAMENTE no CODE SCOUT e na ISSUE.",
-        "Reconheça o que já existe para evitar duplicação.",
-        "NÃO escreva prompt para Codex.",
+        "AGENT 1 — UX",
+        "Baseie-se no CODE SCOUT + ISSUE.",
+        "Reconheça o que já existe.",
         "",
-        "Formato:",
-        "## UX — Diagnóstico",
-        "- Problema P0:",
-        "- Impacto:",
-        "- Onde acontece:",
-        "",
-        "## UX — Solução mínima (incremental)",
-        "- ...",
-        "",
-        "## UX — Critérios de aceite",
-        "- [ ] ...",
-        "",
-        "CODE SCOUT:",
         scout,
         "",
-        "ISSUE:",
         issueContext,
       ].join("\n"),
     },
   ]);
 
-  // =========================
-  // AGENTS 2 e 3 — FE + QA (paralelo)
-  // =========================
-  const [fe, qa] = await Promise.all([
-    openaiChat([
-      { role: "system", content: sharedSystem },
-      {
-        role: "user",
-        content: [
-          "Você é o AGENT 2 (FRONT-END).",
-          "Use SOMENTE paths e funções confirmados no CODE SCOUT.",
-          "NÃO inventar paths. NÃO assumir frameworks.",
-          "",
-          "Formato:",
-          "## FE — Arquivos reais a editar",
-          "- ...",
-          "",
-          "## FE — Passos técnicos executáveis",
-          "1) ...",
-          "",
-          "## FE — A11y / estados",
-          "- focus",
-          "- hover",
-          "- selected",
-          "- disabled",
-          "",
-          scout,
-          ux,
-        ].join("\n"),
-      },
-    ]),
-    openaiChat([
-      { role: "system", content: sharedSystem },
-      {
-        role: "user",
-        content: [
-          "Você é o AGENT 3 (QA).",
-          "Crie checklist de teste manual e não-regressão financeira.",
-          "",
-          "Formato:",
-          "## QA — Desktop",
-          "- [ ] ...",
-          "",
-          "## QA — Mobile",
-          "- [ ] ...",
-          "",
-          "## QA — Acessibilidade",
-          "- [ ] ...",
-          "",
-          "## QA — Não-regressão financeira",
-          "- [ ] ...",
-          "",
-          scout,
-          ux,
-        ].join("\n"),
-      },
-    ]),
+  // =======================
+  // AGENT 2 — FRONT-END (COM CÓDIGO)
+  // =======================
+  const fe = await openaiChat([
+    { role: "system", content: sharedSystem },
+    {
+      role: "user",
+      content: [
+        "AGENT 2 — FRONT-END",
+        "",
+        "OBRIGATÓRIO:",
+        "- Use SOMENTE paths e seletores confirmados no CODE SCOUT.",
+        "- NÃO parafrasear.",
+        "- Fornecer CÓDIGO EXATO.",
+        "",
+        "FORMATO OBRIGATÓRIO:",
+        "## FE — Arquivos reais a editar",
+        "",
+        "## FE — Código proposto",
+        "Para cada mudança:",
+        "ARQUIVO:",
+        "SELETOR:",
+        "AÇÃO: adicionar | substituir | remover",
+        "```css",
+        "/* código exato */",
+        "```",
+        "",
+        scout,
+        ux,
+      ].join("\n"),
+    },
   ]);
 
-  // =========================
+  // =======================
+  // AGENT 3 — QA
+  // =======================
+  const qa = await openaiChat([
+    { role: "system", content: sharedSystem },
+    {
+      role: "user",
+      content: [
+        "AGENT 3 — QA",
+        "Checklist de teste e não-regressão financeira.",
+        "",
+        scout,
+        ux,
+      ].join("\n"),
+    },
+  ]);
+
+  // =======================
   // AGENT 4 — RELEASE CAPTAIN
-  // =========================
+  // =======================
   const finalPrompt = await openaiChat(
     [
       {
         role: "system",
         content: [
-          "Você é o AGENT 4 (RELEASE CAPTAIN).",
+          "AGENT 4 — RELEASE CAPTAIN",
           "",
           "IMPORTANTE:",
-          "- Você está escrevendo um PROMPT OPERACIONAL para o Codex.",
-          "- NÃO escreva resumo, release note ou explicação executiva.",
-          "- Cada frase deve ser uma instrução executável.",
-          "- Use verbos imperativos: Localize, Edite, Adicione, NÃO altere.",
-          "- Cite paths e seletores EXATOS do CODE SCOUT.",
-          "- Saída vaga ou abstrata é ERRO.",
+          "- Copie os blocos de código do AGENT 2 LITERALMENTE.",
+          "- NÃO parafrasear código.",
+          "- NÃO usar faixas (ex: 24–28px).",
+          "- Cada passo deve citar arquivo, seletor e código exato.",
+          "- Saída vaga é ERRO.",
           "",
-          "FORMATO OBRIGATÓRIO:",
-          "1) OBJETIVO (curto)",
-          "2) RESTRIÇÕES ABSOLUTAS",
-          "3) COMANDOS DE LOCALIZAÇÃO (rg / find)",
-          "4) PASSOS EXECUTÁVEIS (numerados)",
+          "FORMATO:",
+          "1) OBJETIVO",
+          "2) RESTRIÇÕES",
+          "3) COMANDOS DE LOCALIZAÇÃO",
+          "4) PASSOS EXECUTÁVEIS (com código literal)",
           "5) ARQUIVOS QUE NÃO DEVEM SER TOCADOS",
-          "6) CHECKLIST DE VALIDAÇÃO",
-          "7) PEDIDO DE RETORNO (diff + como testar)",
-          "",
-          "AGENTS_RULES.md:",
-          rulesText,
+          "6) CHECKLIST",
+          "7) PEDIDO DE RETORNO",
         ].join("\n"),
       },
       {
@@ -373,18 +303,16 @@ async function main() {
     CAPTAIN_MODEL
   );
 
-  const finalPromptBlock = ensureSingleFenceBlock(finalPrompt);
-
   await ghFetch(
     `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
     {
       method: "POST",
-      body: JSON.stringify({ body: finalPromptBlock }),
+      body: JSON.stringify({ body: ensureSingleFenceBlock(finalPrompt) }),
     }
   );
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error(err);
   process.exit(1);
 });
