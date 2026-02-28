@@ -1,11 +1,3 @@
-
----
-
-## 2) `level1.mjs` — versão inteira refinada (Agent 0 + injection + FE/QA em paralelo)
-
-Cole **inteiro** em: `.github/agents/level1.mjs`
-
-```js
 import fs from "node:fs";
 import path from "node:path";
 
@@ -31,6 +23,9 @@ mustEnv("OPENAI_API_KEY");
 mustEnv("REPO");
 mustEnv("ISSUE_NUMBER");
 
+// =========================
+// GitHub API
+// =========================
 async function ghFetch(url, options = {}) {
   const res = await fetch(url, {
     ...options,
@@ -49,6 +44,9 @@ async function ghFetch(url, options = {}) {
   return res.json();
 }
 
+// =========================
+// OpenAI API
+// =========================
 async function openaiChat(messages) {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -74,6 +72,9 @@ async function openaiChat(messages) {
   return content;
 }
 
+// =========================
+// Helpers
+// =========================
 function extractFirstFencedBlock(text) {
   const s = String(text || "");
   const m = s.match(/```[\s\S]*?```/);
@@ -88,37 +89,52 @@ function ensureSingleFenceBlock(text) {
   return "```\n" + trimmed + "\n```";
 }
 
+// 👉 CORREÇÃO CRÍTICA: HEAD + TAIL
 function safeReadFile(p, maxChars = 8000) {
   try {
     if (!fs.existsSync(p)) return null;
+
     const raw = fs.readFileSync(p, "utf8");
-    const clipped = raw.length > maxChars ? raw.slice(0, maxChars) : raw;
-    return clipped;
+    if (raw.length <= maxChars) return raw;
+
+    const half = Math.floor(maxChars / 2);
+    return (
+      raw.slice(0, half) +
+      "\n\n[... TRECHO OMITIDO POR TAMANHO ...]\n\n" +
+      raw.slice(-half)
+    );
   } catch {
     return null;
   }
 }
 
+// =========================
+// Repo Context Injection
+// =========================
 function buildRepoContext() {
-  // Lista “provável” + segura (ajuste quando quiser)
   const candidates = [
     "index.html",
     "assets/js/main.js",
     "assets/css/styles.css",
-    "assets/js/app.js",
-    "assets/js/wizard.js",
-    "assets/css/main.css",
-    "assets/css/app.css",
     "AGENTS_RULES.md",
   ];
 
   const parts = [];
   parts.push("## REPO CONTEXT (TRECHOS REAIS)");
-  parts.push("Observação: estes são trechos lidos diretamente do repositório. Se um arquivo não existir, será informado.");
+  parts.push(
+    "Estes trechos foram lidos diretamente do repositório. Arquivos inexistentes são marcados."
+  );
 
   for (const rel of candidates) {
     const abs = path.resolve(process.cwd(), rel);
-    const content = safeReadFile(abs, 9000);
+
+    const maxChars =
+      rel === "assets/js/main.js" || rel === "assets/css/styles.css"
+        ? 24000
+        : 9000;
+
+    const content = safeReadFile(abs, maxChars);
+
     if (content === null) {
       parts.push(`\n### ${rel}\n(NÃO ENCONTRADO)`);
     } else {
@@ -126,18 +142,29 @@ function buildRepoContext() {
     }
   }
 
-  // Opcional: listar SVGs se a pasta existir (sem ler tudo)
+  // Lista SVGs de marketplaces
   const svgDir = path.resolve(process.cwd(), "assets/img/marketplaces");
   if (fs.existsSync(svgDir) && fs.lstatSync(svgDir).isDirectory()) {
-    const svgs = fs.readdirSync(svgDir).filter((f) => f.toLowerCase().endsWith(".svg"));
-    parts.push(`\n### assets/img/marketplaces (LISTAGEM)\n${svgs.length ? svgs.map(s => `- ${s}`).join("\n") : "(sem svgs)"}\n`);
+    const svgs = fs
+      .readdirSync(svgDir)
+      .filter((f) => f.toLowerCase().endsWith(".svg"));
+    parts.push(
+      `\n### assets/img/marketplaces (LISTAGEM)\n${
+        svgs.length ? svgs.map((s) => `- ${s}`).join("\n") : "(sem svgs)"
+      }\n`
+    );
   } else {
-    parts.push(`\n### assets/img/marketplaces (LISTAGEM)\n(NÃO ENCONTRADO)\n`);
+    parts.push(
+      `\n### assets/img/marketplaces (LISTAGEM)\n(NÃO ENCONTRADO)\n`
+    );
   }
 
   return parts.join("\n");
 }
 
+// =========================
+// MAIN
+// =========================
 async function main() {
   const [owner, repo] = mustEnv("REPO").split("/");
   const issueNumber = mustEnv("ISSUE_NUMBER");
@@ -149,9 +176,10 @@ async function main() {
   const issueTitle = issue.title || "";
   const issueBody = issue.body || "";
 
-  // Lê rules direto (sem depender de env anterior)
   const rulesPath = path.resolve(process.cwd(), "AGENTS_RULES.md");
-  const rulesText = safeReadFile(rulesPath, 12000) || "(AGENTS_RULES.md não encontrado na raiz.)";
+  const rulesText =
+    safeReadFile(rulesPath, 12000) ||
+    "(AGENTS_RULES.md não encontrado na raiz.)";
 
   const repoContext = buildRepoContext();
 
@@ -161,8 +189,8 @@ async function main() {
     "REGRAS ABSOLUTAS:",
     "- Obedeça rigorosamente AGENTS_RULES.md.",
     "- NÃO alterar fórmulas, cálculos, custos, taxas, comissões ou regras financeiras.",
-    "- NÃO inventar paths/arquivos: use somente paths confirmados no CODE SCOUT.",
-    "- Melhorias incrementais e seguras. Sem refatoração grande.",
+    "- NÃO inventar paths: use somente o que aparecer no CODE SCOUT.",
+    "- Melhorias incrementais e seguras.",
     "",
     "AGENTS_RULES.md (REAL):",
     rulesText,
@@ -187,10 +215,10 @@ async function main() {
       role: "user",
       content: [
         "Você é o AGENT 0 (CODE SCOUT).",
-        "Mapeie a realidade técnica do repo baseado no REPO CONTEXT fornecido acima.",
-        "NÃO proponha soluções. NÃO faça UX. NÃO escreva prompt Codex.",
+        "Mapeie a realidade técnica do repo usando APENAS o contexto acima.",
+        "NÃO proponha soluções.",
         "",
-        "Formato obrigatório (copie e preencha):",
+        "Formato obrigatório:",
         "## CODE SCOUT — Mapa real do projeto",
         "",
         "### Arquivos relevantes encontrados",
@@ -203,22 +231,21 @@ async function main() {
         "### O que está PARCIALMENTE resolvido (risco de duplicação)",
         "- ...",
         "",
-        "### O que NÃO existe (lacunas reais a preencher)",
+        "### O que NÃO existe (lacunas reais)",
         "- ...",
         "",
         "### Conclusão técnica",
-        "- Onde mudanças DEVEM acontecer (paths reais)",
+        "- Onde mudanças DEVEM acontecer",
         "- Quais arquivos NÃO devem ser tocados",
-        "- Dependências entre arquivos relevantes para a issue",
+        "- Dependências entre arquivos",
         "",
-        "Contexto da issue:",
         issueContext,
       ].join("\n"),
     },
   ]);
 
   // =========================
-  // AGENT 1 — UX (depende do scout)
+  // AGENT 1 — UX
   // =========================
   const ux = await openaiChat([
     { role: "system", content: sharedSystem },
@@ -226,33 +253,20 @@ async function main() {
       role: "user",
       content: [
         "Você é o AGENT 1 (UX).",
-        "Baseie-se ESTRITAMENTE no CODE SCOUT e na issue.",
-        "Reconheça explicitamente o que já existe e o que está parcialmente resolvido para evitar duplicação.",
-        "NÃO escreva prompt Codex.",
+        "Baseie-se no CODE SCOUT. Evite duplicação.",
         "",
-        "Formato obrigatório:",
+        "Formato:",
         "## UX — Diagnóstico",
-        "- Problema P0:",
-        "- Impacto:",
-        "- Onde acontece:",
-        "",
-        "## UX — Solução mínima (incremental)",
-        "- ...",
-        "",
+        "## UX — Solução mínima",
         "## UX — Critérios de aceite",
-        "- [ ] ...",
         "",
-        "CODE SCOUT:",
         scout,
-        "",
-        "ISSUE:",
-        issueContext,
       ].join("\n"),
     },
   ]);
 
   // =========================
-  // AGENTS 2 e 3 em paralelo (FE + QA)
+  // AGENTS 2 + 3 EM PARALELO
   // =========================
   const [fe, qa] = await Promise.all([
     openaiChat([
@@ -261,26 +275,14 @@ async function main() {
         role: "user",
         content: [
           "Você é o AGENT 2 (FRONT-END).",
-          "Crie um plano técnico executável, usando SOMENTE paths/funções/seletores confirmados no CODE SCOUT.",
-          "NÃO inventar paths. NÃO assumir frameworks.",
+          "Use apenas paths confirmados no CODE SCOUT.",
           "",
-          "Formato obrigatório:",
-          "## FE — Arquivos reais que serão editados (somente os do CODE SCOUT)",
-          "- ...",
+          "Formato:",
+          "## FE — Onde mexer",
+          "## FE — Plano técnico",
+          "## FE — Riscos",
           "",
-          "## FE — Plano técnico (mínimo)",
-          "- ...",
-          "",
-          "## FE — A11y e estados (focus/hover/selected/disabled)",
-          "- ...",
-          "",
-          "## FE — Riscos + mitigação",
-          "- ...",
-          "",
-          "CODE SCOUT:",
           scout,
-          "",
-          "UX:",
           ux,
         ].join("\n"),
       },
@@ -291,26 +293,15 @@ async function main() {
         role: "user",
         content: [
           "Você é o AGENT 3 (QA).",
-          "Crie checklist de teste manual e não-regressão financeira.",
-          "Baseie-se no CODE SCOUT + UX.",
+          "Crie checklist manual e não-regressão financeira.",
           "",
-          "Formato obrigatório:",
+          "Formato:",
           "## QA — Desktop",
-          "- [ ] ...",
-          "",
           "## QA — Mobile",
-          "- [ ] ...",
+          "## QA — Acessibilidade",
+          "## QA — Não-regressão",
           "",
-          "## QA — Teclado/Acessibilidade",
-          "- [ ] ...",
-          "",
-          "## QA — Não-regressão financeira",
-          "- [ ] ... (como validar rapidamente sem mudar fórmulas)",
-          "",
-          "CODE SCOUT:",
           scout,
-          "",
-          "UX:",
           ux,
         ].join("\n"),
       },
@@ -318,7 +309,7 @@ async function main() {
   ]);
 
   // =========================
-  // AGENT 4 — RELEASE CAPTAIN (PROMPT FINAL)
+  // AGENT 4 — RELEASE CAPTAIN
   // =========================
   const finalPrompt = await openaiChat([
     { role: "system", content: sharedSystem },
@@ -326,32 +317,20 @@ async function main() {
       role: "user",
       content: [
         "Você é o AGENT 4 (RELEASE CAPTAIN).",
-        "Gere o PROMPT ÚNICO para colar no Codex e abrir PR.",
+        "Retorne APENAS um bloco fenced Markdown.",
         "",
-        "REGRAS DE FORMATO (INVIOLÁVEIS):",
-        "- Retorne APENAS um bloco fenced Markdown com 3 crases.",
-        "- Nada fora do bloco.",
-        "- O prompt DEVE citar paths reais do CODE SCOUT (não inventar).",
+        "Conteúdo obrigatório:",
+        "1) Objetivo",
+        "2) Restrições",
+        "3) Onde mexer (paths reais)",
+        "4) Passos",
+        "5) Critérios de aceite",
+        "6) Testes",
+        "7) Pedido de diff",
         "",
-        "O prompt deve conter, nesta ordem:",
-        "1) Objetivo (P0)",
-        "2) Restrições absolutas",
-        "3) Onde mexer (paths reais + funções/seletores do CODE SCOUT)",
-        "4) Passos (mudanças UI/CSS/JS/A11y) detalhados, incrementais",
-        "5) Critérios de aceite (checklist)",
-        "6) Roteiro de teste manual (QA)",
-        "7) Pedido de retorno do Codex: mostrar diff + instruções de teste",
-        "",
-        "CODE SCOUT:",
         scout,
-        "",
-        "UX:",
         ux,
-        "",
-        "FE:",
         fe,
-        "",
-        "QA:",
         qa,
       ].join("\n"),
     },
@@ -359,7 +338,6 @@ async function main() {
 
   const finalPromptBlock = ensureSingleFenceBlock(finalPrompt);
 
-  // Comentário = só o bloco fenced (evita “metade dentro/metade fora”)
   await ghFetch(
     `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
     {
