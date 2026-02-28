@@ -2693,10 +2693,10 @@ function buildMarketplaceSelector() {
   const wrap = document.querySelector("#marketplaceSelector");
   if (!wrap) return;
   wrap.innerHTML = UX_MARKETPLACES.map((mp) => `
-    <label class="marketplaceChip ${mp.brandClass || ""}" data-mp="${mp.key}" tabindex="0">
-      <input class="marketplaceChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
+    <label class="marketplaceChip ${mp.brandClass || ""}" data-mp="${mp.key}" for="ux_mp_${mp.key}">
+      <input class="marketplaceChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" aria-label="${mp.title}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
       <span class="mpIcon">
-        <img class="mpLogo" src="${window.versionAssetPath(mp.logoSrc)}" alt="${mp.logoAlt}" loading="lazy" data-fallback="${mp.fallback || "MP"}" />
+        <img class="mpLogo" src="${window.versionAssetPath(mp.logoSrc)}" alt="" loading="lazy" data-fallback="${mp.fallback || "MP"}" />
       </span>
       <span class="mpName">${mp.title}</span>
       ${mp.badge ? `<span class="mpBadge ${mp.badgeClass || ""}">${mp.badge}</span>` : ""}
@@ -2923,16 +2923,6 @@ function initUxRefactor() {
     renderMode1PriceInputs();
     renderWizardUI();
     uxRecalc();
-  });
-
-  document.querySelector("#marketplaceSelector")?.addEventListener("keydown", (event) => {
-    const chip = event.target.closest('.marketplaceChip');
-    const checkbox = chip?.querySelector('.marketplaceChip__input[type="checkbox"]');
-    const isToggleKey = event.key === "Enter" || event.key === " " || event.code === "Space";
-    if (!checkbox || !isToggleKey) return;
-    event.preventDefault();
-    checkbox.checked = !checkbox.checked;
-    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
   document.querySelectorAll('input[name="calcMode"]').forEach((el) => el.addEventListener("change", () => {
