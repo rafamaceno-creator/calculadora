@@ -28,4 +28,5 @@ jobs:
 
             const modPath = path.join(process.env.GITHUB_WORKSPACE, ".github", "agents", "level1.mjs");
             const mod = await import(pathToFileURL(modPath).href);
+
             await mod.run({ github, context, core, apiKey: process.env.OPENAI_API_KEY });
