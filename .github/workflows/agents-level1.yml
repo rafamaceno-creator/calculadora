@@ -17,115 +17,139 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Build agents plan
+      - name: Run agents and comment plan
+        uses: actions/github-script@v7
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
-          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
-        run: |
-          node << 'EOF'
-          import fetch from "node-fetch";
+        with:
+          script: |
+            const apiKey = process.env.OPENAI_API_KEY;
+            if (!apiKey) {
+              core.setFailed("Missing OPENAI_API_KEY secret. Add it in Settings → Secrets and variables → Actions.");
+              return;
+            }
 
-          const contextBase = `
-          Repo: ${process.env.REPO_URL}
+            const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
+            const issueTitle = context.payload.issue.title || "";
+            const issueBody = context.payload.issue.body || "";
 
-          Objetivo:
-          - MAIS ÚTIL
-          - MAIS SIMPLES
-          - MAIS INTUITIVO
-          Beleza é secundária.
+            const contextBase = `
+            Repo: ${repoUrl}
 
-          Regras:
-          - NÃO alterar fórmulas, custos, comissões, taxas ou cálculos.
-          - Revisão de cálculo = apenas AUDIT (issue separada).
-          - Fluxo/wizard pode mudar SOMENTE para simplificar.
-          - PR pequeno, mudanças mínimas.
-          - Ler e seguir AGENTS_RULES.md obrigatoriamente.
-          `;
+            Objetivo (ordem):
+            1) MAIS ÚTIL
+            2) MAIS SIMPLES de mexer/manter/alimentar
+            3) MAIS INTUITIVO
+            Beleza é secundária.
 
-          const issue = `
-          TÍTULO:
-          ${process.env.ISSUE_TITLE}
+            Regras obrigatórias:
+            - Leia e siga AGENTS_RULES.md (raiz do repo) antes de sugerir qualquer mudança.
+            - NÃO alterar fórmulas/custos/comissões/taxas/regras de cálculo.
+            - Se suspeitar de bug de cálculo: marcar como "AUDIT" e recomendar Issue separada (não corrigir neste PR).
+            - Fluxo/wizard pode mudar SOMENTE para simplificar e reduzir confusão.
+            - PR pequeno e mudanças mínimas.
+            `;
 
-          DESCRIÇÃO:
-          ${process.env.ISSUE_BODY}
-          `;
+            const issueText = `
+            TÍTULO:
+            ${issueTitle}
 
-          async function callLLM(role, task) {
-            const res = await fetch("https://api.openai.com/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
+            DESCRIÇÃO:
+            ${issueBody}
+            `;
+
+            async function callOpenAI(roleName, task) {
+              const body = {
                 model: "gpt-4.1-mini",
                 temperature: 0.2,
                 messages: [
-                  { role: "system", content: `Você é o ${role}.` },
-                  { role: "user", content: contextBase + issue + task }
+                  { role: "system", content: `Você é o ${roleName}. Responda em PT-BR, direto e prático.` },
+                  { role: "user", content: contextBase + "\n\n" + issueText + "\n\n" + task }
                 ]
-              })
-            });
+              };
 
-            const data = await res.json();
-            return data.choices[0].message.content;
-          }
+              const res = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${apiKey}`,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+              });
 
-          const ux = await callLLM(
-            "Agente UX",
-            "Liste os principais problemas de usabilidade e soluções mínimas focadas em utilidade."
-          );
+              const data = await res.json();
+              if (!res.ok) {
+                throw new Error(`OpenAI API error: ${res.status} ${JSON.stringify(data)}`);
+              }
+              return data.choices?.[0]?.message?.content?.trim() || "(sem resposta)";
+            }
 
-          const fe = await callLLM(
-            "Agente Front-end",
-            "Transforme os pontos do UX em plano técnico de implementação mínima, sem mexer em cálculos."
-          );
+            const uxTask = `
+            Você é o Agente UX (mobile-first).
+            1) Liste os 7 maiores problemas de usabilidade/clareza no Step 0 do wizard (e arredores imediatos).
+            2) Para cada problema, proponha SOLUÇÃO MÍNIMA (menor mudança possível) que aumenta utilidade e reduz confusão.
+            3) Para cada item: Impacto (alto/médio/baixo), Esforço (P/M/G), Risco.
+            4) Não sugerir mudanças de cálculo. Se notar incoerência, sinalize como "AUDIT" e pare nesse ponto.
+            Formato: P0/P1/P2.
+            `;
 
-          const qa = await callLLM(
-            "Agente QA",
-            "Crie checklist de testes e cenários de não-regressão de cálculo."
-          );
+            const feTask = `
+            Você é o Agente Front-end Engineer.
+            Use o resultado do UX para montar um plano de 1 PR pequeno:
+            - Lista de mudanças por arquivo (CSS/HTML/JS).
+            - Abordagem mínima e segura (sem refatoração grande).
+            - Ajustes para hover/focus/pressed/selected, área clicável, cursor, acessibilidade teclado.
+            - Não alterar fórmulas/custos/comissões.
+            Formato: Escopo PR #1 + Lista por arquivo + Notas técnicas.
+            `;
 
-          const release = await callLLM(
-            "Release Captain",
-            `
-            Consolide tudo e gere:
-            1) Escopo fechado do PR #1
-            2) Prompt FINAL para o Codex gerar o PR
-            `
-          );
+            const qaTask = `
+            Você é o Agente QA.
+            - Crie checklist de testes (mobile e desktop).
+            - Crie 5 cenários de não-regressão (confirmar que cálculos não mudaram; pode ser "resultado idêntico antes/depois").
+            - Liste riscos comuns (estado do wizard, seleção, voltar/avançar, responsivo).
+            Formato em checklist.
+            `;
 
-          const comment = `
-          ## 🤖 Agents – Improvement Plan
+            const releaseTask = `
+            Você é o Release Captain.
+            Consolide UX+FE+QA e entregue:
+            1) Escopo fechado do PR #1 (somente o que cabe em PR pequeno)
+            2) PROMPT ÚNICO pro Codex (ctrl+c/ctrl+v) com:
+               - objetivo
+               - regras (NÃO mexer em cálculos; ler AGENTS_RULES.md)
+               - lista detalhada do que alterar por arquivo
+               - checklist de teste
+               - pedir retorno em diff + resumo + como testar
+            `;
 
-          ### 🧠 UX
-          ${ux}
+            const ux = await callOpenAI("Agente UX", uxTask);
+            const fe = await callOpenAI("Agente Front-end", `INSUMO UX:\n${ux}\n\n${feTask}`);
+            const qa = await callOpenAI("Agente QA", `PLANO FE:\n${fe}\n\n${qaTask}`);
+            const release = await callOpenAI("Release Captain", `UX:\n${ux}\n\nFE:\n${fe}\n\nQA:\n${qa}\n\n${releaseTask}`);
 
-          ---
-          ### 🛠️ Front-end
-          ${fe}
+            const comment = [
+              "## 🤖 Agents – Improvement Plan (Level 1)",
+              "",
+              "### 🧠 UX",
+              ux,
+              "",
+              "---",
+              "### 🛠️ Front-end",
+              fe,
+              "",
+              "---",
+              "### 🧪 QA",
+              qa,
+              "",
+              "---",
+              "### 🚀 Release Captain (PROMPT DO CODEX)",
+              release
+            ].join("\n");
 
-          ---
-          ### 🧪 QA
-          ${qa}
-
-          ---
-          ### 🚀 Release Captain (PROMPT DO CODEX)
-          ${release}
-          `;
-
-          console.log(comment);
-          EOF
-
-      - name: Comment on issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.issue.number,
-              body: process.env.NODE_OUTPUT
-            })
+              body: comment
+            });
