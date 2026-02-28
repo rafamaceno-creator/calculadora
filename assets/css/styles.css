@@ -647,6 +647,7 @@ body.theme-dark .leadCapture__head p{color:#94a3b8}
 
 .wizardProgress{margin-bottom:16px;padding:10px 12px;border:1px solid var(--stroke);border-radius:12px;background:var(--surface-soft);font-size:13px;font-weight:700;color:var(--text)}
 .wizardStep{display:block}
+.modeInstruction{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.4;font-weight:600}
 .modeCards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .modeCard{padding:22px;border:1px solid var(--stroke);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-sm);text-align:left;cursor:pointer;transition:transform .2s ease,border-color .2s ease,background .2s ease}
 .modeCard strong{display:block;margin-bottom:8px;font-size:18px}
@@ -658,6 +659,7 @@ body.theme-dark .leadCapture__head p{color:#94a3b8}
 .wizardResultsContainer.is-hidden{display:none!important}
 
 @media (max-width:768px){
+  .modeInstruction{font-size:15px;margin-bottom:10px}
   .modeCards{grid-template-columns:1fr}
   .wizardActions{flex-direction:column}
   .wizardActions .btn{width:100%}
@@ -858,12 +860,16 @@ input::placeholder{color:#95a0b2}
 .modeCards{gap:12px}
 .modeCard{
   position:relative;
+  display:block;
+  width:100%;
+  min-height:140px;
   border-radius:18px;
   border:1px solid rgba(148,163,184,.34);
   background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(248,250,252,.75));
   box-shadow:var(--shadow-sm);
   touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
+  cursor:pointer;
 }
 .modeCard::before{
   content:"";
@@ -879,7 +885,12 @@ input::placeholder{color:#95a0b2}
 .modeCard strong{font-size:19px;position:relative;z-index:1}
 .modeCard p{color:#5f7086}
 .modeCard:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
-.modeCard.is-selected{border-color:color-mix(in srgb,var(--accent) 50%,transparent);box-shadow:0 0 0 3px rgba(15,157,146,.14),var(--shadow-md)}
+.modeCard:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 75%, #ffffff 25%);outline-offset:2px;box-shadow:0 0 0 5px rgba(15,157,146,.2),var(--shadow-md)}
+.modeCard:active{transform:translateY(0);box-shadow:inset 0 2px 6px rgba(15,23,42,.14)}
+.modeCard.is-selected{border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(15,157,146,.14),var(--shadow-md)}
+.modeCard__check{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;opacity:0;transform:scale(.9);transition:opacity .2s ease,transform .2s ease;z-index:2}
+.modeCard__check svg{width:16px;height:16px;fill:currentColor}
+.modeCard.is-selected .modeCard__check{opacity:1;transform:scale(1)}
 
 .marketplaceSelector{
   display:flex;
@@ -1390,10 +1401,11 @@ body.theme-dark .marketplaceChip{
   .wizardProgress::after{left:10px;bottom:6px;font-size:11px;content:"Passo " attr(data-step-label);}
 
   .modeCards{grid-template-columns:1fr;gap:8px;}
-  .modeCard{padding:14px;min-height:96px;border-radius:14px;}
+  .modeCard{padding:16px;min-height:110px;border-radius:14px;}
   .modeCard::before{width:28px;height:28px;top:10px;right:10px;border-radius:9px;}
+  .modeCard__check{top:10px;right:10px}
   .modeCard strong{margin-bottom:4px;font-size:18px;line-height:1.2;}
-  .modeCard p{font-size:13px;line-height:1.35;padding-right:4px;}
+  .modeCard p{font-size:14px;line-height:1.4;padding-right:4px;}
 
   .wizardActions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;}
   .wizardActions .btn{min-height:44px;}
