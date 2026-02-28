@@ -23,14 +23,9 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
           script: |
-            const fs = require("fs");
             const path = require("path");
+            const { pathToFileURL } = require("url");
 
-            const scriptPath = path.join(process.env.GITHUB_WORKSPACE, ".github", "agents", "level1.js");
-            if (!fs.existsSync(scriptPath)) {
-              core.setFailed("Missing .github/agents/level1.js (create this file).");
-              return;
-            }
-
-            const code = fs.readFileSync(scriptPath, "utf8");
-            eval(code);
+            const modPath = path.join(process.env.GITHUB_WORKSPACE, ".github", "agents", "level1.mjs");
+            const mod = await import(pathToFileURL(modPath).href);
+            await mod.run({ github, context, core, apiKey: process.env.OPENAI_API_KEY });
