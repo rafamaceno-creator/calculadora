@@ -9,13 +9,13 @@ const {
   ISSUE_NUMBER,
 } = process.env;
 
-// Modelo padrão para Agents 0–3
+// Models
 const DEFAULT_MODEL =
   OPENAI_MODEL && OPENAI_MODEL.trim()
     ? OPENAI_MODEL.trim()
     : "gpt-4o-mini";
 
-// Modelo dedicado para o Agent 4 (síntese final)
+// Agent 4 (síntese final) usa modelo mais forte
 const CAPTAIN_MODEL = "gpt-4o";
 
 function mustEnv(name) {
@@ -29,6 +29,9 @@ mustEnv("OPENAI_API_KEY");
 mustEnv("REPO");
 mustEnv("ISSUE_NUMBER");
 
+// --------------------
+// GitHub helper
+// --------------------
 async function ghFetch(url, options = {}) {
   const res = await fetch(url, {
     ...options,
@@ -47,6 +50,9 @@ async function ghFetch(url, options = {}) {
   return res.json();
 }
 
+// --------------------
+// OpenAI helper
+// --------------------
 async function openaiChat(messages, model = DEFAULT_MODEL) {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -72,6 +78,9 @@ async function openaiChat(messages, model = DEFAULT_MODEL) {
   return content;
 }
 
+// --------------------
+// Utils
+// --------------------
 function extractFirstFencedBlock(text) {
   const s = String(text || "");
   const m = s.match(/```[\s\S]*?```/);
@@ -103,6 +112,9 @@ function safeReadFileHeadTail(p, maxChars) {
   }
 }
 
+// --------------------
+// Repo context builder
+// --------------------
 function buildRepoContext() {
   const candidates = [
     "index.html",
@@ -152,6 +164,9 @@ function buildRepoContext() {
   return parts.join("\n");
 }
 
+// --------------------
+// Main
+// --------------------
 async function main() {
   const [owner, repo] = mustEnv("REPO").split("/");
   const issueNumber = mustEnv("ISSUE_NUMBER");
@@ -160,8 +175,13 @@ async function main() {
     `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`
   );
 
-  const issueTitle = issue.title || "";
-  const issueBody = issue.body || "";
+  const issueContext = [
+    "## ISSUE",
+    `Título: ${issue.title || ""}`,
+    "",
+    "Descrição:",
+    issue.body || "",
+  ].join("\n");
 
   const rulesPath = path.resolve(process.cwd(), "AGENTS_RULES.md");
   const rulesText =
@@ -171,26 +191,18 @@ async function main() {
   const repoContext = buildRepoContext();
 
   const sharedSystem = [
-    "Você é parte de um sistema multi-agente que transforma uma Issue em um PROMPT ÚNICO para o Codex abrir um PR.",
+    "Você é parte de um sistema multi-agente que transforma uma Issue em um PROMPT OPERACIONAL para o Codex abrir um PR.",
     "",
     "REGRAS ABSOLUTAS:",
     "- Obedeça rigorosamente AGENTS_RULES.md.",
     "- NÃO alterar fórmulas, cálculos, custos, taxas, comissões ou regras financeiras.",
-    "- NÃO inventar paths/arquivos: usar somente o que estiver confirmado no CODE SCOUT.",
-    "- Melhorias incrementais e seguras.",
+    "- NÃO inventar paths/arquivos.",
+    "- Melhorias incrementais e seguras. Sem refatorações grandes.",
     "",
     "AGENTS_RULES.md:",
     rulesText,
     "",
     repoContext,
-  ].join("\n");
-
-  const issueContext = [
-    "## ISSUE",
-    `Título: ${issueTitle}`,
-    "",
-    "Descrição:",
-    issueBody,
   ].join("\n");
 
   // =========================
@@ -202,8 +214,8 @@ async function main() {
       role: "user",
       content: [
         "Você é o AGENT 0 (CODE SCOUT).",
-        "Mapeie a realidade técnica do repositório com base APENAS no REPO CONTEXT.",
-        "NÃO proponha soluções.",
+        "Mapeie a REALIDADE técnica do projeto.",
+        "NÃO proponha soluções. NÃO faça UX.",
         "",
         "Formato obrigatório:",
         "## CODE SCOUT — Mapa real do projeto",
@@ -238,21 +250,27 @@ async function main() {
       role: "user",
       content: [
         "Você é o AGENT 1 (UX).",
-        "Baseie-se estritamente no CODE SCOUT.",
+        "Baseie-se ESTRITAMENTE no CODE SCOUT e na ISSUE.",
+        "Reconheça o que já existe para evitar duplicação.",
         "NÃO escreva prompt para Codex.",
         "",
         "Formato:",
         "## UX — Diagnóstico",
         "- Problema P0:",
         "- Impacto:",
+        "- Onde acontece:",
         "",
-        "## UX — Solução mínima",
+        "## UX — Solução mínima (incremental)",
         "- ...",
         "",
         "## UX — Critérios de aceite",
         "- [ ] ...",
         "",
+        "CODE SCOUT:",
         scout,
+        "",
+        "ISSUE:",
+        issueContext,
       ].join("\n"),
     },
   ]);
@@ -267,14 +285,21 @@ async function main() {
         role: "user",
         content: [
           "Você é o AGENT 2 (FRONT-END).",
-          "Use SOMENTE paths confirmados no CODE SCOUT.",
+          "Use SOMENTE paths e funções confirmados no CODE SCOUT.",
+          "NÃO inventar paths. NÃO assumir frameworks.",
           "",
           "Formato:",
           "## FE — Arquivos reais a editar",
           "- ...",
           "",
-          "## FE — Plano técnico",
-          "- ...",
+          "## FE — Passos técnicos executáveis",
+          "1) ...",
+          "",
+          "## FE — A11y / estados",
+          "- focus",
+          "- hover",
+          "- selected",
+          "- disabled",
           "",
           scout,
           ux,
@@ -287,10 +312,19 @@ async function main() {
         role: "user",
         content: [
           "Você é o AGENT 3 (QA).",
-          "Crie checklist de teste e não-regressão financeira.",
+          "Crie checklist de teste manual e não-regressão financeira.",
           "",
           "Formato:",
-          "## QA — Checklist",
+          "## QA — Desktop",
+          "- [ ] ...",
+          "",
+          "## QA — Mobile",
+          "- [ ] ...",
+          "",
+          "## QA — Acessibilidade",
+          "- [ ] ...",
+          "",
+          "## QA — Não-regressão financeira",
           "- [ ] ...",
           "",
           scout,
@@ -309,12 +343,23 @@ async function main() {
         role: "system",
         content: [
           "Você é o AGENT 4 (RELEASE CAPTAIN).",
-          "Gere UM PROMPT ÚNICO para colar no Codex e abrir PR.",
           "",
-          "REGRAS:",
-          "- NÃO alterar fórmulas, cálculos ou regras financeiras.",
-          "- Usar APENAS paths confirmados no CODE SCOUT.",
-          "- Retornar APENAS um bloco fenced Markdown.",
+          "IMPORTANTE:",
+          "- Você está escrevendo um PROMPT OPERACIONAL para o Codex.",
+          "- NÃO escreva resumo, release note ou explicação executiva.",
+          "- Cada frase deve ser uma instrução executável.",
+          "- Use verbos imperativos: Localize, Edite, Adicione, NÃO altere.",
+          "- Cite paths e seletores EXATOS do CODE SCOUT.",
+          "- Saída vaga ou abstrata é ERRO.",
+          "",
+          "FORMATO OBRIGATÓRIO:",
+          "1) OBJETIVO (curto)",
+          "2) RESTRIÇÕES ABSOLUTAS",
+          "3) COMANDOS DE LOCALIZAÇÃO (rg / find)",
+          "4) PASSOS EXECUTÁVEIS (numerados)",
+          "5) ARQUIVOS QUE NÃO DEVEM SER TOCADOS",
+          "6) CHECKLIST DE VALIDAÇÃO",
+          "7) PEDIDO DE RETORNO (diff + como testar)",
           "",
           "AGENTS_RULES.md:",
           rulesText,
