@@ -38,7 +38,7 @@ const fs = require("fs");
     return data.choices?.[0]?.message?.content?.trim() || "";
   }
 
-  // 1) Generator pass (multi-agent plan + codex prompt)
+  // 1) Generator pass (strict JSON)
   const systemGen = `
 Você é um orquestrador multi-agente para melhorias incrementais no projeto.
 
@@ -49,7 +49,7 @@ AGENTS_RULES.md
 ========================
 ${rules}
 
-Responda SEM markdown (apenas JSON).
+FORMATO: responda APENAS JSON válido (sem markdown).
 `.trim();
 
   const userGen = `
@@ -64,18 +64,23 @@ ${issueBody}
 SAÍDA OBRIGATÓRIA (JSON válido, sem markdown):
 {
   "ux": "Lista priorizada (P0/P1) com solução mínima e impacto/esforço",
-  "frontend": "Escopo técnico com passos concretos e arquivos a localizar (sem inventar paths)",
-  "qa": "Checklist de testes + não-regressão de cálculos",
-  "codex_prompt": "UM PROMPT ÚNICO, pronto pra copiar/colar no Codex, com passos de localização no repo, critérios de aceite, e checklist de teste."
+  "frontend": "Escopo técnico com passos concretos",
+  "qa": "Checklist de testes + não-regressão",
+  "codex_prompt": "UM PROMPT ÚNICO, pronto pra copiar/colar no Codex"
 }
 
-REGRAS DO CODEX_PROMPT (tem que cumprir):
-- Começar com OBJETIVO (P0) e RESTRIÇÕES.
-- Incluir passo explícito: 'localize no repo' (não inventar arquivo/caminho).
-- Incluir como garantir acessibilidade (Tab + Enter/Space + foco visível) quando relevante.
-- Incluir critérios de aceite e roteiro de teste manual.
-- Repetir a restrição: NÃO alterar cálculos/fórmulas/custos/comissões/taxas.
+REGRAS CRÍTICAS:
+- PROIBIDO alterar fórmulas/cálculos/custos/comissões/taxas/regras financeiras.
 - Mudanças mínimas e incrementais.
+- NÃO inventar caminhos/arquivos. Se precisar mencionar arquivos, exija que o Codex localize no repo com busca.
+- O codex_prompt DEVE conter uma seção 'COMO LOCALIZAR NO REPO' com comandos de busca (exemplos: ripgrep/grep):
+  - rg -n "marketplace|Marketplaces|Selecione marketplaces|Shopee|Mercado Livre|SHEIN|Amazon|TikTok"
+  - rg -n "marketplaceChip|mpIcon|mpCheck|chip"
+  - find . -iname "*.svg"
+- O codex_prompt deve preferir solução acessível nativa:
+  - checkbox/radio input + label (chip inteiro clicável) OU button real.
+  - Evitar role="button" quando for possível usar elemento nativo.
+- O codex_prompt deve incluir critérios de aceite e roteiro de teste.
 `.trim();
 
   let rawGen = await chat(
@@ -90,7 +95,6 @@ REGRAS DO CODEX_PROMPT (tem que cumprir):
   try {
     gen = JSON.parse(rawGen);
   } catch (e) {
-    // fallback: comment raw and stop
     const body = [
       "## 🤖 Agents – Improvement Plan (Level 1)",
       "",
@@ -110,29 +114,35 @@ REGRAS DO CODEX_PROMPT (tem que cumprir):
     return;
   }
 
-  // 2) Critic pass: make codex_prompt SPECIFIC and non-generic
+  // 2) Critic pass: enforce "no invented paths" + force search commands + prefer native controls
   const systemCritic = `
-Você é um revisor exigente de prompts para Codex.
-Seu trabalho: melhorar o prompt para ficar executável, específico e seguro.
+Você é um revisor MUITO exigente de prompts para Codex.
 
-Regras:
+OBJETIVO:
+Transformar o prompt em um "PROMPT MATADOR" executável e específico.
+
+REGRAS ABSOLUTAS:
 - NÃO pode violar AGENTS_RULES.md.
-- NÃO pode permitir alterações de cálculo.
-- Deve exigir que o Codex localize arquivos reais no repo (sem inventar).
-- Deve incluir critérios de aceite e checklist de teste manual.
-- Se o prompt estiver genérico demais, reescreva completo.
+- PROIBIDO alterar cálculos/fórmulas/custos/comissões/taxas/regras financeiras.
+- PROIBIDO inventar arquivos ou paths (NÃO use "provavelmente em src/...").
+- Se precisar apontar arquivos, obrigue o Codex a localizar via busca no repo (rg/grep/find).
+- Preferir HTML acessível nativo: <button> OU <input + label> (evitar role="button" se houver alternativa).
+- O prompt final deve ter estrutura:
+  1) OBJETIVO (P0)
+  2) RESTRIÇÕES
+  3) COMO LOCALIZAR NO REPO (com comandos)
+  4) IMPLEMENTAÇÃO (passos claros)
+  5) CRITÉRIOS DE ACEITE
+  6) ROTEIRO DE TESTE MANUAL
 Retorne APENAS o prompt final (texto puro).
 `.trim();
 
   const userCritic = `
-Contexto:
 Repo: ${repoUrl}
 Issue: ${issueTitle}
 
-Prompt atual:
+PROMPT ATUAL (ruim ou genérico -> reescreva inteiro):
 ${gen.codex_prompt}
-
-Melhore para ficar "prompt matador" (executável e específico) mantendo mudanças mínimas.
 `.trim();
 
   const improvedPrompt = await chat(
@@ -143,10 +153,9 @@ Melhore para ficar "prompt matador" (executável e específico) mantendo mudanç
     0.2
   );
 
-  // replace codex_prompt by improved version
   gen.codex_prompt = improvedPrompt;
 
-  // 3) Post comment formatted with code block
+  // 3) Post comment
   const body = [
     "## 🤖 Agents – Improvement Plan (Level 1)",
     "",
