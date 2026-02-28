@@ -89,7 +89,7 @@ function ensureSingleFenceBlock(text) {
   return "```\n" + trimmed + "\n```";
 }
 
-// 👉 CORREÇÃO CRÍTICA: HEAD + TAIL
+// HEAD + TAIL para arquivos grandes
 function safeReadFile(p, maxChars = 8000) {
   try {
     if (!fs.existsSync(p)) return null;
@@ -112,12 +112,8 @@ function safeReadFile(p, maxChars = 8000) {
 // Repo Context Injection
 // =========================
 function buildRepoContext() {
-  const candidates = [
-    "index.html",
-    "assets/js/main.js",
-    "assets/css/styles.css",
-    "AGENTS_RULES.md",
-  ];
+  // AGENTS_RULES.md NÃO entra aqui (evita duplicação; já vai no sharedSystem)
+  const candidates = ["index.html", "assets/js/main.js", "assets/css/styles.css"];
 
   const parts = [];
   parts.push("## REPO CONTEXT (TRECHOS REAIS)");
@@ -129,7 +125,9 @@ function buildRepoContext() {
     const abs = path.resolve(process.cwd(), rel);
 
     const maxChars =
-      rel === "assets/js/main.js" || rel === "assets/css/styles.css"
+      rel === "assets/js/main.js"
+        ? 48000
+        : rel === "assets/css/styles.css"
         ? 24000
         : 9000;
 
@@ -178,7 +176,7 @@ async function main() {
 
   const rulesPath = path.resolve(process.cwd(), "AGENTS_RULES.md");
   const rulesText =
-    safeReadFile(rulesPath, 12000) ||
+    safeReadFile(rulesPath, 20000) ||
     "(AGENTS_RULES.md não encontrado na raiz.)";
 
   const repoContext = buildRepoContext();
@@ -260,7 +258,11 @@ async function main() {
         "## UX — Solução mínima",
         "## UX — Critérios de aceite",
         "",
+        "CODE SCOUT:",
         scout,
+        "",
+        "ISSUE:",
+        issueContext,
       ].join("\n"),
     },
   ]);
@@ -280,9 +282,13 @@ async function main() {
           "Formato:",
           "## FE — Onde mexer",
           "## FE — Plano técnico",
+          "## FE — A11y/Estados",
           "## FE — Riscos",
           "",
+          "CODE SCOUT:",
           scout,
+          "",
+          "UX:",
           ux,
         ].join("\n"),
       },
@@ -301,7 +307,10 @@ async function main() {
           "## QA — Acessibilidade",
           "## QA — Não-regressão",
           "",
+          "CODE SCOUT:",
           scout,
+          "",
+          "UX:",
           ux,
         ].join("\n"),
       },
@@ -317,20 +326,28 @@ async function main() {
       role: "user",
       content: [
         "Você é o AGENT 4 (RELEASE CAPTAIN).",
-        "Retorne APENAS um bloco fenced Markdown.",
+        "Retorne APENAS um bloco fenced Markdown (3 crases). Nada fora do bloco.",
+        "O prompt precisa ser ctrl+c/ctrl+v e citar paths reais do CODE SCOUT.",
         "",
         "Conteúdo obrigatório:",
-        "1) Objetivo",
-        "2) Restrições",
-        "3) Onde mexer (paths reais)",
-        "4) Passos",
-        "5) Critérios de aceite",
-        "6) Testes",
-        "7) Pedido de diff",
+        "1) Objetivo (P0)",
+        "2) Restrições absolutas",
+        "3) Onde mexer (paths reais + funções/seletores)",
+        "4) Passos detalhados (incrementais)",
+        "5) Critérios de aceite (checklist)",
+        "6) Roteiro de teste manual (checklist)",
+        "7) Pedido de retorno do Codex: diff + como testar",
         "",
+        "CODE SCOUT:",
         scout,
+        "",
+        "UX:",
         ux,
+        "",
+        "FE:",
         fe,
+        "",
+        "QA:",
         qa,
       ].join("\n"),
     },
