@@ -1,109 +1,130 @@
-import fs from "fs";
+import fs from "node:fs";
+import path from "node:path";
 
-async function openaiChat({ apiKey, messages }) {
-  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+const {
+  GITHUB_TOKEN,
+  OPENAI_API_KEY,
+  OPENAI_MODEL,
+  REPO,
+  ISSUE_NUMBER,
+} = process.env;
+
+const model = (OPENAI_MODEL && OPENAI_MODEL.trim()) ? OPENAI_MODEL.trim() : "gpt-4o-mini";
+
+function mustEnv(name) {
+  const v = process.env[name];
+  if (!v || !String(v).trim()) throw new Error(`Missing env: ${name}`);
+  return String(v).trim();
+}
+
+mustEnv("GITHUB_TOKEN");
+mustEnv("OPENAI_API_KEY");
+mustEnv("REPO");
+mustEnv("ISSUE_NUMBER");
+
+const rulesPath = path.resolve(process.cwd(), "AGENTS_RULES.md");
+const rulesText = fs.existsSync(rulesPath)
+  ? fs.readFileSync(rulesPath, "utf8")
+  : "(AGENTS_RULES.md não encontrado na raiz. CRIE/CONFIRME ESTE ARQUIVO.)";
+
+async function ghFetch(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      "Authorization": `Bearer ${GITHUB_TOKEN}`,
+      "Accept": "application/vnd.github+json",
+      "User-Agent": "agents-level1",
+      ...(options.headers || {}),
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`GitHub API error ${res.status}: ${body}`);
+  }
+
+  return res.json();
+}
+
+async function openaiChat(messages) {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      "Authorization": `Bearer ${OPENAI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4.1-mini",
+      model,
       temperature: 0.2,
       messages,
     }),
   });
 
-  const data = await resp.json();
-  if (!resp.ok) {
-    throw new Error(`OpenAI error ${resp.status}: ${JSON.stringify(data)}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`OpenAI API error ${res.status}: ${body}`);
   }
-  return (data.choices?.[0]?.message?.content || "").trim();
+
+  const data = await res.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OpenAI: resposta vazia");
+  return content;
 }
 
-function safeBlock(text) {
-  const t = (text || "").trim();
-  // Evita quebrar markdown do comentário se o modelo soltar ```
-  return t.replace(/```/g, "~~~");
-}
+async function main() {
+  const [owner, repo] = REPO.split("/");
+  const issue = await ghFetch(`https://api.github.com/repos/${owner}/${repo}/issues/${ISSUE_NUMBER}`);
 
-export async function run({ github, context, core, apiKey }) {
-  try {
-    if (!apiKey) throw new Error("Missing OPENAI_API_KEY. Add it in repo Secrets (Actions).");
+  const issueTitle = issue.title || "";
+  const issueBody = issue.body || "";
 
-    const rulesPath = "AGENTS_RULES.md";
-    if (!fs.existsSync(rulesPath)) throw new Error("AGENTS_RULES.md not found in repo root.");
+  const system = `
+Você é um "Release Captain" + "UX/Front-end lead" para o repositório.
+Sua missão: transformar a Issue em UM PROMPT ÚNICO, pronto pra colar no Codex, para gerar um PR.
+REGRAS:
+- Obedeça rigorosamente o arquivo AGENTS_RULES.md (abaixo).
+- Não invente paths/arquivos: peça para o Codex buscar no repo (rg/find) e só então editar.
+- O output final DEVE ser APENAS um bloco de código (markdown \`\`\`) contendo o prompt final.
+- O prompt final deve:
+  1) Explicar objetivo
+  2) Restrições (não mexer em cálculos/regras financeiras)
+  3) Passos para localizar arquivos no repo (com rg/find)
+  4) Plano de mudanças (UI/UX/A11y) com critérios de aceite
+  5) Checklist de teste manual
+Nada fora do bloco de código no final.
 
-    const rules = fs.readFileSync(rulesPath, "utf8");
-
-    const issue = context.payload.issue;
-    if (!issue) throw new Error("No issue payload found.");
-
-    const title = issue.title || "";
-    const body = issue.body || "";
-    const issue_number = issue.number;
-
-    const repoUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
-
-    const system = `
-Você é um assistente de engenharia para gerar UM prompt perfeito para Codex, com foco em utilidade e simplicidade.
-
-REGRAS (obrigatório seguir):
-${rules}
-
-FORMATO OBRIGATÓRIO:
-Você DEVE retornar somente o texto do prompt final (texto puro), com estas seções nesta ordem:
-
-1) OBJETIVO (P0)
-2) RESTRIÇÕES
-3) COMO LOCALIZAR NO REPO  (com comandos começando com "$ ", sem blocos de código markdown)
-4) IMPLEMENTAÇÃO
-5) CRITÉRIOS DE ACEITE
-6) ROTEIRO DE TESTE MANUAL
-
-REGRAS IMPORTANTES:
-- NÃO use blocos de código markdown (não use ```).
-- NÃO invente caminhos/arquivos. Exija que o Codex localize no repo com busca.
-- PROIBIDO alterar fórmulas/cálculos/custos/comissões/taxas/regras financeiras.
-- Preferir HTML acessível nativo: <button> OU <input + label>.
+AGENTS_RULES.md:
+${rulesText}
 `.trim();
 
-    const user = `
-Repo: ${repoUrl}
-
-ISSUE:
-Título: ${title}
+  const user = `
+Issue:
+Título: ${issueTitle}
 
 Descrição:
-${body}
-
-Agora gere o PROMPT FINAL para o Codex seguindo o formato obrigatório.
+${issueBody}
 `.trim();
 
-    const promptFinal = await openaiChat({
-      apiKey,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    });
+  const result = await openaiChat([
+    { role: "system", content: system },
+    { role: "user", content: user },
+  ]);
 
-    const comment = [
-      "## 🤖 Agents – Improvement Plan (Level 1)",
-      "",
-      "### 🚀 PROMPT PARA O CODEX (copie e cole)",
-      "```txt",
-      safeBlock(promptFinal || "(vazio)"),
-      "```",
-    ].join("\n");
+  const commentBody =
+`🤖 **Agents – Improvement Plan (Level 1)**
 
-    await github.rest.issues.createComment({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      issue_number,
-      body: comment,
-    });
-  } catch (err) {
-    core.setFailed(err?.message || String(err));
-  }
+Abaixo está o **PROMPT ÚNICO** pronto para colar no Codex e gerar um PR:
+
+${result}
+`;
+
+  await ghFetch(`https://api.github.com/repos/${owner}/${repo}/issues/${ISSUE_NUMBER}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body: commentBody }),
+  });
 }
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
