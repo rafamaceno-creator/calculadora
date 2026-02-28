@@ -1141,30 +1141,20 @@ body.theme-dark .stickySummary__actions{background:transparent}
 }
 
 /* Mobile: horizontal scroll */
-@media (max-width:768px){
-  .marketplaceSelector{
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    padding-bottom:10px;
-    scrollbar-width:thin;
-  }
-  .mpChip{ flex:0 0 auto; }
-}
 
 /* Marketplace chips with official marketplace logos */
 .marketplaceChip{
   --brand-color: var(--accent);
   position:relative;
-  display:inline-flex;
+  display:flex;
   align-items:center;
   justify-content:flex-start;
   gap:10px;
   min-height:48px;
   padding:10px 14px;
-  border:1px solid color-mix(in srgb,var(--stroke) 86%,transparent);
-  border-radius:999px;
-  background:linear-gradient(180deg,rgba(255,255,255,.84),rgba(248,250,252,.7));
+  border:1.5px solid color-mix(in srgb,var(--stroke) 86%,transparent);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.84),rgba(248,250,252,.72));
   box-shadow:0 8px 18px rgba(15,23,42,.08);
   cursor:pointer;
   transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease,background .18s ease;
@@ -1172,30 +1162,35 @@ body.theme-dark .stickySummary__actions{background:transparent}
 
 .marketplaceChip:hover{
   transform:translateY(-1px);
-  border-color:color-mix(in srgb,var(--brand-color) 40%, var(--stroke));
+  border-color:color-mix(in srgb,var(--brand-color) 42%, var(--stroke));
   box-shadow:0 12px 22px rgba(15,23,42,.12);
 }
 
 .marketplaceChip__input{
   position:absolute;
-  opacity:0;
-  pointer-events:none;
+  width:1px;
+  height:1px;
+  margin:-1px;
+  border:0;
+  padding:0;
+  white-space:nowrap;
+  clip-path:inset(50%);
+  clip:rect(0 0 0 0);
+  overflow:hidden;
 }
 
 .mpIcon {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: rgba(255,255,255,0.8);
-  border: 1px solid rgba(0,0,0,0.08);
-  flex: 0 0 28px;
+  flex: 0 0 26px;
 }
 
 .mpLogo {
-  width: 70%;
-  height: 70%;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
 }
 
@@ -1207,11 +1202,8 @@ body.theme-dark .stickySummary__actions{background:transparent}
 
 .mpName{
   min-width:0;
-  max-width:220px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
   font-size:13px;
+  line-height:1.25;
   font-weight:600;
   color:var(--text);
 }
@@ -1226,6 +1218,7 @@ body.theme-dark .stickySummary__actions{background:transparent}
   color:#334155;
   background:rgba(15,23,42,.08);
   border:1px solid rgba(15,23,42,.14);
+  flex:0 0 auto;
 }
 
 .mpBadge--premium{
@@ -1236,14 +1229,14 @@ body.theme-dark .stickySummary__actions{background:transparent}
 
 .mpCheck{
   margin-left:auto;
-  width:18px;
-  height:18px;
+  width:20px;
+  height:20px;
   border-radius:999px;
   border:1.5px solid color-mix(in srgb,var(--stroke) 82%,transparent);
   background:transparent;
   display:grid;
   place-items:center;
-  flex:0 0 18px;
+  flex:0 0 20px;
   transition:background .18s ease,border-color .18s ease;
 }
 
@@ -1258,22 +1251,17 @@ body.theme-dark .stickySummary__actions{background:transparent}
 }
 
 .marketplaceChip:has(.marketplaceChip__input:checked){
-  border-color:var(--accent);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 12%, #fff),color-mix(in srgb,var(--accent) 6%, #fff));
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%, transparent),0 12px 24px rgba(15,157,146,.12);
+  border-color:color-mix(in srgb,var(--brand-color) 72%, var(--accent));
+  background:linear-gradient(180deg,color-mix(in srgb,var(--brand-color) 18%, #fff),color-mix(in srgb,var(--brand-color) 10%, #fff));
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--brand-color) 24%, transparent),0 12px 24px rgba(15,157,146,.12);
 }
 
 .marketplaceChip:has(.marketplaceChip__input:checked) .mpCheck{
-  background:var(--accent);
-  border-color:var(--accent);
+  background:var(--brand-color);
+  border-color:var(--brand-color);
 }
 
 .marketplaceChip:has(.marketplaceChip__input:checked) .mpCheck::after{border-color:#fff}
-
-.marketplaceChip:focus-visible{
-  outline:3px solid color-mix(in srgb,var(--accent) 34%,transparent);
-  outline-offset:3px;
-}
 
 .marketplaceChip:has(.marketplaceChip__input:focus-visible){
   outline:3px solid color-mix(in srgb,var(--accent) 34%,transparent);
@@ -1291,28 +1279,8 @@ body.theme-dark .marketplaceChip{
 }
 
 @media (max-width:768px){
-  .mpIcon{
-    width: 24px;
-    height: 24px;
-    flex-basis:24px;
-  }
-}
-
-@media (max-width:768px){
-  .marketplaceSelector{
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    gap:10px;
-    padding-bottom:8px;
-  }
-
-  .marketplaceChip{
-    flex:0 0 auto;
-    max-width:83vw;
-  }
-
-  .mpName{max-width:44vw}
+  .mpIcon{width:26px;height:26px;flex-basis:26px;}
+  .mpLogo{width:26px;height:26px;}
 }
 
 /* Mobile UX fix: keep step 2 marketplaces fully visible and buttons more fluid */
@@ -1358,7 +1326,7 @@ body.theme-dark .marketplaceChip{
 }
 
 @media (max-width:420px){
-  #marketplaceSelector.marketplaceSelector{grid-template-columns:1fr;}
+  #marketplaceSelector.marketplaceSelector{grid-template-columns:repeat(2,minmax(0,1fr));}
   .wizardActions .btn{
     flex:1 1 auto;
     max-width:none;
@@ -1428,26 +1396,23 @@ body.theme-dark .marketplaceChip{
   #wizardBackStep2::before,#wizardBackStepData::before,#wizardBackStep3::before{content:"←";font-weight:700;}
 
   #marketplaceSelector.marketplaceSelector{
-    display:flex;
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    scroll-snap-type:x mandatory;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
     gap:8px;
-    padding:2px 2px 8px;
+    padding:2px 0 6px;
   }
   #marketplaceSelector .marketplaceChip{
-    flex:0 0 auto;
-    scroll-snap-align:start;
-    min-height:44px;
-    max-width:78vw;
+    width:100%;
+    min-height:46px;
+    min-width:0;
     padding:9px 12px;
-    border-radius:14px;
+    border-radius:12px;
     box-shadow:none;
   }
-  #marketplaceSelector .mpIcon{width:24px;height:24px;flex-basis:24px;}
-  #marketplaceSelector .mpName{font-size:12px;line-height:1.2;max-width:46vw;white-space:nowrap;}
-  #marketplaceSelector .mpCheck{width:16px;height:16px;flex-basis:16px;}
+  #marketplaceSelector .mpIcon{width:26px;height:26px;flex-basis:26px;}
+  #marketplaceSelector .mpLogo{width:26px;height:26px;}
+  #marketplaceSelector .mpName{font-size:12px;line-height:1.25;white-space:normal;}
+  #marketplaceSelector .mpCheck{width:18px;height:18px;flex-basis:18px;}
 }
 
 @media (max-width:480px){
