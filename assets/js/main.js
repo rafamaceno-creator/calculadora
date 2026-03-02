@@ -2777,6 +2777,27 @@ function validateStep(step) {
   return true;
 }
 
+
+function updateWizardSummary() {
+  const summary = document.querySelector(".wizardSummary");
+  if (!summary) return;
+
+  const selectedMarketplaces = getSelectedMarketplaces().length;
+  const mode = getCalcMode();
+  const baseMinutes = mode === "ideal" ? 9 : mode === "real" ? 7 : 8;
+  const totalMinutes = Math.min(12, Math.max(6, baseMinutes + (selectedMarketplaces > 2 ? 1 : 0)));
+
+  const estimatedTime = document.querySelector("#wizardSummaryTime");
+  if (estimatedTime) {
+    estimatedTime.textContent = `Tempo estimado: ${totalMinutes} min`;
+  }
+
+  summary.querySelectorAll(".wizardSummary__list li").forEach((item, index) => {
+    item.classList.toggle("is-done", wizardStep > index);
+    item.classList.toggle("is-current", wizardStep === index);
+  });
+}
+
 function applyWizardResultFilter() {
   const selected = new Set(getSelectedMarketplaces());
   document.querySelectorAll("#results .marketplaceCard").forEach((card) => {
@@ -2807,6 +2828,8 @@ function renderWizardUI() {
 
   const progress = document.querySelector("#wizardProgress");
   if (progress) progress.textContent = `Passo ${wizardStep} de 4`;
+
+  updateWizardSummary();
 
   const nextStep2 = document.querySelector("#wizardNextStep2");
   if (nextStep2) nextStep2.disabled = !validateStep(1);
