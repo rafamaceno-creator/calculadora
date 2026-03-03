@@ -686,6 +686,78 @@ function compareCardHTML(title, data) {
   `;
 }
 
+function mode1ResultCardHTML(title, price, analysis, cost, mp, taxPct) {
+  const cardId = `mode1-card-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
+  if (!price) {
+    return `
+  <details class="card marketplaceCard resultCard resultAccordion mode1Card" id="${cardId}">
+    <summary class="resultAccordion__summary" aria-label="${title}: sem preço informado">
+      <div class="resultAccordion__summaryMain">
+        <div class="resultAccordion__left">
+          <div class="cardTitleWrap">
+            <div>
+              <div class="cardTitle">${title}</div>
+              <div class="pill pill--subtle">Sem preço</div>
+            </div>
+          </div>
+        </div>
+        <div class="resultAccordion__right">
+          <div class="resultAccordion__priceLabel">LUCRO REAL</div>
+          <div class="resultAccordion__priceValue">—</div>
+        </div>
+        <span class="resultAccordion__chevron" aria-hidden="true">▾</span>
+      </div>
+    </summary>
+    <div class="resultAccordion__body">
+      <p class="hint">Volte ao passo anterior e informe o preço de venda para ${title}.</p>
+    </div>
+  </details>
+  `;
+  }
+
+  const status = marginStatus(analysis.margem);
+  const commissionValue = price * (mp.marketplacePct || 0) + (mp.marketplaceFixed || 0);
+  const taxValue = price * Math.max(0, taxPct) / 100;
+  const extraCosts = price * (mp.percentCosts || 0) + (mp.fixedCosts || 0);
+  const hasExtra = extraCosts > 0.001;
+  const hasAntecipa = analysis.antecipa > 0.001;
+
+  return `
+  <details class="card marketplaceCard resultCard resultAccordion mode1Card" id="${cardId}">
+    <summary class="resultAccordion__summary" aria-label="${title}: lucro real ${brl(analysis.lucro)} (${analysis.margem.toFixed(2)}%)">
+      <div class="resultAccordion__summaryMain">
+        <div class="resultAccordion__left">
+          <div class="cardTitleWrap">
+            <div>
+              <div class="cardTitle">${title}</div>
+              <div class="pill pill--subtle">${status.label}</div>
+            </div>
+          </div>
+        </div>
+        <div class="resultAccordion__right">
+          <div class="resultAccordion__priceLabel">LUCRO REAL</div>
+          <div class="resultAccordion__priceValue">${brl(analysis.lucro)}</div>
+        </div>
+        <span class="resultAccordion__chevron" aria-hidden="true">▾</span>
+      </div>
+    </summary>
+    <div class="resultAccordion__body">
+      <div class="resultGrid resultGrid--support">
+        <div class="k">PREÇO DE VENDA</div><div class="v">${brl(price)}</div>
+        <div class="k">COMISSÃO</div><div class="v">− ${brl(commissionValue)}</div>
+        <div class="k">IMPOSTO DE VENDA</div><div class="v">− ${brl(taxValue)}</div>
+        ${hasExtra ? `<div class="k">OUTROS CUSTOS</div><div class="v">− ${brl(extraCosts)}</div>` : ""}
+        ${hasAntecipa ? `<div class="k">ANTECIPA (2,5%)</div><div class="v">− ${brl(analysis.antecipa)}</div>` : ""}
+        <div class="k">VOCÊ RECEBE</div><div class="v">${brl(analysis.liquidoFinal)}</div>
+        <div class="k">CUSTO DO PRODUTO</div><div class="v">− ${brl(cost)}</div>
+        <div class="k">LUCRO REAL</div><div class="v">${brl(analysis.lucro)} (${analysis.margem.toFixed(2)}%)</div>
+      </div>
+    </div>
+  </details>
+  `;
+}
+
 function updateReportRoot() {
   const reportRoot = document.querySelector("#reportRoot");
   const results = document.querySelector("#results");
@@ -1509,6 +1581,9 @@ function recalc(options = {}) {
   const resultsEl = document.querySelector("#results");
   if (!resultsEl) return;
 
+  const calcMode = getCalcMode();
+
+  if (calcMode !== "real") {
   resultsEl.innerHTML = [
     resultCardHTML(
       "Shopee",
@@ -1630,6 +1705,7 @@ function recalc(options = {}) {
     trackGA4Event("view_composition");
     sessionStorage.setItem(COMPOSITION_VIEW_KEY, "1");
   }
+  } // end if (calcMode !== "real")
 
   const marketplaceState = [
     { key: "shopee", title: "Shopee", marketplacePct: shFee.pct, marketplaceFixed: shFee.fixed, percentCosts: adv.pctExtra + adv.affiliate.shopee, fixedCosts: adv.fixedBRL },
@@ -1650,19 +1726,25 @@ function recalc(options = {}) {
   ].map((item) => ({ ...item, totalCost: Math.max(0, item.price - item.profitBRL) }));
 
   const state = { marketplaces: marketplaceState, cost, taxPct, shopeeAntecipa, computedResults };
-  const basicResults = computeForAllMarketplaces({
-    cost,
-    config: {
-      ...getCalculationConfig(),
-      adv: { pctExtra: 0, fixedBRL: 0, affiliate: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 }, details: { ads: { pct: 0, brl: 0 }, ret: { pct: 0, brl: 0 }, other: { pct: 0, brl: 0 }, costFixed: { pct: 0, brl: 0 }, difal: 0, pis: 0, cofins: 0, aff: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 } } },
-      weightData: resolveMarketplaceWeight({ enabled: false, rawValue: "", unit: "kg" })
-    }
-  }).computedResults;
-  renderResultInsight(basicResults, computedResults);
 
-  renderSamePriceComparison(state);
+  if (calcMode !== "real") {
+    const basicResults = computeForAllMarketplaces({
+      cost,
+      config: {
+        ...getCalculationConfig(),
+        adv: { pctExtra: 0, fixedBRL: 0, affiliate: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 }, details: { ads: { pct: 0, brl: 0 }, ret: { pct: 0, brl: 0 }, other: { pct: 0, brl: 0 }, costFixed: { pct: 0, brl: 0 }, difal: 0, pis: 0, cofins: 0, aff: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 } } },
+        weightData: resolveMarketplaceWeight({ enabled: false, rawValue: "", unit: "kg" })
+      }
+    }).computedResults;
+    renderResultInsight(basicResults, computedResults);
+    renderSamePriceComparison(state);
+  }
+
   renderCurrentPriceAnalysis(state);
-  renderScaleSimulation(state);
+
+  if (calcMode !== "real") {
+    renderScaleSimulation(state);
+  }
   renderShareActions();
   updateLeadCaptureAfterRecalc({
     shouldDisplay: cost > 0,
@@ -1743,16 +1825,8 @@ function hasCurrentPriceValues(state) {
 }
 
 function getCurrentPriceForMarketplace(marketplaceKey) {
-  const samePriceToggle = document.querySelector("#currentSamePriceToggle");
-  const globalRaw = document.querySelector("#currentPriceInput")?.value || "";
-  const globalPrice = parsePriceInput(globalRaw);
-
-  if (!samePriceToggle || samePriceToggle.checked) return globalPrice;
-
-  const marketplaceRaw = getCurrentPriceInputElement(marketplaceKey)?.value || "";
-  if (String(marketplaceRaw).trim()) return parsePriceInput(marketplaceRaw);
-  if (String(globalRaw).trim()) return globalPrice;
-  return 0;
+  const rawValue = UX_PRICE_VALUES[marketplaceKey] || "";
+  return String(rawValue).trim() ? parsePriceInput(String(rawValue)) : 0;
 }
 
 function syncCurrentPriceMarketplaceInputs(state) {
@@ -1799,20 +1873,36 @@ function renderSamePriceComparison(state) {
 }
 
 function renderCurrentPriceAnalysis(state) {
-  const wrap = document.querySelector("#currentPriceResults");
-  const hint = document.querySelector("#currentPriceHint");
-  if (!wrap) return;
+  const calcMode = getCalcMode();
+  if (calcMode !== "real") return;
 
-  syncCurrentPriceMarketplaceInputs(state);
+  const resultsEl = document.querySelector("#results");
+  if (!resultsEl) return;
 
-  const samePriceMode = document.querySelector("#currentSamePriceToggle")?.checked !== false;
-  const hasAnyPrice = hasCurrentPriceValues(state);
+  const selectedKeys = getSelectedMarketplaces();
+  const activeMPs = state.marketplaces.filter((mp) => selectedKeys.includes(mp.key));
 
-  hint?.classList.toggle("is-hidden", hasAnyPrice);
+  if (activeMPs.length === 0) {
+    resultsEl.innerHTML = `<p class="hint">Selecione ao menos um marketplace para ver seu lucro real.</p>`;
+    return;
+  }
 
-  const cards = state.marketplaces.map((mp) => {
+  const hasAnyPrice = activeMPs.some((mp) => String(UX_PRICE_VALUES[mp.key] || "").trim() !== "");
+
+  if (!hasAnyPrice) {
+    resultsEl.innerHTML = `
+      <div class="hint" style="padding:1.25rem;text-align:center;line-height:1.6;">
+        <strong>Preencha os preços de venda</strong><br>
+        <small>Volte ao passo anterior e informe o valor cobrado em cada marketplace para ver seu lucro real.</small>
+      </div>
+    `;
+    return;
+  }
+
+  const cards = activeMPs.map((mp) => {
+    const price = getCurrentPriceForMarketplace(mp.key);
     const analysis = calculateMarketplaceAtPrice({
-      price: getCurrentPriceForMarketplace(mp.key),
+      price,
       cost: state.cost,
       taxPct: state.taxPct,
       marketplacePct: mp.marketplacePct,
@@ -1821,12 +1911,11 @@ function renderCurrentPriceAnalysis(state) {
       fixedCosts: mp.fixedCosts,
       applyAntecipa: mp.key === "shopee" ? state.shopeeAntecipa : false
     });
-
-    return compareCardHTML(mp.title, analysis);
+    return mode1ResultCardHTML(mp.title, price, analysis, state.cost, mp, state.taxPct);
   });
 
-  wrap.innerHTML = cards.join("");
-  trackGA4Event("current_profit_calculate", { mode: samePriceMode ? "global" : "per_marketplace" });
+  resultsEl.innerHTML = cards.join("");
+  trackGA4Event("current_profit_calculate", { mode: "per_marketplace" });
 }
 
 function renderScaleSimulation(state) {
@@ -2728,14 +2817,22 @@ function attachMarketplaceLogoFallbacks(root) {
 function renderMode1PriceInputs() {
   const wrap = document.querySelector("#mode1PriceInputs");
   if (!wrap) return;
-  wrap.innerHTML = getSelectedMarketplaces().map((key) => {
+  const selected = getSelectedMarketplaces();
+  if (selected.length === 0) {
+    wrap.innerHTML = `<p class="hint">Selecione ao menos um marketplace no passo anterior.</p>`;
+    return;
+  }
+  wrap.innerHTML = selected.map((key) => {
     const mp = UX_MARKETPLACES.find((item) => item.key === key);
+    const shortName = (mp?.title || key).split(" — ")[0].split(" (")[0];
     return `
       <div class="field cardMini">
-        <div class="label">Preço de venda — ${mp?.title || key}</div>
+        <div class="label label-row">
+          <span>Preço de venda — ${mp?.title || key}</span>
+        </div>
         <div class="inputWrap">
           <span class="inputPrefix">R$</span>
-          <input type="number" step="0.01" min="0" data-ux-price-marketplace="${key}" value="${UX_PRICE_VALUES[key] || ""}" placeholder="Ex: 99,90" />
+          <input type="number" step="0.01" min="0" data-ux-price-marketplace="${key}" value="${UX_PRICE_VALUES[key] || ""}" placeholder="Seu preço atual na ${shortName}" />
         </div>
       </div>
     `;
@@ -2758,7 +2855,7 @@ function toggleUxModeSections() {
 
   const isStep2 = wizardStep === 2;
   const isStep3 = wizardStep === 3;
-  mode1PriceSection?.classList.toggle("is-hidden", !(mode === "real" && isStep2));
+  mode1PriceSection?.classList.toggle("is-hidden", !(mode === "real" && isStep3));
   profitGoalSection?.classList.toggle("is-hidden", !(mode === "ideal" && isStep3));
   const heading = document.querySelector("#profitGoalHeading");
   if (heading) heading.textContent = "Margem desejada";
@@ -2792,10 +2889,19 @@ function updateWizardSummary() {
     estimatedTime.textContent = `Tempo estimado: ${totalMinutes} min`;
   }
 
-  summary.querySelectorAll(".wizardSummary__list li").forEach((item, index) => {
+  const items = summary.querySelectorAll(".wizardSummary__list li");
+  items.forEach((item, index) => {
     item.classList.toggle("is-done", wizardStep > index);
     item.classList.toggle("is-current", wizardStep === index);
   });
+
+  // Atualiza label da Etapa 4 conforme modo selecionado
+  const step4Label = items[3]?.querySelector("span:first-child");
+  if (step4Label) {
+    step4Label.textContent = mode === "real"
+      ? "Etapa 4 · Preços e ajustes"
+      : "Etapa 4 · Ajustes avançados e meta";
+  }
 }
 
 function applyWizardResultFilter() {
