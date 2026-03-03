@@ -691,7 +691,7 @@ function mode1ResultCardHTML(title, price, analysis, cost, mp, taxPct) {
 
   if (!price) {
     return `
-  <details class="card marketplaceCard resultCard resultAccordion mode1Card" id="${cardId}">
+  <details class="card marketplaceCard resultCard resultAccordion mode1Card mode1--empty" id="${cardId}">
     <summary class="resultAccordion__summary" aria-label="${title}: sem preço informado">
       <div class="resultAccordion__summaryMain">
         <div class="resultAccordion__left">
@@ -704,7 +704,7 @@ function mode1ResultCardHTML(title, price, analysis, cost, mp, taxPct) {
         </div>
         <div class="resultAccordion__right">
           <div class="resultAccordion__priceLabel">LUCRO REAL</div>
-          <div class="resultAccordion__priceValue">—</div>
+          <div class="resultAccordion__priceValue mode1__price--empty">—</div>
         </div>
         <span class="resultAccordion__chevron" aria-hidden="true">▾</span>
       </div>
@@ -717,27 +717,29 @@ function mode1ResultCardHTML(title, price, analysis, cost, mp, taxPct) {
   }
 
   const status = marginStatus(analysis.margem);
+  const statusModClass = analysis.margem >= 8 ? "mode1--healthy" : analysis.margem >= 0 ? "mode1--tight" : "mode1--loss";
   const commissionValue = price * (mp.marketplacePct || 0) + (mp.marketplaceFixed || 0);
   const taxValue = price * Math.max(0, taxPct) / 100;
   const extraCosts = price * (mp.percentCosts || 0) + (mp.fixedCosts || 0);
   const hasExtra = extraCosts > 0.001;
   const hasAntecipa = analysis.antecipa > 0.001;
+  const isLoss = analysis.lucro < 0;
 
   return `
-  <details class="card marketplaceCard resultCard resultAccordion mode1Card" id="${cardId}">
+  <details class="card marketplaceCard resultCard resultAccordion mode1Card ${statusModClass}" id="${cardId}">
     <summary class="resultAccordion__summary" aria-label="${title}: lucro real ${brl(analysis.lucro)} (${analysis.margem.toFixed(2)}%)">
       <div class="resultAccordion__summaryMain">
         <div class="resultAccordion__left">
           <div class="cardTitleWrap">
             <div>
               <div class="cardTitle">${title}</div>
-              <div class="pill pill--subtle">${status.label}</div>
+              <div class="pill pill--subtle ${status.className}">${status.label}</div>
             </div>
           </div>
         </div>
         <div class="resultAccordion__right">
           <div class="resultAccordion__priceLabel">LUCRO REAL</div>
-          <div class="resultAccordion__priceValue">${brl(analysis.lucro)}</div>
+          <div class="resultAccordion__priceValue${isLoss ? " is-negative" : ""}">${brl(analysis.lucro)}</div>
         </div>
         <span class="resultAccordion__chevron" aria-hidden="true">▾</span>
       </div>
@@ -751,7 +753,7 @@ function mode1ResultCardHTML(title, price, analysis, cost, mp, taxPct) {
         ${hasAntecipa ? `<div class="k">ANTECIPA (2,5%)</div><div class="v">− ${brl(analysis.antecipa)}</div>` : ""}
         <div class="k">VOCÊ RECEBE</div><div class="v">${brl(analysis.liquidoFinal)}</div>
         <div class="k">CUSTO DO PRODUTO</div><div class="v">− ${brl(cost)}</div>
-        <div class="k">LUCRO REAL</div><div class="v">${brl(analysis.lucro)} (${analysis.margem.toFixed(2)}%)</div>
+        <div class="k mode1__profit-label">LUCRO REAL</div><div class="v mode1__profit-value${isLoss ? " is-negative" : ""}">${brl(analysis.lucro)} (${analysis.margem.toFixed(2)}%)</div>
       </div>
     </div>
   </details>
@@ -1584,6 +1586,11 @@ function recalc(options = {}) {
   const calcMode = getCalcMode();
 
   if (calcMode !== "real") {
+  const heading = document.querySelector("#resultsHeading");
+  if (heading) heading.textContent = "Preço ideal por marketplace";
+  const subheading = document.querySelector("#resultsSubheading");
+  if (subheading) subheading.textContent = "";
+
   resultsEl.innerHTML = [
     resultCardHTML(
       "Shopee",
@@ -1878,6 +1885,11 @@ function renderCurrentPriceAnalysis(state) {
 
   const resultsEl = document.querySelector("#results");
   if (!resultsEl) return;
+
+  const heading = document.querySelector("#resultsHeading");
+  if (heading) heading.textContent = "Seu lucro real por marketplace";
+  const subheading = document.querySelector("#resultsSubheading");
+  if (subheading) subheading.textContent = `Custo: ${brl(state.cost)} · Imposto: ${state.taxPct}%`;
 
   const selectedKeys = getSelectedMarketplaces();
   const activeMPs = state.marketplaces.filter((mp) => selectedKeys.includes(mp.key));

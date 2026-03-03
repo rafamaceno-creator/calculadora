@@ -1469,3 +1469,31 @@ body.theme-dark .marketplaceChip{
   .wizardSummary__list li{font-size:12px}
   .wizardSummary__head h4{font-size:14px}
 }
+
+/* ── Mode 1 result card status colors ─────────────────────────────── */
+.mode1Card.mode1--healthy{--mp-accent:#10b981}
+.mode1Card.mode1--tight{--mp-accent:#f59e0b}
+.mode1Card.mode1--loss{--mp-accent:#ef4444}
+.mode1Card.mode1--empty{--mp-accent:#94a3b8;opacity:.7}
+
+/* ── Mode 1 status pill colors ────────────────────────────────────── */
+.pill.statusHealthy{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+.pill.statusTight{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.pill.statusLoss{background:#fef2f2;color:#b91c1c;border-color:#fca5a5}
+
+/* ── Negative value highlight ─────────────────────────────────────── */
+.resultAccordion__priceValue.is-negative{color:#dc2626 !important}
+.mode1__profit-value.is-negative{color:#dc2626}
+
+/* ── Wizard step entry animation ──────────────────────────────────── */
+@keyframes wizardStepIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.wizardStep:not(.is-hidden){animation:wizardStepIn .22s ease both}
+
+/* ── Input filled-state visual feedback ───────────────────────────── */
+input:not(:placeholder-shown){border-color:color-mix(in srgb,var(--accent) 40%,rgba(148,163,184,.4))}
+
+/* ── Results subheading spacing ───────────────────────────────────── */
+#resultsSubheading{margin:4px 0 12px;font-size:13px;color:var(--muted)}
