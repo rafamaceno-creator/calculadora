@@ -91,8 +91,8 @@
       <nav id="topbarNav" class="nav" aria-label="Navegação">
         <a href="#sec-precificacao">Calculadora</a>
         <a href="#faq">FAQ</a>
-        <a class="btn btn--primary btn--cta js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
-        <a class="btn btn--outline btn--cta" data-action="cta-specialist" data-from="topbar" href="/a-hora-com-o-especialista">A Hora com o Especialista</a>
+        <a class="btn btn--primary btn--cta" data-action="cta-specialist" data-from="topbar" href="/a-hora-com-o-especialista">A Hora com o Especialista</a>
+        <a class="btn btn--outline btn--cta js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
         <a class="btn btn--ghost btn--cta js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
       </nav>
 
@@ -101,13 +101,53 @@
 
   <main class="container appShell">
     <section class="hero">
-      <span class="kicker">Simples no início • Completo no avançado</span>
-      <h1>Calculadora de Preço para Shopee, Mercado Livre e Amazon</h1>
-      <p>Simule taxas, comissões e custos por canal (Mercado Livre, Shopee, Amazon e outros) e descubra o preço mínimo e o preço ideal.</p>
-      <small class="hero__microcopy">100% gratuito. Sem login.</small>
-      <div class="hero__actions">
-        <a class="btn btn--primary" href="#sec-precificacao">Calcular agora</a>
-        <a class="btn btn--outline" href="#sec-como-funciona">Ver como funciona</a>
+      <div class="hero__layout">
+        <div class="hero__text">
+          <span class="kicker">Simples no início • Completo no avançado</span>
+          <h1>Calculadora de Preço para Shopee, Mercado Livre e Amazon</h1>
+          <p>Simule taxas, comissões e custos por canal (Mercado Livre, Shopee, Amazon e outros) e descubra o preço mínimo e o preço ideal.</p>
+          <small class="hero__microcopy">100% gratuito. Sem login.</small>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#sec-precificacao">Calcular agora</a>
+            <a class="btn btn--outline" href="#sec-como-funciona">Ver como funciona</a>
+          </div>
+        </div>
+        <div class="hero__mockup" aria-hidden="true">
+          <div class="heroMockup">
+            <div class="heroMockup__header">
+              <span class="heroMockup__dot heroMockup__dot--teal"></span>
+              <span class="heroMockup__dot heroMockup__dot--yellow"></span>
+              <span class="heroMockup__dot heroMockup__dot--red"></span>
+              <span class="heroMockup__title">Precificação</span>
+            </div>
+            <div class="heroMockup__body">
+              <div class="heroMockup__field">
+                <span class="heroMockup__label">Custo total</span>
+                <span class="heroMockup__input">R$ 60,00</span>
+              </div>
+              <div class="heroMockup__field">
+                <span class="heroMockup__label">Imposto de venda</span>
+                <span class="heroMockup__input">10%</span>
+              </div>
+              <div class="heroMockup__chips">
+                <span class="heroMockup__chip heroMockup__chip--active">Shopee</span>
+                <span class="heroMockup__chip heroMockup__chip--active">Mercado Livre</span>
+                <span class="heroMockup__chip">Amazon</span>
+              </div>
+              <div class="heroMockup__result">
+                <div class="heroMockup__resultRow">
+                  <span class="heroMockup__resultLabel">Shopee — Preço ideal</span>
+                  <span class="heroMockup__resultValue">R$ 98,50</span>
+                </div>
+                <div class="heroMockup__resultRow heroMockup__resultRow--secondary">
+                  <span class="heroMockup__resultLabel">ML Clássico</span>
+                  <span class="heroMockup__resultValue">R$ 107,20</span>
+                </div>
+              </div>
+              <div class="heroMockup__cta">Calcular agora →</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -130,7 +170,15 @@
       <div class="grid">
       <div class="card pricingCard">
         <div class="card__inner">
-          <div class="wizardProgress" id="wizardProgress" aria-live="polite">Passo 0 de 4</div>
+          <div class="wizardProgressWrap">
+            <div class="wizardProgress" id="wizardProgress" aria-live="polite">Passo 0 de 4</div>
+            <div class="wizardProgressLabels" aria-hidden="true">
+              <span class="wizardProgressLabel" data-step="0">Objetivo</span>
+              <span class="wizardProgressLabel" data-step="1">Marketplace</span>
+              <span class="wizardProgressLabel" data-step="2">Produto</span>
+              <span class="wizardProgressLabel" data-step="3">Ajustes</span>
+            </div>
+          </div>
 
           <section class="formBlock wizardStep" data-step="0">
             <div class="formBlock__head">
@@ -164,19 +212,31 @@
             </div>
 
             <div id="calcModeCards" class="modeCards" role="group" aria-label="Escolher modo de cálculo" aria-describedby="calcModeInstruction">
-              <button class="modeCard" type="button" data-mode="real" aria-pressed="false">
+              <button class="modeCard modeCard--teal" type="button" data-mode="real" aria-pressed="false">
                 <span class="modeCard__check" aria-hidden="true">
                   <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
                     <path d="M7.7 14.2 3.8 10.3a1 1 0 1 1 1.4-1.4l2.5 2.5 7.1-7.1a1 1 0 0 1 1.4 1.4l-8.5 8.5a1 1 0 0 1-1.4 0Z"></path>
                   </svg>
                 </span>
+                <span class="modeCard__icon modeCard__icon--teal" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
+                    <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
+                    <path d="M2 20h20"/>
+                  </svg>
+                </span>
                 <strong>Quanto estou ganhando de verdade?</strong>
                 <p>Coloque o preço que você já pratica e descubra seu lucro real — após comissão, taxas e custos do marketplace.</p>
               </button>
-              <button class="modeCard" type="button" data-mode="ideal" aria-pressed="false">
+              <button class="modeCard modeCard--blue" type="button" data-mode="ideal" aria-pressed="false">
                 <span class="modeCard__check" aria-hidden="true">
                   <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
                     <path d="M7.7 14.2 3.8 10.3a1 1 0 1 1 1.4-1.4l2.5 2.5 7.1-7.1a1 1 0 0 1 1.4 1.4l-8.5 8.5a1 1 0 0 1-1.4 0Z"></path>
+                  </svg>
+                </span>
+                <span class="modeCard__icon modeCard__icon--blue" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Z"/>
+                    <path d="M12 6v6l4 2"/>
                   </svg>
                 </span>
                 <strong>Por quanto devo vender?</strong>

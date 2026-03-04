@@ -663,7 +663,7 @@ body.theme-dark .leadCapture__head p{color:#94a3b8}
 .wizardSummary__list li.is-done{color:#0f766e}
 
 .wizardSummary__badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}
-.wizardSummary__badge--required{color:#9f1239;background:color-mix(in srgb,#e11d48 14%, #fff);border:1px solid color-mix(in srgb,#e11d48 34%, transparent)}
+.wizardSummary__badge--required{color:#374151;background:color-mix(in srgb,#6B7280 13%, #fff);border:1px solid color-mix(in srgb,#6B7280 28%, transparent)}
 .wizardSummary__badge--optional{color:#475569;background:color-mix(in srgb,#64748b 14%, #fff);border:1px solid color-mix(in srgb,#64748b 30%, transparent)}
 
 .modeCards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -1486,4 +1486,220 @@ body.theme-dark .marketplaceChip{
   .wizardSummary{padding:10px 12px;gap:8px}
   .wizardSummary__list li{font-size:12px}
   .wizardSummary__head h4{font-size:14px}
+}
+
+/* ===== UI/UX Improvements ===== */
+
+/* --- Improvement 5: Spacing — more compact sections --- */
+.hero{padding:28px 0 16px}
+.sectionCard--howItWorks{padding-top:16px;padding-bottom:16px}
+.sectionCard{margin:0 0 16px}
+.segmentMenu{margin:6px 0 18px}
+
+/* --- Improvement 7: H1 typography — 2-line max, larger desktop size --- */
+.hero h1{
+  font-size:clamp(28px,4.2vw,52px);
+  line-height:1.06;
+  max-width:18ch;
+  letter-spacing:-.032em;
+}
+@media (min-width:1024px){
+  .hero h1{font-size:clamp(42px,3.8vw,56px)}
+}
+@media (max-width:768px){
+  .hero h1{font-size:clamp(24px,7.5vw,34px);line-height:1.12;max-width:22ch}
+}
+
+/* --- Improvement 1: Hero layout with mockup --- */
+.hero__layout{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:48px;
+}
+.hero__text{display:flex;flex-direction:column;gap:0}
+.hero__mockup{
+  flex:0 0 auto;
+}
+
+/* Hero Mockup Card */
+.heroMockup{
+  width:300px;
+  border-radius:20px;
+  border:1px solid var(--stroke);
+  background:var(--surface);
+  backdrop-filter:blur(var(--glass-blur));
+  -webkit-backdrop-filter:blur(var(--glass-blur));
+  box-shadow:var(--shadow-md);
+  overflow:hidden;
+  pointer-events:none;
+  user-select:none;
+  transform:rotate(1.5deg) translateY(-4px);
+  transition:transform .3s ease;
+}
+.heroMockup:hover{transform:rotate(0deg) translateY(-6px)}
+.heroMockup__header{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--stroke);
+  background:linear-gradient(90deg,rgba(15,157,146,.08),rgba(124,58,237,.08));
+}
+.heroMockup__dot{
+  width:10px;height:10px;border-radius:50%;flex:0 0 auto;
+}
+.heroMockup__dot--teal{background:#0f9d92}
+.heroMockup__dot--yellow{background:#fbbf24}
+.heroMockup__dot--red{background:#f87171}
+.heroMockup__title{
+  margin-left:6px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;
+}
+.heroMockup__body{padding:14px}
+.heroMockup__field{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;padding:8px 10px;
+  border:1px solid var(--stroke);border-radius:10px;background:rgba(255,255,255,.7);
+}
+.heroMockup__label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.heroMockup__input{font-size:13px;font-weight:700;color:var(--text)}
+.heroMockup__chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.heroMockup__chip{
+  font-size:10px;font-weight:700;padding:4px 10px;border-radius:999px;
+  border:1px solid var(--stroke);color:var(--muted);background:rgba(255,255,255,.7);
+}
+.heroMockup__chip--active{
+  border-color:var(--accent);color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 12%,#fff);
+}
+.heroMockup__result{
+  border-radius:12px;border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,#fff),rgba(255,255,255,.95));
+  padding:10px 12px;margin-top:8px;display:grid;gap:6px;
+}
+.heroMockup__resultRow{
+  display:flex;align-items:center;justify-content:space-between;
+}
+.heroMockup__resultRow--secondary{opacity:.65}
+.heroMockup__resultLabel{font-size:10px;font-weight:600;color:#334155}
+.heroMockup__resultValue{font-size:14px;font-weight:800;color:var(--accent);letter-spacing:-.02em}
+.heroMockup__cta{
+  margin-top:10px;text-align:center;font-size:11px;font-weight:700;
+  color:var(--accent);padding:8px;border-radius:8px;
+  background:color-mix(in srgb,var(--accent) 10%,#fff);
+  border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);
+}
+
+@media (max-width:900px){
+  .hero__layout{grid-template-columns:1fr;gap:24px}
+  .hero__mockup{display:none}
+}
+
+/* --- Improvement 2: Mode cards with icons and colored backgrounds --- */
+.modeCard__icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:60px;
+  height:60px;
+  border-radius:16px;
+  margin-bottom:16px;
+  flex-shrink:0;
+}
+.modeCard__icon--teal{
+  background:linear-gradient(135deg,rgba(15,157,146,.18),rgba(15,157,146,.10));
+  color:#0a7d77;
+  border:1px solid rgba(15,157,146,.28);
+}
+.modeCard__icon--blue{
+  background:linear-gradient(135deg,rgba(37,99,235,.16),rgba(59,130,246,.10));
+  color:#1d4ed8;
+  border:1px solid rgba(37,99,235,.26);
+}
+
+.modeCard--teal{
+  border-color:rgba(15,157,146,.26);
+  background:linear-gradient(150deg,rgba(15,157,146,.10) 0%,rgba(255,255,255,.88) 55%,rgba(255,255,255,.82) 100%);
+}
+.modeCard--teal:hover{
+  border-color:rgba(15,157,146,.52);
+  background:linear-gradient(150deg,rgba(15,157,146,.16) 0%,rgba(255,255,255,.95) 60%);
+}
+.modeCard--teal.is-selected{
+  border-color:var(--accent);
+  background:linear-gradient(150deg,rgba(15,157,146,.18) 0%,rgba(255,255,255,.98) 60%);
+}
+
+.modeCard--blue{
+  border-color:rgba(37,99,235,.24);
+  background:linear-gradient(150deg,rgba(59,130,246,.10) 0%,rgba(255,255,255,.88) 55%,rgba(255,255,255,.82) 100%);
+}
+.modeCard--blue:hover{
+  border-color:rgba(37,99,235,.48);
+  background:linear-gradient(150deg,rgba(59,130,246,.16) 0%,rgba(255,255,255,.95) 60%);
+}
+.modeCard--blue.is-selected{
+  border-color:#2563eb;
+  background:linear-gradient(150deg,rgba(59,130,246,.18) 0%,rgba(255,255,255,.98) 60%);
+}
+
+/* Remove the old ::before decoration on mode cards — icon replaces it */
+.modeCard--teal::before,
+.modeCard--blue::before{display:none}
+
+/* --- Improvement 3: Progress bar with visible step labels --- */
+.wizardProgressWrap{margin-bottom:18px}
+.wizardProgressWrap .wizardProgress{margin-bottom:0}
+
+.wizardProgressLabels{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  margin-top:6px;
+  padding:0 12px;
+}
+.wizardProgressLabel{
+  text-align:center;
+  font-size:10px;
+  font-weight:700;
+  color:var(--muted);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  transition:color .25s ease, font-weight .25s ease;
+  line-height:1.3;
+}
+.wizardProgressLabel:first-child{text-align:left}
+.wizardProgressLabel:last-child{text-align:right}
+
+/* Active label per step (mirrors CSS :has() already in use) */
+.pricingCard .card__inner:has(.wizardStep[data-step="0"]:not(.is-hidden)) .wizardProgressLabel[data-step="0"]{color:var(--accent);font-weight:800}
+.pricingCard .card__inner:has(.wizardStep[data-step="1"]:not(.is-hidden)) .wizardProgressLabel[data-step="0"]{color:#0a7d77}
+.pricingCard .card__inner:has(.wizardStep[data-step="1"]:not(.is-hidden)) .wizardProgressLabel[data-step="1"]{color:var(--accent);font-weight:800}
+.pricingCard .card__inner:has(.wizardStep[data-step="2"]:not(.is-hidden)) .wizardProgressLabel[data-step="0"],
+.pricingCard .card__inner:has(.wizardStep[data-step="2"]:not(.is-hidden)) .wizardProgressLabel[data-step="1"]{color:#0a7d77}
+.pricingCard .card__inner:has(.wizardStep[data-step="2"]:not(.is-hidden)) .wizardProgressLabel[data-step="2"]{color:var(--accent);font-weight:800}
+.pricingCard .card__inner:has(.wizardStep[data-step="3"]:not(.is-hidden)) .wizardProgressLabel[data-step="0"],
+.pricingCard .card__inner:has(.wizardStep[data-step="3"]:not(.is-hidden)) .wizardProgressLabel[data-step="1"],
+.pricingCard .card__inner:has(.wizardStep[data-step="3"]:not(.is-hidden)) .wizardProgressLabel[data-step="2"]{color:#0a7d77}
+.pricingCard .card__inner:has(.wizardStep[data-step="3"]:not(.is-hidden)) .wizardProgressLabel[data-step="3"]{color:var(--accent);font-weight:800}
+.pricingCard .card__inner:has(.wizardStep[data-step="4"]:not(.is-hidden)) .wizardProgressLabel{color:#0a7d77}
+
+/* Bigger dots on progress bar */
+.wizardProgress{
+  background-image:
+    radial-gradient(circle at 16px 22px, color-mix(in srgb,var(--accent) calc(min(var(--wizard-step),1)*100%), rgba(148,163,184,.45)) 0 8px, transparent 9px),
+    radial-gradient(circle at calc(33.33% + 5px) 22px, color-mix(in srgb,var(--accent) calc(min(max(var(--wizard-step) - 1,0),1)*100%), rgba(148,163,184,.45)) 0 8px, transparent 9px),
+    radial-gradient(circle at calc(66.66% - 5px) 22px, color-mix(in srgb,var(--accent) calc(min(max(var(--wizard-step) - 2,0),1)*100%), rgba(148,163,184,.45)) 0 8px, transparent 9px),
+    radial-gradient(circle at calc(100% - 16px) 22px, color-mix(in srgb,var(--accent) calc(min(max(var(--wizard-step) - 3,0),1)*100%), rgba(148,163,184,.45)) 0 8px, transparent 9px),
+    linear-gradient(170deg,rgba(255,255,255,.85),rgba(241,245,249,.8));
+  transition:background-image .3s ease;
+}
+
+/* Dark mode support for new elements */
+body.theme-dark .heroMockup{
+  background:rgba(15,23,42,.82);border-color:rgba(148,163,184,.28);
+}
+body.theme-dark .heroMockup__field{background:rgba(30,41,59,.7);border-color:rgba(148,163,184,.22)}
+body.theme-dark .heroMockup__chip{background:rgba(30,41,59,.6)}
+body.theme-dark .modeCard--teal,body.theme-dark .modeCard--blue{
+  background:linear-gradient(170deg,rgba(15,23,42,.86),rgba(30,41,59,.62));
 }
