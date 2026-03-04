@@ -21,11 +21,6 @@ function saveConfig() {
     mlClassicPct: document.querySelector("#mlClassicPct")?.value || "",
     mlPremiumPct: document.querySelector("#mlPremiumPct")?.value || "",
 
-    // Peso ML
-    mlWeightToggle: document.querySelector("#mlWeightToggle")?.checked || false,
-    mlWeightValue: document.querySelector("#mlWeightValue")?.value || "",
-    mlWeightUnit: document.querySelector("#mlWeightUnit")?.value || "kg",
-
     // Variáveis avançadas
     advToggle: document.querySelector("#advToggle")?.checked || false,
 
@@ -121,11 +116,6 @@ function applyConfig(config) {
   // Mercado Livre
   set("#mlClassicPct", config.mlClassicPct);
   set("#mlPremiumPct", config.mlPremiumPct);
-
-  // Peso ML
-  set("#mlWeightToggle", config.mlWeightToggle, true);
-  set("#mlWeightValue", config.mlWeightValue);
-  set("#mlWeightUnit", config.mlWeightUnit);
 
   // Variáveis avançadas
   set("#advToggle", config.advToggle, true);

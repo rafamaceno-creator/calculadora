@@ -246,11 +246,7 @@ function normalizeWeightKg(value, unit) {
   return v;
 }
 
-function resolveMarketplaceWeight({ enabled, rawValue, unit }) {
-  if (!enabled) {
-    return { kg: 0.5, assumed: true };
-  }
-
+function resolveMarketplaceWeight({ rawValue, unit }) {
   const valueText = String(rawValue ?? "").trim();
   const normalizedKg = normalizeWeightKg(valueText, unit);
   if (!valueText || !Number.isFinite(normalizedKg) || normalizedKg <= 0) {
@@ -1110,10 +1106,9 @@ function getCalculationConfig() {
 
   const adv = getAdvancedVars();
 
-  const weightToggle = document.querySelector("#mlWeightToggle")?.checked;
-  const weightValueRaw = document.querySelector("#mlWeightValue")?.value;
-  const weightUnit = document.querySelector("#mlWeightUnit")?.value || "kg";
-  const weightData = resolveMarketplaceWeight({ enabled: weightToggle, rawValue: weightValueRaw, unit: weightUnit });
+  const weightValueRaw = document.querySelector("#globalWeightInput")?.value;
+  const weightUnit = document.querySelector("#globalWeightUnit")?.value || "kg";
+  const weightData = resolveMarketplaceWeight({ rawValue: weightValueRaw, unit: weightUnit });
 
   const sheinCommissionEnabled = document.querySelector("#sheinCommissionToggle")?.checked;
   const sheinCategory = sheinCommissionEnabled ? (document.querySelector("#sheinCategory")?.value || "other") : "other";
@@ -1332,11 +1327,9 @@ function recalc(options = {}) {
 
   const adv = getAdvancedVars();
 
-  const weightToggle = document.querySelector("#mlWeightToggle")?.checked;
-  const weightValueRaw = document.querySelector("#mlWeightValue")?.value;
-  const weightUnit = document.querySelector("#mlWeightUnit")?.value || "kg";
+  const weightValueRaw = document.querySelector("#globalWeightInput")?.value;
+  const weightUnit = document.querySelector("#globalWeightUnit")?.value || "kg";
   const weightData = resolveMarketplaceWeight({
-    enabled: weightToggle,
     rawValue: weightValueRaw,
     unit: weightUnit
   });
@@ -1733,7 +1726,7 @@ function recalc(options = {}) {
       config: {
         ...getCalculationConfig(),
         adv: { pctExtra: 0, fixedBRL: 0, affiliate: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 }, details: { ads: { pct: 0, brl: 0 }, ret: { pct: 0, brl: 0 }, other: { pct: 0, brl: 0 }, costFixed: { pct: 0, brl: 0 }, difal: 0, pis: 0, cofins: 0, aff: { shopee: 0, ml: 0, tiktok: 0, amazon: 0 } } },
-        weightData: resolveMarketplaceWeight({ enabled: false, rawValue: "", unit: "kg" })
+        weightData: resolveMarketplaceWeight({ rawValue: "", unit: "kg" })
       }
     }).computedResults;
     renderResultInsight(basicResults, computedResults);
@@ -2291,9 +2284,6 @@ function bindInputTracking() {
     "profitValue",
     "mlClassicPct",
     "mlPremiumPct",
-    "mlWeightToggle",
-    "mlWeightValue",
-    "mlWeightUnit",
     "sheinCategory",
     "amazonDbaToggle",
     "amazonPct",
@@ -2359,7 +2349,7 @@ function bind() {
 
   $("#recalc")?.addEventListener("click", () => {
     recalc({ source: "manual" });
-    const hasWeight = !!document.querySelector("#mlWeightToggle")?.checked;
+    const hasWeight = !!(document.querySelector("#globalWeightInput")?.value?.trim());
     const hasAffiliate = !!(document.querySelector("#advToggle")?.checked && document.querySelector("#affToggle")?.checked);
     trackGA4Event("recalc", { section: "button", value: "manual", has_weight: hasWeight, has_affiliate: hasAffiliate });
     scrollToResults();
@@ -2540,16 +2530,6 @@ function bind() {
   };
   affToggle?.addEventListener("change", applyAffBox);
   applyAffBox();
-
-  // Peso box
-  const wToggle = $("#mlWeightToggle");
-  const wBox = $("#mlWeightBox");
-  const applyWBox = () => {
-    if (!wToggle || !wBox) return;
-    setInlineBoxVisibility(wBox, wToggle.checked);
-  };
-  wToggle?.addEventListener("change", applyWBox);
-  applyWBox();
 
   const amazonToggle = $("#amazonDbaToggle");
   const amazonBox = $("#amazonDbaBox");
@@ -3014,21 +2994,7 @@ function handleBack() {
   setWizardStep(wizardStep - 1);
 }
 
-function syncGlobalWeightToAdvancedAll() {
-  const raw = (document.querySelector("#globalWeightInput")?.value || "").trim();
-  const unit = document.querySelector("#globalWeightUnit")?.value || "kg";
-  const mlWeightToggle = document.querySelector("#mlWeightToggle");
-  const mlWeightValue = document.querySelector("#mlWeightValue");
-  const mlWeightUnit = document.querySelector("#mlWeightUnit");
-  if (!mlWeightToggle || !mlWeightValue || !mlWeightUnit) return;
-  if (!raw) return;
-  mlWeightToggle.checked = true;
-  mlWeightValue.value = raw;
-  mlWeightUnit.value = unit;
-}
-
 function uxRecalc() {
-  syncGlobalWeightToAdvancedAll();
   recalc({ source: "auto" });
   toggleUxModeSections();
 }
@@ -3139,7 +3105,6 @@ function initUxRefactor() {
   document.querySelector("#recalc")?.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopImmediatePropagation();
-    syncGlobalWeightToAdvancedAll();
     recalc({ source: "manual" });
     applyWizardResultFilter();
     setWizardStep(4);
