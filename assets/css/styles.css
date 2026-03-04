@@ -1175,23 +1175,32 @@ body.theme-dark #themeToggle .icon-theme line{opacity:0}
 
 /* Logo wrapper */
 .mpIcon{
-  width:32px;
-  height:32px;
+  width:28px;
+  height:28px;
   display:grid;
   place-items:center;
-  flex:0 0 32px;
+  flex:0 0 28px;
 }
 
 .mpLogo{
-  width:32px;
-  height:32px;
+  width:28px;
+  height:28px;
   object-fit:contain;
+  border-radius:4px;
 }
 
 .mpIconFallback{
-  font-size:12px;
+  width:28px;
+  height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#E5E7EB;
+  color:#374151;
+  border-radius:4px;
+  font-size:10px;
   font-weight:700;
-  opacity:.8;
+  line-height:1;
 }
 
 /* Name group: name + badge stacked */
@@ -1295,8 +1304,6 @@ body.theme-dark .mpBadge{color:rgba(255,255,255,.45);}
     padding:12px;
   }
   #marketplaceSelector .mpName{white-space:normal;line-height:1.2;}
-  #marketplaceSelector .mpIcon{width:28px;height:28px;flex-basis:28px;}
-  #marketplaceSelector .mpLogo{width:28px;height:28px;}
   #marketplaceSelector .mpCheck{width:18px;height:18px;flex-basis:18px;}
 
   .wizardActions{
@@ -1417,8 +1424,6 @@ body.theme-dark .mpBadge{color:rgba(255,255,255,.45);}
     border-radius:12px;
     box-shadow:none;
   }
-  #marketplaceSelector .mpIcon{width:28px;height:28px;flex-basis:28px;}
-  #marketplaceSelector .mpLogo{width:28px;height:28px;}
   #marketplaceSelector .mpName{font-size:12px;line-height:1.25;white-space:normal;}
   #marketplaceSelector .mpCheck{width:18px;height:18px;flex-basis:18px;}
 }
