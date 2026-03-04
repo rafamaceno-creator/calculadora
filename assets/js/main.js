@@ -2597,6 +2597,38 @@ function bind() {
   $("#currentPriceInput")?.addEventListener("change", () => saveCurrentPriceState());
 }
 
+/* ------------------------------------------------------------------
+   Adj Cards — collapsible subsection cards in "Ajustes adicionais"
+   ------------------------------------------------------------------ */
+function updateAdjCounter(groupId) {
+  const counter = document.querySelector(`#adjCounter-${groupId}`);
+  if (!counter) return;
+  const checked = document.querySelectorAll(`[data-adj-group="${groupId}"]:checked`).length;
+  counter.textContent = `${checked} ${checked === 1 ? "ativo" : "ativos"}`;
+  counter.classList.toggle("has-active", checked > 0);
+}
+
+function bindAdjCards() {
+  document.querySelectorAll(".adjCard").forEach((card) => {
+    const btn = card.querySelector(".adjCard__header");
+    const body = card.querySelector(".adjCard__body");
+    if (!btn || !body) return;
+
+    btn.addEventListener("click", () => {
+      const isOpen = card.classList.toggle("is-open");
+      btn.setAttribute("aria-expanded", String(isOpen));
+    });
+  });
+
+  // Listen for checkbox changes to update counters
+  document.querySelectorAll("[data-adj-group]").forEach((cb) => {
+    const group = cb.dataset.adjGroup;
+    cb.addEventListener("change", () => updateAdjCounter(group));
+    // Initial count
+    updateAdjCounter(group);
+  });
+}
+
 
 function getTriggerSelector(trigger) {
   return trigger?.getAttribute("data-target")
@@ -2917,6 +2949,22 @@ function applyWizardResultFilter() {
   });
 }
 
+function updateStepperDots(step) {
+  // step 0..3 maps to the 4 visible wizard steps; step 4 = results (all done)
+  const visibleStep = Math.min(step, 3);
+  document.querySelectorAll(".wizardStepper__item").forEach((el) => {
+    const s = parseInt(el.dataset.stepperStep, 10);
+    el.classList.toggle("is-done", s < step);
+    el.classList.toggle("is-active", s === visibleStep && step <= 3);
+  });
+  // Fill the connecting line proportionally (0 steps done → 0%, 3 → 100%)
+  const fill = document.querySelector("#wizardStepperFill");
+  if (fill) {
+    const pct = step >= 4 ? 100 : (step / 3) * 100;
+    fill.style.width = Math.min(pct, 100) + "%";
+  }
+}
+
 function setWizardStep(step) {
   wizardStep = clamp(step, 0, 4);
   renderWizardUI();
@@ -2935,6 +2983,7 @@ function renderWizardUI() {
   const progress = document.querySelector("#wizardProgress");
   if (progress) progress.textContent = `Passo ${wizardStep} de 4`;
 
+  updateStepperDots(wizardStep);
   updateWizardSummary();
 
   const nextStep2 = document.querySelector("#wizardNextStep2");
@@ -3136,6 +3185,7 @@ function initApp() {
   bindSmoothScroll();
   bindSegmentMenuActiveState();
   bindBulk();
+  bindAdjCards();
   renderSavedSimulations();
   track("session_ready", { device: getDeviceType() });
   uxRecalc();

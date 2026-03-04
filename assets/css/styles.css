@@ -1703,3 +1703,242 @@ body.theme-dark .heroMockup__chip{background:rgba(30,41,59,.6)}
 body.theme-dark .modeCard--teal,body.theme-dark .modeCard--blue{
   background:linear-gradient(170deg,rgba(15,23,42,.86),rgba(30,41,59,.62));
 }
+
+/* =====================================================================
+   WIZARD STEPPER (Fix 1)
+   ===================================================================== */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.wizardStepper{
+  position:relative;
+  margin-bottom:20px;
+  padding-top:6px;
+}
+/* Horizontal track line behind the dots */
+.wizardStepper__track{
+  position:absolute;
+  top:14px;
+  left:calc(12.5% - 0px);
+  right:calc(12.5% - 0px);
+  height:2px;
+  border-radius:2px;
+  background:rgba(148,163,184,.3);
+  overflow:hidden;
+}
+.wizardStepper__fill{
+  height:100%;
+  width:0%;
+  background:var(--accent);
+  border-radius:2px;
+  transition:width .35s ease;
+}
+/* Steps row */
+.wizardStepper__items{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  z-index:1;
+}
+.wizardStepper__item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+/* Dot */
+.wizardStepper__dot{
+  width:14px;
+  height:14px;
+  border-radius:999px;
+  background:rgba(148,163,184,.35);
+  border:2px solid rgba(148,163,184,.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .25s ease, border-color .25s ease, width .25s ease, height .25s ease, box-shadow .25s ease;
+  flex-shrink:0;
+}
+/* Check icon inside dot (hidden by default) */
+.wizardStepper__check{
+  width:8px;
+  height:8px;
+  color:#fff;
+  opacity:0;
+  transition:opacity .2s ease;
+  flex-shrink:0;
+}
+/* Active step — teal, bigger, with ring */
+.wizardStepper__item.is-active .wizardStepper__dot{
+  width:20px;
+  height:20px;
+  background:var(--accent);
+  border-color:var(--accent);
+  box-shadow:0 0 0 4px rgba(14,165,164,.18);
+}
+/* Done step — green with check */
+.wizardStepper__item.is-done .wizardStepper__dot{
+  background:#059669;
+  border-color:#059669;
+}
+.wizardStepper__item.is-done .wizardStepper__check{
+  opacity:1;
+}
+/* Label */
+.wizardStepper__label{
+  font-size:9px;
+  font-weight:700;
+  color:var(--muted);
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  text-align:center;
+  line-height:1.2;
+  transition:color .25s ease, font-weight .25s ease;
+}
+.wizardStepper__item.is-active .wizardStepper__label{
+  color:var(--accent);
+  font-weight:800;
+}
+.wizardStepper__item.is-done .wizardStepper__label{
+  color:#059669;
+}
+
+/* Dark mode stepper */
+body.theme-dark .wizardStepper__track{background:rgba(100,116,139,.25)}
+body.theme-dark .wizardStepper__dot{background:rgba(100,116,139,.3);border-color:rgba(100,116,139,.3)}
+body.theme-dark .wizardStepper__label{color:rgba(148,163,184,.7)}
+
+/* =====================================================================
+   ADJ CARDS — Redesigned "Ajustes adicionais" (Fix 2)
+   ===================================================================== */
+.adjCard{
+  border:1px solid var(--stroke);
+  border-radius:14px;
+  background:#fff;
+  overflow:hidden;
+  margin-top:10px;
+  transition:box-shadow .2s ease, border-color .2s ease;
+}
+.adjCard:focus-within{border-color:color-mix(in srgb,var(--accent) 40%,var(--stroke))}
+
+.adjCard__header{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 14px;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  font:inherit;
+  color:var(--text);
+  transition:background .15s ease;
+  text-align:left;
+  min-height:44px;
+}
+.adjCard__header:hover{background:rgba(14,165,164,.04)}
+.adjCard__header:focus-visible{outline:3px solid rgba(14,165,164,.28);outline-offset:-2px;border-radius:14px}
+
+.adjCard__title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.05em;
+  color:#334155;
+}
+.adjCard__title svg{color:var(--accent);flex-shrink:0}
+
+.adjCard__counter{
+  font-size:10px;
+  font-weight:700;
+  color:#fff;
+  background:var(--accent);
+  border-radius:999px;
+  padding:1px 7px;
+  letter-spacing:.02em;
+  transition:background .2s ease, opacity .2s ease;
+  opacity:0;
+}
+.adjCard__counter.has-active{opacity:1}
+
+.adjCard__chevron{
+  color:var(--muted);
+  flex-shrink:0;
+  transition:transform .25s ease;
+}
+.adjCard.is-open .adjCard__chevron{transform:rotate(180deg)}
+.adjCard.is-open .adjCard__header{background:rgba(14,165,164,.04)}
+
+/* Body: collapsed → expanded */
+.adjCard__body{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .3s ease;
+}
+.adjCard.is-open .adjCard__body{max-height:1400px}
+
+.adjCard__inner{
+  padding:0 14px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  background:#F9FAFB;
+  border-top:1px solid var(--stroke);
+}
+
+/* Each option row with icon */
+.adjRow{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(226,232,240,.6);
+}
+.adjRow:last-child,.adjRow:last-of-type{border-bottom:none}
+.adjRow__icon{
+  flex-shrink:0;
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  background:rgba(14,165,164,.08);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--accent);
+  margin-top:1px;
+}
+.adjRow__label{align-self:center}
+.adjRow__labelGroup{display:flex;flex-direction:column;gap:2px}
+.adjRow__hint{font-size:11px;color:var(--muted);line-height:1.4}
+
+/* "Opcional" pill inside Amazon DBA card */
+.adjCard__optPill{
+  position:absolute;
+  top:10px;
+  right:10px;
+  font-size:10px;
+  font-weight:700;
+  padding:2px 8px;
+  border-radius:999px;
+}
+
+/* cardMini inside adjCard__inner stays white to contrast the gray body */
+.adjCard__inner .cardMini{background:#fff}
+.adjCard__inner .advGrid .advItem{background:#fff}
+
+/* Dark mode adj cards */
+body.theme-dark .adjCard{background:rgba(15,23,42,.6);border-color:rgba(100,116,139,.35)}
+body.theme-dark .adjCard__header:hover{background:rgba(14,165,164,.08)}
+body.theme-dark .adjCard__inner{background:rgba(15,23,42,.5);border-color:rgba(100,116,139,.25)}
+body.theme-dark .adjRow__icon{background:rgba(14,165,164,.12)}
+body.theme-dark .adjRow{border-color:rgba(100,116,139,.2)}
+body.theme-dark .adjCard__inner .advGrid .advItem{background:rgba(30,41,59,.6)}
+body.theme-dark .adjCard__inner .cardMini{background:rgba(30,41,59,.5)}
+
+/* Responsive stepper – keep labels visible at small sizes */
+@media (max-width:420px){
+  .wizardStepper__label{font-size:8px;letter-spacing:.02em}
+  .wizardStepper__item.is-active .wizardStepper__dot{width:18px;height:18px}
+}
