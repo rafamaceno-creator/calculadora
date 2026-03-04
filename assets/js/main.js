@@ -2813,17 +2813,21 @@ function getSelectedMarketplaces() {
 function buildMarketplaceSelector() {
   const wrap = document.querySelector("#marketplaceSelector");
   if (!wrap) return;
-  wrap.innerHTML = UX_MARKETPLACES.map((mp) => `
-    <label class="marketplaceChip ${mp.brandClass || ""}" data-mp="${mp.key}" for="ux_mp_${mp.key}">
+  wrap.innerHTML = UX_MARKETPLACES.map((mp) => {
+    const displayName = mp.badge ? mp.title.split(" — ")[0] : mp.title;
+    return `
+    <label class="marketplaceChip" data-mp="${mp.key}" for="ux_mp_${mp.key}">
       <input class="marketplaceChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" aria-label="${mp.title}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
       <span class="mpIcon">
         <img class="mpLogo" src="${window.versionAssetPath(mp.logoSrc)}" alt="" loading="lazy" data-fallback="${mp.fallback || "MP"}" />
       </span>
-      <span class="mpName">${mp.title}</span>
-      ${mp.badge ? `<span class="mpBadge ${mp.badgeClass || ""}">${mp.badge}</span>` : ""}
+      <span class="mpNameGroup">
+        <span class="mpName">${displayName}</span>
+        ${mp.badge ? `<span class="mpBadge ${mp.badgeClass || ""}">· ${mp.badge}</span>` : ""}
+      </span>
       <span class="mpCheck" aria-hidden="true"></span>
     </label>
-  `).join("");
+  `}).join("");
 
   attachMarketplaceLogoFallbacks(wrap);
 }
