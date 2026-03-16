@@ -1720,6 +1720,15 @@ function recalc(options = {}) {
 
   const state = { marketplaces: marketplaceState, cost, taxPct, shopeeAntecipa, computedResults };
 
+  LAST_CALC_CONTEXT = {
+    cost,
+    taxPct,
+    adv,
+    computedResults
+  };
+  renderSimulationSummary(buildSimulationSummaryContext());
+  renderResultTransparencySummary(LAST_CALC_CONTEXT);
+
   if (calcMode !== "real") {
     const basicResults = computeForAllMarketplaces({
       cost,
@@ -2781,6 +2790,7 @@ let UX_SELECTED_MARKETPLACES = UX_MARKETPLACES.map((mp) => mp.key);
 const UX_PRICE_VALUES = {};
 let UX_RECALC_TIMER = null;
 let wizardStep = 0;
+let LAST_CALC_CONTEXT = null;
 
 function getCalcMode() {
   return document.querySelector('input[name="calcMode"]:checked')?.value || "";
@@ -2874,6 +2884,137 @@ function toggleUxModeSections() {
       ? "Preço pode variar por marketplace. Preencha o valor correspondente a cada canal."
       : "Vamos calcular o preço ideal por marketplace com base na margem informada.";
   }
+}
+
+function formatPct(value) {
+  return `${(Math.max(0, Number(value) || 0) * 100).toFixed(2)}%`;
+}
+
+function buildSimulationSummaryContext() {
+  const mode = getCalcMode();
+  const cost = Math.max(0, toNumber(document.querySelector("#cost")?.value));
+  const taxPct = clamp(toNumber(document.querySelector("#tax")?.value), 0, 99) / 100;
+  const profitType = document.querySelector("#profitType")?.value || "brl";
+  const profitValue = Math.max(0, toNumber(document.querySelector("#profitValue")?.value));
+  const adv = getAdvancedVars();
+  const selectedKeys = getSelectedMarketplaces();
+
+  const mlEnabled = document.querySelector("#mlCommissionToggle")?.checked;
+  const mlClassicPct = (mlEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
+  const mlPremiumPct = (mlEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
+
+  const perMarketplace = selectedKeys.map((key) => {
+    if (key === "mlClassic") return { key, label: "Mercado Livre — Clássico", commissionPct: mlClassicPct, affiliatePct: adv.affiliate.ml };
+    if (key === "mlPremium") return { key, label: "Mercado Livre — Premium", commissionPct: mlPremiumPct, affiliatePct: adv.affiliate.ml };
+    if (key === "tiktok") return { key, label: "TikTok Shop", commissionPct: TIKTOK.pct, affiliatePct: adv.affiliate.tiktok };
+    if (key === "shein") {
+      const enabled = document.querySelector("#sheinCommissionToggle")?.checked;
+      const category = enabled ? (document.querySelector("#sheinCategory")?.value || "other") : "other";
+      const pct = category === "female" ? SHEIN.pctFemale : SHEIN.pctOther;
+      return { key, label: "SHEIN", commissionPct: pct, affiliatePct: 0 };
+    }
+    if (key === "amazon") {
+      const enabled = document.querySelector("#amazonDbaToggle")?.checked || false;
+      const pct = Math.max(0, toNumber(document.querySelector("#amazonPct")?.value)) / 100;
+      return { key, label: enabled ? "Amazon (DBA)" : "Amazon (desativado)", commissionPct: pct, affiliatePct: adv.affiliate.amazon, disabled: !enabled };
+    }
+    return { key, label: "Shopee", commissionPct: SHOPEE_FAIXAS[0].pct, affiliatePct: adv.affiliate.shopee };
+  });
+
+  const totalVariablePct = taxPct + adv.pctExtra + (profitType === "pct" ? (profitValue / 100) : 0);
+
+  return {
+    mode,
+    cost,
+    taxPct,
+    profitType,
+    profitValue,
+    adv,
+    perMarketplace,
+    totalVariablePct,
+    totalFixed: adv.fixedBRL
+  };
+}
+
+function renderSimulationSummary(context = buildSimulationSummaryContext()) {
+  const root = document.querySelector("#simulationSummaryContent");
+  if (!root) return;
+
+  const profitLine = context.profitType === "pct"
+    ? `Margem alvo: <strong>${Math.max(0, context.profitValue).toFixed(2)}%</strong> sobre o preço de venda`
+    : `Lucro alvo: <strong>${brl(context.profitValue)}</strong> por pedido`;
+
+  const marketplaceRows = context.perMarketplace.length
+    ? context.perMarketplace.map((item) => `<li><span>${item.label}</span><strong>${item.disabled ? "inativo" : formatPct(item.commissionPct)}</strong></li>`).join("")
+    : '<li><span>Nenhum marketplace selecionado</span><strong>—</strong></li>';
+
+  const affiliateRows = context.perMarketplace.length
+    ? context.perMarketplace.map((item) => `<li><span>${item.label}</span><strong>${item.disabled ? "inativo" : formatPct(item.affiliatePct)}</strong></li>`).join("")
+    : "";
+
+  root.innerHTML = `
+    <div class="simulationSummaryGrid">
+      <article class="summaryCard">
+        <h4>O que está ativo</h4>
+        <ul>
+          <li><span>Custo base do produto</span><strong>${brl(context.cost)}</strong></li>
+          <li><span>Imposto de venda</span><strong>${formatPct(context.taxPct)}</strong></li>
+          <li><span>${profitLine}</span></li>
+          <li><span>Custos fixos extras</span><strong>${brl(context.totalFixed)}</strong></li>
+          <li><span>Total incidências variáveis (sem comissão do canal)</span><strong>${formatPct(context.totalVariablePct)}</strong></li>
+        </ul>
+      </article>
+      <article class="summaryCard">
+        <h4>Comissão por canal</h4>
+        <ul>${marketplaceRows}</ul>
+      </article>
+      <article class="summaryCard">
+        <h4>Afiliados por canal</h4>
+        <ul>${affiliateRows}</ul>
+      </article>
+      <article class="summaryCard">
+        <h4>Ordem lógica aplicada</h4>
+        <ol>
+          <li>Somamos custo do produto + custos fixos por pedido.</li>
+          <li>Aplicamos comissões e incidências percentuais sobre o preço de venda.</li>
+          <li>Garantimos a meta de lucro/margem informada.</li>
+          <li>Resolvemos o preço sugerido por marketplace.</li>
+        </ol>
+      </article>
+    </div>
+  `;
+}
+
+function renderResultTransparencySummary(context = LAST_CALC_CONTEXT) {
+  const root = document.querySelector("#resultTransparencySummary");
+  if (!root || !context) return;
+
+  const lines = (context.computedResults || [])
+    .filter((item) => Number.isFinite(item.price))
+    .sort((a, b) => a.price - b.price)
+    .map((item) => `<li><span>${item.title}</span><strong>${brl(item.price)}</strong></li>`)
+    .join("");
+
+  root.innerHTML = `
+    <div class="summaryCallout">
+      <strong>Como chegar no preço final:</strong>
+      custo base ${brl(context.cost)} + custos fixos ${brl(context.adv.fixedBRL)} + incidências percentuais (imposto e taxas) + margem alvo.
+    </div>
+    <div class="resultSummaryGrid">
+      <div>
+        <h4>Totais usados na simulação</h4>
+        <ul>
+          <li><span>Custos fixos por pedido</span><strong>${brl(context.adv.fixedBRL)}</strong></li>
+          <li><span>Incidências extras (%)</span><strong>${formatPct(context.adv.pctExtra)}</strong></li>
+          <li><span>Imposto de venda (%)</span><strong>${formatPct(context.taxPct / 100)}</strong></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Preço final recomendado</h4>
+        <ul>${lines || '<li><span>Sem resultado disponível</span><strong>—</strong></li>'}</ul>
+      </div>
+    </div>
+  `;
 }
 
 function validateStep(step) {
@@ -2980,8 +3121,13 @@ function renderWizardUI() {
 
   toggleUxModeSections();
 
+  if (wizardStep === 3) {
+    renderSimulationSummary(buildSimulationSummaryContext());
+  }
+
   if (wizardStep === 4) {
     applyWizardResultFilter();
+    renderResultTransparencySummary(LAST_CALC_CONTEXT);
   }
 }
 
