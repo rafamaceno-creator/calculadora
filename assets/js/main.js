@@ -2618,6 +2618,23 @@ function bindAdjCards() {
   });
 }
 
+function syncExtraCostsCardVisibility() {
+  const extraCostsCard = document.querySelector("#adjCard-custos");
+  const trigger = extraCostsCard?.querySelector(".adjCard__header");
+  if (!extraCostsCard || !trigger) return;
+
+  const lockOpen = wizardStep === 3;
+
+  extraCostsCard.classList.toggle("is-locked-open", lockOpen);
+  trigger.disabled = lockOpen;
+  trigger.setAttribute("aria-disabled", String(lockOpen));
+
+  if (lockOpen) {
+    extraCostsCard.classList.add("is-open");
+    trigger.setAttribute("aria-expanded", "true");
+  }
+}
+
 
 function getTriggerSelector(trigger) {
   return trigger?.getAttribute("data-target")
@@ -3120,6 +3137,7 @@ function renderWizardUI() {
   });
 
   toggleUxModeSections();
+  syncExtraCostsCardVisibility();
 
   if (wizardStep === 3) {
     renderSimulationSummary(buildSimulationSummaryContext());

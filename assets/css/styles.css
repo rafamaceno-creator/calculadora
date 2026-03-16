@@ -1852,7 +1852,16 @@ body.theme-dark .wizardStepper__label{color:rgba(148,163,184,.7)}
   overflow:hidden;
   transition:max-height .3s ease;
 }
-.adjCard.is-open .adjCard__body{max-height:1400px}
+.adjCard.is-open .adjCard__body,
+.adjCard.is-locked-open .adjCard__body{max-height:1400px}
+
+.adjCard.is-locked-open .adjCard__header{
+  cursor:default;
+}
+
+.adjCard.is-locked-open .adjCard__chevron{
+  opacity:.35;
+}
 
 .adjCard__inner{
   padding:0 14px 14px;
