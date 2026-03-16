@@ -637,6 +637,14 @@
             <p>Regra: custos fixos e lucro em R$ somam no custo. Depois, somamos incidências em % (comissão + imposto [+ lucro% se escolhido] + custos%) e calculamos: <strong>Preço = custo ajustado ÷ (1 − incidências)</strong>.</p>
           </details>
 
+          <section class="formBlock wizardStep is-hidden simulationSummary" data-step="3" id="simulationSummaryBlock" aria-live="polite">
+            <div class="formBlock__head">
+              <h3>Resumo da simulação</h3>
+              <p>Antes de calcular, confira o que está ativo e em qual ordem entra no preço sugerido.</p>
+            </div>
+            <div id="simulationSummaryContent"></div>
+          </section>
+
           <div class="formDivider wizardStep is-hidden" data-step="3"></div>
 
           <section class="formBlock formBlock--actions wizardStep is-hidden" data-step="3">
@@ -659,6 +667,7 @@
               <h3>Resultado</h3>
               <p>Confira o resultado por marketplace selecionado.</p>
             </div>
+            <div id="resultTransparencySummary" class="resultTransparencySummary" aria-live="polite"></div>
             <div class="actions wizardActions">
               <button id="wizardEditData" class="btn btn--ghost" type="button">Editar dados</button>
               <button id="wizardNewCalc" class="btn btn--primary" type="button">Novo cálculo</button>
