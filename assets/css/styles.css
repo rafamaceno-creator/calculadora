@@ -1140,23 +1140,23 @@ body.theme-dark #themeToggle .icon-theme line{opacity:0}
 
 /* Card */
 .marketplaceChip{
+  border:1.5px solid color-mix(in srgb,var(--stroke) 86%,transparent);
+  border-radius:14px;
+  padding:10px 14px;
   display:flex;
   align-items:center;
   gap:10px;
   min-height:72px;
-  border:1px solid #E5E7EB;
-  border-radius:12px;
-  padding:12px 14px;
   background:#fff;
   cursor:pointer;
-  transition:border-color .2s ease,box-shadow .2s ease;
+  transition:border-color 0.2s ease, background-color 0.2s ease;
   position:relative;
 }
 
 /* Hover: subtle teal shadow + semi-transparent teal border */
 .marketplaceChip:hover{
-  box-shadow:0 4px 14px rgba(13,148,136,.12);
-  border-color:rgba(13,148,136,.4);
+  border-color:color-mix(in srgb,var(--brand-color) 56%, var(--accent));
+  background:linear-gradient(180deg, color-mix(in srgb,var(--brand-color) 12%, #fff), color-mix(in srgb,var(--brand-color) 6%, #fff));
 }
 
 /* Hidden native checkbox */
@@ -1257,8 +1257,8 @@ body.theme-dark #themeToggle .icon-theme line{opacity:0}
 
 /* Selected card: teal 2px border */
 .marketplaceChip:has(.marketplaceChip__input:checked){
-  border:2px solid #0d9488;
-  background:#fff;
+  border-color:color-mix(in srgb,var(--brand-color) 72%, var(--accent));
+  background:linear-gradient(180deg, color-mix(in srgb,var(--brand-color) 18%, #fff), color-mix(in srgb,var(--brand-color) 10%, #fff));
 }
 
 /* Selected check: teal circle with white checkmark */
