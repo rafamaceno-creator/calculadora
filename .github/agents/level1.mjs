@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 const {
   GITHUB_TOKEN,
@@ -17,11 +18,7 @@ const DEFAULT_MODEL =
     ? OPENAI_MODEL.trim()
     : "gpt-4o-mini";
 
-// Agent 2 (FRONT-END) precisa gerar código literal
-const FE_MODEL = "gpt-4o";
-
-// Agent 4 (síntese final) também usa modelo forte
-const CAPTAIN_MODEL = "gpt-4o";
+const STRONG_MODEL = "gpt-4o";
 
 // =======================
 // ENV
@@ -55,6 +52,8 @@ async function ghFetch(url, options = {}) {
     const body = await res.text().catch(() => "");
     throw new Error(`GitHub API error ${res.status}: ${body}`);
   }
+
+  if (res.status === 204) return null;
   return res.json();
 }
 
@@ -83,66 +82,113 @@ async function openaiChat(messages, model = DEFAULT_MODEL) {
   return content;
 }
 
-function extractFirstFencedBlock(text) {
-  const m = String(text || "").match(/```[\s\S]*?```/);
-  return m ? m[0].trim() : null;
-}
-
-function ensureSingleFenceBlock(text) {
-  const first = extractFirstFencedBlock(text);
-  return first ? first : "```\n" + text.trim() + "\n```";
-}
-
-function safeReadFileHeadTail(p, maxChars) {
+function safeReadFile(p) {
   try {
     if (!fs.existsSync(p)) return null;
-    const raw = fs.readFileSync(p, "utf8");
-    if (raw.length <= maxChars) return raw;
-    const half = Math.floor(maxChars / 2);
-    return (
-      raw.slice(0, half) +
-      "\n\n[... TRECHO OMITIDO POR TAMANHO ...]\n\n" +
-      raw.slice(-half)
-    );
+    return fs.readFileSync(p, "utf8");
   } catch {
     return null;
   }
 }
 
-// =======================
-// REPO CONTEXT
-// =======================
-function buildRepoContext() {
-  const files = [
-    "index.html",
-    "assets/js/main.js",
-    "assets/css/styles.css",
+function truncate(text, maxChars = 16000) {
+  if (!text) return "";
+  if (text.length <= maxChars) return text;
+  const half = Math.floor(maxChars / 2);
+  return (
+    text.slice(0, half) +
+    "\n\n[... TRECHO OMITIDO POR TAMANHO ...]\n\n" +
+    text.slice(-half)
+  );
+}
+
+function shellEscapeSingleQuotes(str) {
+  return String(str).replace(/'/g, `'\\''`);
+}
+
+function runRg(pattern, file) {
+  try {
+    const cmd = `rg -n -C 6 '${shellEscapeSingleQuotes(pattern)}' ${file}`;
+    return execSync(cmd, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch {
+    return "";
+  }
+}
+
+function buildTargetedRepoContext() {
+  const targets = [
+    {
+      file: "assets/js/main.js",
+      patterns: [
+        "solvePrice",
+        "breakdownAtPrice",
+        "wizard",
+        "stepper",
+        "adjust",
+        "summary",
+        "marketplace",
+        "affiliate",
+        "extra",
+      ],
+    },
+    {
+      file: "assets/css/styles.css",
+      patterns: [
+        "segmentMenu__btn",
+        "wizardStepper__dot",
+        "wizardStepper__item",
+        "adjCard__header",
+        "adjCard",
+        "summary",
+        "result",
+        "breakdown",
+      ],
+    },
+    {
+      file: "index.html",
+      patterns: [
+        "wizard",
+        "stepper",
+        "summary",
+        "marketplace",
+        "affiliate",
+        "extra",
+        "breakdown",
+        "resultado",
+      ],
+    },
   ];
 
-  const parts = ["## REPO CONTEXT (TRECHOS REAIS)"];
+  const parts = ["## REPO CONTEXT (TRECHOS LOCALIZADOS)"];
 
-  for (const rel of files) {
-    const abs = path.resolve(process.cwd(), rel);
-    const maxChars =
-      rel === "assets/js/main.js"
-        ? 48000
-        : rel === "assets/css/styles.css"
-        ? 24000
-        : 9000;
+  for (const target of targets) {
+    const abs = path.resolve(process.cwd(), target.file);
+    if (!fs.existsSync(abs)) {
+      parts.push(`\n### ${target.file}\n(NÃO ENCONTRADO)`);
+      continue;
+    }
 
-    const content = safeReadFileHeadTail(abs, maxChars);
-    parts.push(
-      `\n### ${rel}\n${
-        content ? "```" + "\n" + content + "\n```" : "(NÃO ENCONTRADO)"
-      }`
-    );
+    const fileParts = [];
+    for (const pattern of target.patterns) {
+      const out = runRg(pattern, abs);
+      if (out && out.trim()) {
+        fileParts.push(`#### rg: ${pattern}\n\`\`\`\n${truncate(out, 8000)}\n\`\`\``);
+      }
+    }
+
+    if (!fileParts.length) {
+      const raw = safeReadFile(abs);
+      parts.push(`\n### ${target.file}\n\`\`\`\n${truncate(raw, 12000)}\n\`\`\``);
+    } else {
+      parts.push(`\n### ${target.file}\n${fileParts.join("\n\n")}`);
+    }
   }
 
   const svgDir = path.resolve(process.cwd(), "assets/img/marketplaces");
   if (fs.existsSync(svgDir)) {
-    const svgs = fs.readdirSync(svgDir).filter((f) =>
-      f.toLowerCase().endsWith(".svg")
-    );
+    const svgs = fs
+      .readdirSync(svgDir)
+      .filter((f) => f.toLowerCase().endsWith(".svg"));
     parts.push(
       `\n### assets/img/marketplaces (LISTAGEM)\n${
         svgs.length ? svgs.map((s) => `- ${s}`).join("\n") : "(sem svgs)"
@@ -151,6 +197,28 @@ function buildRepoContext() {
   }
 
   return parts.join("\n");
+}
+
+function buildSharedSystem({ rulesText, repoContext }) {
+  return [
+    "Sistema multi-agente para gerar PROMPT OPERACIONAL para Codex.",
+    "",
+    "IMPORTANTE:",
+    "- Esta pipeline NÃO implementa código, NÃO cria PR e NÃO altera arquivos.",
+    "- A saída final deve ser um plano operacional de alta precisão para execução posterior.",
+    "",
+    "REGRAS ABSOLUTAS:",
+    "- NÃO alterar fórmulas, cálculos, custos ou regras financeiras, salvo se a issue pedir explicitamente e houver evidência clara no código.",
+    "- NÃO inventar arquivos, paths, funções, seletores ou componentes.",
+    "- Usar apenas o que o CODE SCOUT confirmar.",
+    "- Se a issue for ampla, NÃO reduzi-la automaticamente a microajustes cosméticos.",
+    "- Diferenciar claramente: problema visual vs problema estrutural vs problema de lógica de exibição.",
+    "",
+    "AGENTS_RULES.md:",
+    rulesText,
+    "",
+    repoContext,
+  ].join("\n");
 }
 
 // =======================
@@ -172,176 +240,271 @@ async function main() {
   ].join("\n");
 
   const rulesText =
-    safeReadFileHeadTail(
-      path.resolve(process.cwd(), "AGENTS_RULES.md"),
-      20000
-    ) || "(AGENTS_RULES.md não encontrado)";
+    safeReadFile(path.resolve(process.cwd(), "AGENTS_RULES.md")) ||
+    "(AGENTS_RULES.md não encontrado)";
 
-  const repoContext = buildRepoContext();
-
-  const sharedSystem = [
-    "Sistema multi-agente para gerar PROMPT OPERACIONAL para Codex.",
-    "",
-    "REGRAS ABSOLUTAS:",
-    "- NÃO alterar fórmulas, cálculos, custos ou regras financeiras.",
-    "- NÃO inventar paths.",
-    "- Usar apenas o que o CODE SCOUT confirmar.",
-    "",
-    "AGENTS_RULES.md:",
-    rulesText,
-    "",
-    repoContext,
-  ].join("\n");
+  const repoContext = buildTargetedRepoContext();
+  const sharedSystem = buildSharedSystem({ rulesText, repoContext });
 
   // =======================
   // AGENT 0 — CODE SCOUT
   // =======================
-  const scout = await openaiChat([
-    { role: "system", content: sharedSystem },
-    {
-      role: "user",
-      content: [
-        "AGENT 0 — CODE SCOUT",
-        "Mapeie a realidade técnica. NÃO proponha soluções.",
-        "",
-        issueContext,
-      ].join("\n"),
-    },
-  ]);
-
-  // =======================
-  // AGENT 1 — UX
-  // =======================
-  const ux = await openaiChat([
-    { role: "system", content: sharedSystem },
-    {
-      role: "user",
-      content: [
-        "AGENT 1 — UX",
-        "Baseie-se no CODE SCOUT + ISSUE.",
-        "Reconheça o que já existe.",
-        "",
-        scout,
-        "",
-        issueContext,
-      ].join("\n"),
-    },
-  ]);
-
-  // =======================
-  // AGENT 2 — FRONT-END (MODELO FORTE)
-  // =======================
-  const fe = await openaiChat(
+  const scout = await openaiChat(
     [
       { role: "system", content: sharedSystem },
       {
         role: "user",
         content: [
-          "AGENT 2 — FRONT-END",
+          "AGENT 0 — CODE SCOUT",
+          "Mapeie a realidade técnica. NÃO proponha solução ainda.",
           "",
-          "OBRIGATÓRIO:",
-          "- Use SOMENTE paths e seletores confirmados no CODE SCOUT.",
-          "- Fornecer CÓDIGO EXATO — nunca prosa.",
+          "RESPONDA EM 5 BLOCOS:",
+          "1) ARQUIVOS RELEVANTES",
+          "2) FUNÇÕES / SELETORES / TRECHOS CONFIRMADOS",
+          "3) O QUE JÁ EXISTE HOJE",
+          "4) LIMITAÇÕES DE CONTEXTO / INCERTEZAS",
+          "5) O QUE A ISSUE PARECE EXIGIR (sem propor implementação)",
           "",
-          "REGRA CRÍTICA:",
-          "- Repetir código existente sem alterar nada é ERRO.",
-          "- AÇÃO substituir é PROIBIDA sem diff explícito mostrando o que muda.",
-          "- Toda resposta deve conter pelo menos UMA alteração concreta e comprovada.",
-          "",
-          "ANTES DE PROPOR QUALQUER CÓDIGO:",
-          "- Cite o seletor existente e explique em 1 frase por que ele NÃO atende aos critérios UX.",
-          "- Somente então proponha o código modificado.",
-          "",
-          "CRITÉRIOS UX A VALIDAR:",
-          "- O estado selected é perceptível em 1s para usuário leigo?",
-          "- Há diferença clara entre hover e selected?",
-          "- O selected é distinguível em baixo contraste / daltonismo?",
-          "- Se qualquer resposta for NÃO, ajuste o CSS existente.",
-          "",
-          "FORMATO OBRIGATÓRIO PARA CADA MUDANÇA:",
-          "SELETOR EXISTENTE: (cole o código atual)",
-          "PROBLEMA: (1 frase explicando o gap UX)",
-          "ARQUIVO:",
-          "SELETOR:",
-          "AÇÃO: adicionar | ajustar | complementar",
-          "\`\`\`css",
-          "/* código exato alterado */",
-          "\`\`\`",
-          "",
-          scout,
-          ux,
+          issueContext,
         ].join("\n"),
       },
     ],
-    FE_MODEL
+    DEFAULT_MODEL
   );
 
   // =======================
-  // AGENT 3 — QA
+  // AGENT 1 — PRODUCT / UX
   // =======================
-  const qa = await openaiChat([
-    { role: "system", content: sharedSystem },
-    {
-      role: "user",
-      content: [
-        "AGENT 3 — QA",
-        "Checklist de teste e não-regressão financeira.",
-        "",
-        scout,
-        ux,
-      ].join("\n"),
-    },
-  ]);
+  const productUx = await openaiChat(
+    [
+      { role: "system", content: sharedSystem },
+      {
+        role: "user",
+        content: [
+          "AGENT 1 — PRODUCT / UX",
+          "Baseie-se no CODE SCOUT + ISSUE.",
+          "Seu papel é traduzir a issue em problema real de experiência do usuário.",
+          "",
+          "RESPONDA EM 4 BLOCOS:",
+          "1) PROBLEMA CENTRAL",
+          "2) SINAIS SECUNDÁRIOS",
+          "3) O QUE É VISUAL vs O QUE É ESTRUTURAL",
+          "4) CRITÉRIOS DE SUCESSO PARA O USUÁRIO",
+          "",
+          scout,
+          "",
+          issueContext,
+        ].join("\n"),
+      },
+    ],
+    DEFAULT_MODEL
+  );
 
   // =======================
-  // AGENT 4 — RELEASE CAPTAIN
+  // AGENT 2 — FE VISUAL
+  // =======================
+  const feVisual = await openaiChat(
+    [
+      { role: "system", content: sharedSystem },
+      {
+        role: "user",
+        content: [
+          "AGENT 2 — FE VISUAL",
+          "",
+          "OBJETIVO:",
+          "Propor apenas melhorias visuais e de hierarquia, sem inventar estrutura inexistente.",
+          "",
+          "OBRIGATÓRIO:",
+          "- Use somente paths e seletores confirmados no CODE SCOUT.",
+          "- Forneça código literal quando propor CSS.",
+          "- Não repetir código existente sem alteração real.",
+          "",
+          "RESPONDA EM BLOCOS REPETÍVEIS NESTE FORMATO:",
+          "SELETOR EXISTENTE:",
+          "PROBLEMA VISUAL:",
+          "ARQUIVO:",
+          "AÇÃO: adicionar | ajustar | complementar",
+          "```css",
+          "/* código exato */",
+          "```",
+          "",
+          scout,
+          "",
+          productUx,
+        ].join("\n"),
+      },
+    ],
+    STRONG_MODEL
+  );
+
+  // =======================
+  // AGENT 3 — FE STRUCTURE
+  // =======================
+  const feStructure = await openaiChat(
+    [
+      { role: "system", content: sharedSystem },
+      {
+        role: "user",
+        content: [
+          "AGENT 3 — FE STRUCTURE",
+          "",
+          "OBJETIVO:",
+          "Propor melhorias estruturais do fluxo, HTML/JS e explicabilidade da etapa final.",
+          "",
+          "IMPORTANTE:",
+          "- Não alterar regras financeiras.",
+          "- Não inventar funções/paths.",
+          "- Se a estrutura atual não suportar algo, diga explicitamente.",
+          "- Você pode propor mudanças em HTML, JS e organização da UI, desde que baseadas no CODE SCOUT.",
+          "",
+          "RESPONDA EM 5 BLOCOS:",
+          "1) OPORTUNIDADES ESTRUTURAIS",
+          "2) TRECHOS/FUNÇÕES QUE PRECISAM MUDAR",
+          "3) RESUMO DO QUE O CODEX DEVE IMPLEMENTAR",
+          "4) RISCOS / DEPENDÊNCIAS",
+          "5) CÓDIGO EXATO quando houver evidência suficiente",
+          "",
+          scout,
+          "",
+          productUx,
+          "",
+          issueContext,
+        ].join("\n"),
+      },
+    ],
+    STRONG_MODEL
+  );
+
+  // =======================
+  // AGENT 4 — SCOPE GUARD
+  // =======================
+  const scopeGuard = await openaiChat(
+    [
+      { role: "system", content: sharedSystem },
+      {
+        role: "user",
+        content: [
+          "AGENT 4 — SCOPE GUARD",
+          "",
+          "Verifique se a proposta ficou aderente à issue.",
+          "Seu papel é apontar quando a solução ficou estreita demais.",
+          "",
+          "RESPONDA EM 4 BLOCOS:",
+          "1) PARTES DA ISSUE COBERTAS",
+          "2) PARTES DA ISSUE NÃO COBERTAS",
+          "3) A SOLUÇÃO ESTÁ REDUZIDA A MICROAJUSTES? (sim/não + justificativa)",
+          "4) O QUE O PROMPT FINAL PRECISA EXIGIR PARA NÃO PERDER O OBJETIVO",
+          "",
+          issueContext,
+          "",
+          scout,
+          "",
+          productUx,
+          "",
+          feVisual,
+          "",
+          feStructure,
+        ].join("\n"),
+      },
+    ],
+    DEFAULT_MODEL
+  );
+
+  // =======================
+  // AGENT 5 — QA
+  // =======================
+  const qa = await openaiChat(
+    [
+      { role: "system", content: sharedSystem },
+      {
+        role: "user",
+        content: [
+          "AGENT 5 — QA",
+          "Monte um checklist de validação para Codex e revisão humana.",
+          "",
+          "RESPONDA EM 3 BLOCOS:",
+          "1) TESTES VISUAIS",
+          "2) TESTES FUNCIONAIS",
+          "3) NÃO-REGRESSÃO",
+          "",
+          scout,
+          "",
+          productUx,
+          "",
+          feVisual,
+          "",
+          feStructure,
+        ].join("\n"),
+      },
+    ],
+    DEFAULT_MODEL
+  );
+
+  // =======================
+  // AGENT 6 — RELEASE CAPTAIN
   // =======================
   const finalPrompt = await openaiChat(
     [
       {
         role: "system",
         content: [
-          "AGENT 4 — RELEASE CAPTAIN",
+          "AGENT 6 — RELEASE CAPTAIN",
           "",
-          "IMPORTANTE:",
-          "- Copie os blocos de código do AGENT 2 LITERALMENTE.",
-          "- NÃO parafrasear código.",
-          "- NÃO usar faixas (ex: 24–28px).",
-          "- Cada passo deve citar arquivo, seletor e código exato.",
-          "- Saída vaga é ERRO.",
-          "- Se o AGENT 2 apenas repetiu código existente sem alteração, aponte o gap e proponha a mudança.",
-          "- O output NUNCA pode ser só CSS solto. Deve seguir obrigatoriamente o FORMATO dos 7 pontos abaixo.",
-          "- COMANDOS DE LOCALIZAÇÃO devem ser comandos rg/find executáveis, nunca frases em prosa.",
-          "- Se qualquer PASSO EXECUTÁVEL não contiver (arquivo + seletor + ação + código exato), o output é INVÁLIDO.",
-          "- No CHECKLIST, use valores exatos do código proposto — nunca faixas como 24-28px.",
-          "- ARQUIVOS PROIBIDOS são absolutos. Não adicionar exceções ou parênteses flexibilizando.",
+          "Sua missão é consolidar tudo em um prompt operacional para Codex.",
+          "Esta pipeline não altera código; ela apenas produz instruções de implementação.",
           "",
-          "FORMATO OBRIGATÓRIO (7 pontos — todos obrigatórios):",
-          "1) OBJETIVO",
-          "2) RESTRIÇÕES",
-          "3) COMANDOS DE LOCALIZAÇÃO",
-          "4) PASSOS EXECUTÁVEIS (com código literal)",
-          "5) ARQUIVOS QUE NÃO DEVEM SER TOCADOS",
-          "6) CHECKLIST",
-          "7) PEDIDO DE RETORNO",
+          "REGRAS OBRIGATÓRIAS:",
+          "- Não inventar paths, seletores ou funções.",
+          "- Não omitir lacunas de escopo.",
+          "- Se a issue for ampla, o prompt final deve refletir isso.",
+          "- Separar claramente: EXECUTIVO vs EXECUÇÃO.",
+          "- Copiar blocos de código literais quando existirem.",
           "",
-          "AGENTS_RULES.md:",
-          rulesText,
+          "FORMATO FINAL OBRIGATÓRIO:",
+          "1) RESUMO EXECUTIVO",
+          "2) OBJETIVO",
+          "3) RESTRIÇÕES",
+          "4) COMANDOS DE LOCALIZAÇÃO",
+          "5) PASSOS EXECUTÁVEIS",
+          "6) ARQUIVOS QUE NÃO DEVEM SER TOCADOS",
+          "7) CHECKLIST",
+          "8) PEDIDO DE RETORNO",
+          "",
+          "REGRAS ESPECIAIS:",
+          "- No RESUMO EXECUTIVO, explicar o que é visual, estrutural e o que ficou fora.",
+          "- Em PASSOS EXECUTÁVEIS, priorizar ações que resolvam o objetivo central da issue.",
+          "- Não transformar uma issue estrutural em uma lista de CSS se houver evidência de mudanças em JS/HTML.",
+          "- Se houver código exato do FE VISUAL ou FE STRUCTURE, copiar literalmente.",
         ].join("\n"),
       },
       {
         role: "user",
-        content: [scout, ux, fe, qa].join("\n\n---\n\n"),
+        content: [
+          issueContext,
+          scout,
+          productUx,
+          feVisual,
+          feStructure,
+          scopeGuard,
+          qa,
+        ].join("\n\n---\n\n"),
       },
     ],
-    CAPTAIN_MODEL
+    STRONG_MODEL
   );
+
+  const body = [
+    "> Resultado do Level 1: plano operacional para implementação via Codex.",
+    "> Nenhum arquivo foi alterado e nenhum PR foi aberto por esta Action.",
+    "",
+    finalPrompt.trim(),
+  ].join("\n");
 
   await ghFetch(
     `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
     {
       method: "POST",
-      body: JSON.stringify({ body: finalPrompt.trim() }),
+      body: JSON.stringify({ body }),
     }
   );
 }
