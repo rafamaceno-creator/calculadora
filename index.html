@@ -439,9 +439,8 @@
           </section>
 
           <!-- Optional adjustments (custos extras, afiliados) -->
-<details class="formAccordion optionalAdjustments wizardStep is-hidden" data-step="1" id="commissionAccordion">
-            <summary>Ajustes adicionais (opcional)</summary>
-            <p class="formAccordion__intro">Marque apenas o que se aplica ao seu cenário.</p>
+<section class="formAccordion optionalAdjustments wizardStep is-hidden" data-step="1" id="commissionAccordion">
+            <p class="formAccordion__intro">Ajustes adicionais (opcional) — marque apenas o que se aplica ao seu cenário.</p>
 
             <!-- ── CARD: MARKETPLACES (removido — use "Personalizar comissão" acima) ──
             (espaço reservado para compatibilidade) -->
@@ -456,8 +455,8 @@
             </div>
 
             <!-- ── CARD: AFILIADOS ──────────────────────────────────── -->
-            <div class="adjCard" id="adjCard-afiliados">
-              <button class="adjCard__header" type="button" aria-expanded="false" aria-controls="adjBody-afiliados">
+            <div class="adjCard is-open" id="adjCard-afiliados">
+              <button class="adjCard__header" type="button" aria-expanded="true" aria-controls="adjBody-afiliados">
                 <div class="adjCard__title">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                   <span>AFILIADOS</span>
@@ -504,8 +503,8 @@
             </div>
 
             <!-- ── CARD: CUSTOS EXTRAS ──────────────────────────────── -->
-            <div class="adjCard" id="adjCard-custos">
-              <button class="adjCard__header" type="button" aria-expanded="false" aria-controls="adjBody-custos">
+            <div class="adjCard is-open" id="adjCard-custos">
+              <button class="adjCard__header" type="button" aria-expanded="true" aria-controls="adjBody-custos">
                 <div class="adjCard__title">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   <span>CUSTOS EXTRAS</span>
@@ -580,7 +579,7 @@
             </div>
 
 
-          </details>
+          </section>
 
           <details class="formInfoDetails wizardStep is-hidden" data-step="1">
             <summary>Como calculamos?</summary>

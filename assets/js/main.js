@@ -3109,11 +3109,6 @@ function initUxRefactor() {
   buildMarketplaceSelector();
   renderMode1PriceInputs();
 
-  const optionalAdjustments = document.querySelector(".optionalAdjustments");
-  if (optionalAdjustments instanceof HTMLDetailsElement) {
-    optionalAdjustments.open = true;
-  }
-
   const profitValuePct = document.querySelector("#profitValuePct");
   const metaPercent = document.querySelector("#meta_percent");
   if (profitValuePct && metaPercent) {
