@@ -1100,9 +1100,11 @@ function getCalculationConfig() {
   const profitType = document.querySelector("#profitType")?.value || "brl";
   const profitValue = Math.max(0, toNumber(document.querySelector("#profitValue")?.value));
 
-  const mlCommissionEnabled = document.querySelector("#mlCommissionToggle")?.checked;
-  const mlClassicPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
-  const mlPremiumPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
+  const customCommEnabled = document.querySelector("#customCommissionToggle")?.checked;
+  const mlClassicPct = (customCommEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
+  const mlPremiumPct = (customCommEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
+  const amazonPct = Math.max(0, customCommEnabled ? toNumber(document.querySelector("#amazonPct")?.value) : 15) / 100;
+  const sheinCustomPct = customCommEnabled ? Math.max(0, toNumber(document.querySelector("#sheinPct")?.value)) / 100 : SHEIN.pctOther;
 
   const adv = getAdvancedVars();
 
@@ -1110,25 +1112,21 @@ function getCalculationConfig() {
   const weightUnit = document.querySelector("#globalWeightUnit")?.value || "kg";
   const weightData = resolveMarketplaceWeight({ rawValue: weightValueRaw, unit: weightUnit });
 
-  const sheinCommissionEnabled = document.querySelector("#sheinCommissionToggle")?.checked;
-  const sheinCategory = sheinCommissionEnabled ? (document.querySelector("#sheinCategory")?.value || "other") : "other";
-
-  const amazonDbaEnabled = document.querySelector("#amazonDbaToggle")?.checked || false;
-  const amazonPct = Math.max(0, toNumber(document.querySelector("#amazonPct")?.value)) / 100;
+  const amazonDbaEnabled = true;
   const amazonOriginGroup = document.querySelector("#amazonOriginGroup")?.value || "sp_capital";
 
-  return { taxPct, profitType, profitValue, mlClassicPct, mlPremiumPct, adv, weightData, sheinCategory, amazonDbaEnabled, amazonPct, amazonOriginGroup };
+  return { taxPct, profitType, profitValue, mlClassicPct, mlPremiumPct, adv, weightData, sheinCustomPct, amazonDbaEnabled, amazonPct, amazonOriginGroup };
 }
 
 function computeForAllMarketplaces(inputState) {
   const cost = Math.max(0, toNumber(inputState?.cost));
   const calcConfig = inputState?.config || getCalculationConfig();
-  const { taxPct, profitType, profitValue, mlClassicPct, mlPremiumPct, adv, weightData, sheinCategory, amazonDbaEnabled, amazonPct, amazonOriginGroup } = calcConfig;
+  const { taxPct, profitType, profitValue, mlClassicPct, mlPremiumPct, adv, weightData, sheinCustomPct, amazonDbaEnabled, amazonPct, amazonOriginGroup } = calcConfig;
   const weightKg = weightData.kg;
 
   const tiktok = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: TIKTOK.pct, marketplaceFixed: TIKTOK.fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.tiktok });
 
-  const sheinPct = sheinCategory === "female" ? SHEIN.pctFemale : SHEIN.pctOther;
+  const sheinPct = sheinCustomPct != null ? sheinCustomPct : SHEIN.pctOther;
   const sheinFixed = sheinFixedByWeight(weightKg);
   const shein = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: sheinPct, marketplaceFixed: sheinFixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra });
 
@@ -1321,9 +1319,10 @@ function recalc(options = {}) {
   const profitType = document.querySelector("#profitType")?.value || "brl";
   const profitValue = Math.max(0, toNumber(document.querySelector("#profitValue")?.value));
 
-  const mlCommissionEnabled = document.querySelector("#mlCommissionToggle")?.checked;
-  const mlClassicPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
-  const mlPremiumPct = (mlCommissionEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
+  const customCommEnabled = document.querySelector("#customCommissionToggle")?.checked;
+  const mlClassicPct = (customCommEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
+  const mlPremiumPct = (customCommEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
+  const amazonPct = Math.max(0, customCommEnabled ? toNumber(document.querySelector("#amazonPct")?.value) : 15) / 100;
 
   const adv = getAdvancedVars();
 
@@ -1335,8 +1334,7 @@ function recalc(options = {}) {
   });
   const weightKg = weightData.kg;
 
-  const amazonDbaEnabled = document.querySelector("#amazonDbaToggle")?.checked || false;
-  const amazonPct = Math.max(0, toNumber(document.querySelector("#amazonPct")?.value)) / 100;
+  const amazonDbaEnabled = true;
   const amazonOriginGroup = document.querySelector("#amazonOriginGroup")?.value || "sp_capital";
   const amazonWeightKg = weightData.kg;
 
@@ -1353,11 +1351,9 @@ function recalc(options = {}) {
   });
 
   /* ===== SHEIN ===== */
-  const sheinCommissionEnabled = document.querySelector("#sheinCommissionToggle")?.checked;
-  const sheinCategory = sheinCommissionEnabled
-    ? (document.querySelector("#sheinCategory")?.value || "other")
-    : "other";
-  const sheinPct = sheinCategory === "female" ? SHEIN.pctFemale : SHEIN.pctOther;
+  const sheinPct = customCommEnabled
+    ? Math.max(0, toNumber(document.querySelector("#sheinPct")?.value)) / 100
+    : SHEIN.pctOther;
   const sheinFixed = sheinFixedByWeight(weightKg);
 
   const shein = solvePrice({
@@ -1628,7 +1624,7 @@ function recalc(options = {}) {
       adv.details,
       0,
       [
-        { k: "Categoria", v: (sheinCategory === "female" ? "Vestuário feminino" : "Demais categorias") },
+        { k: "Comissão", v: `${(sheinPct * 100).toFixed(2)}%` },
         { k: "Intermediação de frete", v: brl(sheinFixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
@@ -2293,9 +2289,9 @@ function bindInputTracking() {
     "profitValue",
     "mlClassicPct",
     "mlPremiumPct",
-    "sheinCategory",
-    "amazonDbaToggle",
+    "sheinPct",
     "amazonPct",
+    "customCommissionToggle",
     "amazonOriginGroup",
     "samePriceInput",
     "currentPriceInput",
@@ -2502,23 +2498,14 @@ function bind() {
 
   syncProfitValue();
 
-  const mlCommissionToggle = $("#mlCommissionToggle");
-  const mlCommissionBox = $("#mlCommissionBox");
-  const applyMlCommissionBox = () => {
-    if (!mlCommissionToggle || !mlCommissionBox) return;
-    setInlineBoxVisibility(mlCommissionBox, mlCommissionToggle.checked);
+  const customCommissionToggle = $("#customCommissionToggle");
+  const customCommissionBox = $("#customCommissionBox");
+  const applyCustomCommissionBox = () => {
+    if (!customCommissionToggle || !customCommissionBox) return;
+    setInlineBoxVisibility(customCommissionBox, customCommissionToggle.checked);
   };
-  mlCommissionToggle?.addEventListener("change", applyMlCommissionBox);
-  applyMlCommissionBox();
-
-  const sheinCommissionToggle = $("#sheinCommissionToggle");
-  const sheinCommissionBox = $("#sheinCommissionBox");
-  const applySheinCommissionBox = () => {
-    if (!sheinCommissionToggle || !sheinCommissionBox) return;
-    setInlineBoxVisibility(sheinCommissionBox, sheinCommissionToggle.checked);
-  };
-  sheinCommissionToggle?.addEventListener("change", applySheinCommissionBox);
-  applySheinCommissionBox();
+  customCommissionToggle?.addEventListener("change", applyCustomCommissionBox);
+  applyCustomCommissionBox();
 
   // Mostrar/esconder box avançadas
   const advToggle = $("#advToggle");
@@ -2540,26 +2527,9 @@ function bind() {
   affToggle?.addEventListener("change", applyAffBox);
   applyAffBox();
 
-  const amazonToggle = $("#amazonDbaToggle");
-  const amazonBox = $("#amazonDbaBox");
-  const applyAmazonBox = () => {
-    if (!amazonToggle || !amazonBox) return;
-    setInlineBoxVisibility(amazonBox, amazonToggle.checked);
-  };
-  amazonToggle?.addEventListener("change", () => {
-    applyAmazonBox();
-    trackGA4Event(amazonToggle.checked ? "amazon_toggle_on" : "amazon_toggle_off", { section: "inputs" });
-  });
-
-  $("#amazonOriginGroup")?.addEventListener("change", (event) => {
-    trackGA4Event("amazon_origin_selected", { value: event.target.value || "sp_capital" });
-  });
-
   $("#amazonPct")?.addEventListener("change", (event) => {
     trackGA4Event("amazon_pct_changed", { value: toNumber(event.target.value) || 0 });
   });
-
-  applyAmazonBox();
 
   const currentSamePriceToggle = $("#currentSamePriceToggle");
   currentSamePriceToggle?.addEventListener("change", (event) => {
@@ -2619,20 +2589,7 @@ function bindAdjCards() {
 }
 
 function syncExtraCostsCardVisibility() {
-  const extraCostsCard = document.querySelector("#adjCard-custos");
-  const trigger = extraCostsCard?.querySelector(".adjCard__header");
-  if (!extraCostsCard || !trigger) return;
-
-  const lockOpen = wizardStep === 3;
-
-  extraCostsCard.classList.toggle("is-locked-open", lockOpen);
-  trigger.disabled = lockOpen;
-  trigger.setAttribute("aria-disabled", String(lockOpen));
-
-  if (lockOpen) {
-    extraCostsCard.classList.add("is-open");
-    trigger.setAttribute("aria-expanded", "true");
-  }
+  // No-op: extra costs card is always accessible in the combined step
 }
 
 
@@ -2803,7 +2760,7 @@ const MARKETPLACE_TITLE_TO_KEY = {
   "Amazon (DBA)": "amazon"
 };
 
-let UX_SELECTED_MARKETPLACES = UX_MARKETPLACES.map((mp) => mp.key);
+let UX_SELECTED_MARKETPLACES = ["amazon"];
 const UX_PRICE_VALUES = {};
 let UX_RECALC_TIMER = null;
 let wizardStep = 0;
@@ -2889,10 +2846,9 @@ function toggleUxModeSections() {
     return;
   }
 
-  const isStep2 = wizardStep === 2;
-  const isStep3 = wizardStep === 3;
-  mode1PriceSection?.classList.toggle("is-hidden", !(mode === "real" && isStep3));
-  profitGoalSection?.classList.toggle("is-hidden", !(mode === "ideal" && isStep3));
+  const isStep1 = wizardStep === 1;
+  mode1PriceSection?.classList.toggle("is-hidden", !(mode === "real" && isStep1));
+  profitGoalSection?.classList.toggle("is-hidden", !(mode === "ideal" && isStep1));
   const heading = document.querySelector("#profitGoalHeading");
   if (heading) heading.textContent = "Margem desejada";
 
@@ -2916,24 +2872,21 @@ function buildSimulationSummaryContext() {
   const adv = getAdvancedVars();
   const selectedKeys = getSelectedMarketplaces();
 
-  const mlEnabled = document.querySelector("#mlCommissionToggle")?.checked;
-  const mlClassicPct = (mlEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
-  const mlPremiumPct = (mlEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
+  const customCommEnabled = document.querySelector("#customCommissionToggle")?.checked;
+  const mlClassicPct = (customCommEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
+  const mlPremiumPct = (customCommEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
 
   const perMarketplace = selectedKeys.map((key) => {
     if (key === "mlClassic") return { key, label: "Mercado Livre — Clássico", commissionPct: mlClassicPct, affiliatePct: adv.affiliate.ml };
     if (key === "mlPremium") return { key, label: "Mercado Livre — Premium", commissionPct: mlPremiumPct, affiliatePct: adv.affiliate.ml };
     if (key === "tiktok") return { key, label: "TikTok Shop", commissionPct: TIKTOK.pct, affiliatePct: adv.affiliate.tiktok };
     if (key === "shein") {
-      const enabled = document.querySelector("#sheinCommissionToggle")?.checked;
-      const category = enabled ? (document.querySelector("#sheinCategory")?.value || "other") : "other";
-      const pct = category === "female" ? SHEIN.pctFemale : SHEIN.pctOther;
+      const pct = customCommEnabled ? Math.max(0, toNumber(document.querySelector("#sheinPct")?.value)) / 100 : SHEIN.pctOther;
       return { key, label: "SHEIN", commissionPct: pct, affiliatePct: 0 };
     }
     if (key === "amazon") {
-      const enabled = document.querySelector("#amazonDbaToggle")?.checked || false;
-      const pct = Math.max(0, toNumber(document.querySelector("#amazonPct")?.value)) / 100;
-      return { key, label: enabled ? "Amazon (DBA)" : "Amazon (desativado)", commissionPct: pct, affiliatePct: adv.affiliate.amazon, disabled: !enabled };
+      const pct = Math.max(0, customCommEnabled ? toNumber(document.querySelector("#amazonPct")?.value) : 15) / 100;
+      return { key, label: "Amazon (DBA)", commissionPct: pct, affiliatePct: adv.affiliate.amazon };
     }
     return { key, label: "Shopee", commissionPct: SHOPEE_FAIXAS[0].pct, affiliatePct: adv.affiliate.shopee };
   });
@@ -3036,7 +2989,7 @@ function renderResultTransparencySummary(context = LAST_CALC_CONTEXT) {
 
 function validateStep(step) {
   if (step === 1) {
-    return getSelectedMarketplaces().length > 0;
+    return getSelectedMarketplaces().length > 0 && Boolean(getCalcMode());
   }
   return true;
 }
@@ -3046,14 +2999,9 @@ function updateWizardSummary() {
   const summary = document.querySelector(".wizardSummary");
   if (!summary) return;
 
-  const selectedMarketplaces = getSelectedMarketplaces().length;
-  const mode = getCalcMode();
-  const baseMinutes = mode === "ideal" ? 9 : mode === "real" ? 7 : 8;
-  const totalMinutes = Math.min(12, Math.max(6, baseMinutes + (selectedMarketplaces > 2 ? 1 : 0)));
-
   const estimatedTime = document.querySelector("#wizardSummaryTime");
   if (estimatedTime) {
-    estimatedTime.textContent = `Tempo estimado: ${totalMinutes} min`;
+    estimatedTime.textContent = `Tempo estimado: 3 min`;
   }
 
   const items = summary.querySelectorAll(".wizardSummary__list li");
@@ -3061,14 +3009,6 @@ function updateWizardSummary() {
     item.classList.toggle("is-done", wizardStep > index);
     item.classList.toggle("is-current", wizardStep === index);
   });
-
-  // Atualiza label da Etapa 4 conforme modo selecionado
-  const step4Label = items[3]?.querySelector("span:first-child");
-  if (step4Label) {
-    step4Label.textContent = mode === "real"
-      ? "Etapa 4 · Preços e ajustes"
-      : "Etapa 4 · Ajustes avançados e meta";
-  }
 }
 
 function applyWizardResultFilter() {
@@ -3085,18 +3025,18 @@ function applyWizardResultFilter() {
 }
 
 function updateStepperDots(step) {
-  // step 0..3 maps to the 4 visible wizard steps; step 4 = results (all done)
-  const visibleStep = Math.min(step, 3);
+  // step 0 = objetivo, step 1 = dados, step 4 = resultado (3-item stepper)
   document.querySelectorAll(".wizardStepper__item").forEach((el) => {
     const s = parseInt(el.dataset.stepperStep, 10);
-    el.classList.toggle("is-done", s < step);
-    el.classList.toggle("is-active", s === visibleStep && step <= 3);
+    const isDone = (s === 0 && step >= 1) || (s === 1 && step >= 4);
+    const isActive = (s === 0 && step === 0) || (s === 1 && step === 1) || (s === 2 && step >= 4);
+    el.classList.toggle("is-done", isDone);
+    el.classList.toggle("is-active", isActive);
   });
-  // Fill the connecting line proportionally (0 steps done → 0%, 3 → 100%)
   const fill = document.querySelector("#wizardStepperFill");
   if (fill) {
-    const pct = step >= 4 ? 100 : (step / 3) * 100;
-    fill.style.width = Math.min(pct, 100) + "%";
+    const pct = step === 0 ? 0 : step === 1 ? 50 : 100;
+    fill.style.width = pct + "%";
   }
 }
 
@@ -3116,13 +3056,14 @@ function renderWizardUI() {
   });
 
   const progress = document.querySelector("#wizardProgress");
-  if (progress) progress.textContent = `Passo ${wizardStep} de 4`;
+  const visibleStep = wizardStep === 4 ? 2 : Math.min(wizardStep, 2);
+  if (progress) progress.textContent = `Passo ${visibleStep} de 2`;
 
   updateStepperDots(wizardStep);
   updateWizardSummary();
 
-  const nextStep2 = document.querySelector("#wizardNextStep2");
-  if (nextStep2) nextStep2.disabled = !validateStep(1);
+  const recalcBtn = document.querySelector("#recalc");
+  if (recalcBtn && wizardStep === 1) recalcBtn.disabled = !validateStep(1);
 
   const resultsContainer = document.querySelector(".wizardResultsContainer");
   if (resultsContainer) {
@@ -3138,10 +3079,6 @@ function renderWizardUI() {
 
   toggleUxModeSections();
   syncExtraCostsCardVisibility();
-
-  if (wizardStep === 3) {
-    renderSimulationSummary(buildSimulationSummaryContext());
-  }
 
   if (wizardStep === 4) {
     applyWizardResultFilter();
@@ -3249,15 +3186,8 @@ function initUxRefactor() {
   });
   document.querySelector("#globalWeightUnit")?.addEventListener("change", uxRecalc);
 
-  document.querySelector("#wizardBackStep2")?.addEventListener("click", handleBack);
-  document.querySelector("#wizardNextStep2")?.addEventListener("click", () => {
-    if (!validateStep(1)) return;
-    setWizardStep(2);
-  });
-  document.querySelector("#wizardBackStepData")?.addEventListener("click", handleBack);
-  document.querySelector("#wizardNextStepData")?.addEventListener("click", () => setWizardStep(3));
-  document.querySelector("#wizardBackStep3")?.addEventListener("click", handleBack);
-  document.querySelector("#wizardEditData")?.addEventListener("click", () => setWizardStep(3));
+  document.querySelector("#wizardBackStep1")?.addEventListener("click", handleBack);
+  document.querySelector("#wizardEditData")?.addEventListener("click", () => setWizardStep(1));
   document.querySelector("#wizardNewCalc")?.addEventListener("click", () => {
     document.querySelectorAll('input[name="calcMode"]').forEach((el) => {
       el.checked = false;
