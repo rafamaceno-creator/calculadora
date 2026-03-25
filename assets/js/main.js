@@ -2760,7 +2760,7 @@ const MARKETPLACE_TITLE_TO_KEY = {
   "Amazon (DBA)": "amazon"
 };
 
-let UX_SELECTED_MARKETPLACES = ["amazon"];
+let UX_SELECTED_MARKETPLACES = UX_MARKETPLACES.map((mp) => mp.key);
 const UX_PRICE_VALUES = {};
 let UX_RECALC_TIMER = null;
 let wizardStep = 0;

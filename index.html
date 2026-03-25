@@ -270,7 +270,7 @@
           <section class="formBlock wizardStep is-hidden" data-step="1">
             <div class="formBlock__head">
               <h3>Dados do cálculo</h3>
-              <p>Selecione os marketplaces e preencha os dados do produto.</p>
+              <p>Selecione os marketplaces e preencha os dados do produto, margem e ajustes.</p>
             </div>
 
             <!-- Marketplace selector -->
@@ -327,10 +327,9 @@
                 </div>
               </div>
             </div>
-          </section>
 
-          <!-- Profit goal -->
-          <section class="formBlock wizardStep is-hidden" data-step="1" id="profitGoalSection">
+            <!-- Profit goal -->
+            <div class="formBlock" id="profitGoalSection">
             <div class="formBlock__head">
               <h3 id="profitGoalHeading">Margem desejada</h3>
               <p>Defina sua margem em valor fixo ou em percentual.</p>
@@ -370,6 +369,8 @@
             </div>
 
             <input id="profitValue" class="is-hidden" type="number" step="0.01" min="0" value="10" tabindex="-1" aria-hidden="true" />
+          </div>
+
           </section>
 
           <!-- Personalizar comissão marketplace -->
