@@ -438,26 +438,20 @@
             <div id="mode1PriceInputs" class="modeInputs"></div>
           </section>
 
-          <!-- Optional adjustments (custos extras, afiliados) -->
-<details class="formAccordion optionalAdjustments wizardStep is-hidden" data-step="1" id="commissionAccordion">
-            <summary>Ajustes adicionais (opcional)</summary>
-            <p class="formAccordion__intro">Marque apenas o que se aplica ao seu cenário.</p>
+          <!-- Ajustes opcionais — sempre visíveis para o vendedor ver tudo de uma vez -->
+          <!-- inputs de compatibilidade (invisíveis) -->
+          <div style="display:none" aria-hidden="true">
+            <input id="mlCommissionToggle" type="checkbox" tabindex="-1" />
+            <input id="sheinCommissionToggle" type="checkbox" tabindex="-1" />
+            <input id="amazonDbaToggle" type="checkbox" checked tabindex="-1" />
+            <select id="sheinCategory" tabindex="-1"><option value="other" selected>other</option></select>
+            <select id="amazonOriginGroup" tabindex="-1"><option value="sp_capital" selected>sp_capital</option></select>
+          </div>
 
-            <!-- ── CARD: MARKETPLACES (removido — use "Personalizar comissão" acima) ──
-            (espaço reservado para compatibilidade) -->
-            <div class="adjCard" id="adjCard-marketplaces" style="display:none">
-              <div class="adjCard__body" id="adjBody-marketplaces"><div class="adjCard__inner">
-                <input id="mlCommissionToggle" type="checkbox" data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
-                <input id="sheinCommissionToggle" type="checkbox" data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
-                <input id="amazonDbaToggle" type="checkbox" checked data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
-                <select id="sheinCategory" class="is-hidden" aria-hidden="true" tabindex="-1"><option value="other" selected>other</option></select>
-                <select id="amazonOriginGroup" class="is-hidden" aria-hidden="true" tabindex="-1"><option value="sp_capital" selected>sp_capital</option></select>
-              </div></div>
-            </div>
-
-            <!-- ── CARD: AFILIADOS ──────────────────────────────────── -->
-            <div class="adjCard" id="adjCard-afiliados">
-              <button class="adjCard__header" type="button" aria-expanded="false" aria-controls="adjBody-afiliados">
+          <!-- AFILIADOS -->
+          <section class="formBlock wizardStep is-hidden" data-step="1">
+            <div class="adjCard is-open" id="adjCard-afiliados">
+              <button class="adjCard__header" type="button" aria-expanded="true" aria-controls="adjBody-afiliados">
                 <div class="adjCard__title">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                   <span>AFILIADOS</span>
@@ -502,10 +496,12 @@
                 </div>
               </div>
             </div>
+          </section>
 
-            <!-- ── CARD: CUSTOS EXTRAS ──────────────────────────────── -->
-            <div class="adjCard" id="adjCard-custos">
-              <button class="adjCard__header" type="button" aria-expanded="false" aria-controls="adjBody-custos">
+          <!-- CUSTOS EXTRAS -->
+          <section class="formBlock wizardStep is-hidden" data-step="1">
+            <div class="adjCard is-open" id="adjCard-custos">
+              <button class="adjCard__header" type="button" aria-expanded="true" aria-controls="adjBody-custos">
                 <div class="adjCard__title">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   <span>CUSTOS EXTRAS</span>
@@ -515,8 +511,6 @@
               </button>
               <div class="adjCard__body" id="adjBody-custos">
                 <div class="adjCard__inner">
-
-                  <!-- Custos percentuais/fixos -->
                   <div class="adjRow">
                     <div class="adjRow__icon">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -574,13 +568,10 @@
                     </div>
                     <div class="hint">Regras: itens em R$ entram como custo fixo. Itens em % entram como incidência.</div>
                   </div>
-
                 </div>
               </div>
             </div>
-
-
-          </details>
+          </section>
 
           <details class="formInfoDetails wizardStep is-hidden" data-step="1">
             <summary>Como calculamos?</summary>
