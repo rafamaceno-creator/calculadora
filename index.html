@@ -186,19 +186,13 @@
                 <div class="wizardStepper__dot">
                   <svg class="wizardStepper__check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 6.5l2.8 2.8 5-5.6"/></svg>
                 </div>
-                <span class="wizardStepper__label">Marketplace</span>
+                <span class="wizardStepper__label">Dados</span>
               </div>
               <div class="wizardStepper__item" data-stepper-step="2">
                 <div class="wizardStepper__dot">
                   <svg class="wizardStepper__check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 6.5l2.8 2.8 5-5.6"/></svg>
                 </div>
-                <span class="wizardStepper__label">Produto</span>
-              </div>
-              <div class="wizardStepper__item" data-stepper-step="3">
-                <div class="wizardStepper__dot">
-                  <svg class="wizardStepper__check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 6.5l2.8 2.8 5-5.6"/></svg>
-                </div>
-                <span class="wizardStepper__label">Ajustes</span>
+                <span class="wizardStepper__label">Resultado</span>
               </div>
             </div>
           </div>
@@ -222,16 +216,8 @@
                   <span class="wizardSummary__badge wizardSummary__badge--required">Obrigatório</span>
                 </li>
                 <li>
-                  <span>Etapa 2 · Seleção de marketplaces</span>
+                  <span>Etapa 2 · Dados e marketplaces</span>
                   <span class="wizardSummary__badge wizardSummary__badge--required">Obrigatório</span>
-                </li>
-                <li>
-                  <span>Etapa 3 · Dados principais do produto</span>
-                  <span class="wizardSummary__badge wizardSummary__badge--required">Obrigatório</span>
-                </li>
-                <li>
-                  <span>Etapa 4 · Ajustes avançados e meta</span>
-                  <span class="wizardSummary__badge wizardSummary__badge--optional">Opcional</span>
                 </li>
               </ul>
             </div>
@@ -283,26 +269,17 @@
 
           <section class="formBlock wizardStep is-hidden" data-step="1">
             <div class="formBlock__head">
-              <h3>Selecione marketplaces</h3>
-              <p>Selecione 1 ou mais marketplaces.</p>
+              <h3>Dados do cálculo</h3>
+              <p>Selecione os marketplaces e preencha os dados do produto.</p>
             </div>
 
+            <!-- Marketplace selector -->
             <div class="field">
+              <div class="label">Marketplaces</div>
               <div id="marketplaceSelector" class="marketplaceSelector" aria-label="Selecionar marketplaces"></div>
             </div>
 
-            <div class="actions wizardActions">
-              <button id="wizardBackStep2" class="btn btn--ghost" type="button">Voltar</button>
-              <button id="wizardNextStep2" class="btn btn--primary" type="button" disabled>Continuar</button>
-            </div>
-          </section>
-
-          <section class="formBlock wizardStep is-hidden" data-step="2">
-            <div class="formBlock__head">
-              <h3>Dados do produto</h3>
-              <p>Use apenas os dados essenciais para iniciar.</p>
-            </div>
-
+            <!-- Product data -->
             <div class="field">
               <div class="label label-row">
                 <span>Nome do cálculo / produto</span>
@@ -325,6 +302,17 @@
 
               <div class="field">
                 <div class="label label-row">
+                  <span>Imposto de venda (%)</span>
+                  <button class="info" type="button" aria-label="Info: Imposto de venda (%)" data-tooltip="Percentual de imposto que incide na venda (sobre o preço de venda). Use a alíquota efetiva do seu cenário.">i</button>
+                </div>
+                <div class="inputWrap">
+                  <input id="tax" type="number" step="0.01" min="0" value="10" />
+                  <span class="inputSuffix">%</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="label label-row">
                   <span>Peso (opcional)</span>
                   <button class="info" type="button" aria-label="Info: Peso (opcional)" data-tooltip="Peso global usado nas regras dos marketplaces que dependem de peso. Se não informar, o sistema mantém o padrão atual de 0,5 kg.">i</button>
                 </div>
@@ -338,30 +326,11 @@
                   </select>
                 </div>
               </div>
-
-              <div class="field">
-                <div class="label label-row">
-                  <span>Imposto de venda (%)</span>
-                  <button class="info" type="button" aria-label="Info: Imposto de venda (%)" data-tooltip="Percentual de imposto que incide na venda (sobre o preço de venda). Use a alíquota efetiva do seu cenário.">i</button>
-                </div>
-                <div class="inputWrap">
-                  <input id="tax" type="number" step="0.01" min="0" value="10" />
-                  <span class="inputSuffix">%</span>
-                </div>
-              </div>
             </div>
           </section>
 
-          <div class="formDivider wizardStep is-hidden" data-step="3"></div>
-
-          <section class="formBlock wizardStep is-hidden" data-step="2">
-            <div class="actions wizardActions">
-              <button id="wizardBackStepData" class="btn btn--ghost" type="button">Voltar</button>
-              <button id="wizardNextStepData" class="btn btn--primary" type="button">Continuar</button>
-            </div>
-          </section>
-
-          <section class="formBlock wizardStep is-hidden" data-step="3" id="profitGoalSection">
+          <!-- Profit goal -->
+          <section class="formBlock wizardStep is-hidden" data-step="1" id="profitGoalSection">
             <div class="formBlock__head">
               <h3 id="profitGoalHeading">Margem desejada</h3>
               <p>Defina sua margem em valor fixo ou em percentual.</p>
@@ -403,117 +372,107 @@
             <input id="profitValue" class="is-hidden" type="number" step="0.01" min="0" value="10" tabindex="-1" aria-hidden="true" />
           </section>
 
-<details class="formAccordion optionalAdjustments wizardStep is-hidden" data-step="3" id="commissionAccordion">
+          <!-- Personalizar comissão marketplace -->
+          <section class="formBlock wizardStep is-hidden" data-step="1">
+            <div class="adjRow">
+              <div class="adjRow__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              </div>
+              <label class="check adjRow__label">
+                <input id="customCommissionToggle" type="checkbox" />
+                <span>Personalizar comissão marketplace</span>
+              </label>
+            </div>
+            <div id="customCommissionBox" class="cardMini optionalInlineBox is-hidden">
+              <div class="advGrid">
+                <div class="field">
+                  <div class="label label-row">
+                    <span>Amazon (%)</span>
+                    <button class="info" type="button" aria-label="Info: Comissão Amazon (%)" data-tooltip="Comissão padrão da Amazon é 15%. Ajuste conforme sua categoria.">i</button>
+                  </div>
+                  <div class="inputWrap">
+                    <input id="amazonPct" type="number" step="0.01" min="0" value="15" />
+                    <span class="inputSuffix">%</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="label label-row">
+                    <span>ML Premium (%)</span>
+                    <button class="info" type="button" aria-label="Info: Mercado Livre Premium (%)" data-tooltip="Comissão padrão ML Premium é 19%. Ajuste conforme sua categoria/anúncio.">i</button>
+                  </div>
+                  <div class="inputWrap">
+                    <input id="mlPremiumPct" type="number" step="0.01" min="0" value="19" />
+                    <span class="inputSuffix">%</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="label label-row">
+                    <span>ML Clássico (%)</span>
+                    <button class="info" type="button" aria-label="Info: Mercado Livre Clássico (%)" data-tooltip="Comissão padrão ML Clássico é 14%. Ajuste conforme sua categoria/anúncio.">i</button>
+                  </div>
+                  <div class="inputWrap">
+                    <input id="mlClassicPct" type="number" step="0.01" min="0" value="14" />
+                    <span class="inputSuffix">%</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="label label-row">
+                    <span>SHEIN (%)</span>
+                    <button class="info" type="button" aria-label="Info: Comissão SHEIN (%)" data-tooltip="Comissão padrão SHEIN: 18% (demais) ou 20% (vestuário feminino). Ajuste conforme sua categoria.">i</button>
+                  </div>
+                  <div class="inputWrap">
+                    <input id="sheinPct" type="number" step="0.01" min="0" value="18" />
+                    <span class="inputSuffix">%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Price inputs for "real" mode -->
+          <section class="formBlock wizardStep is-hidden" data-step="1" id="mode1PriceSection">
+            <div class="formBlock__head">
+              <h3>Preço de venda por marketplace</h3>
+              <p id="calcModeMicrocopy">Preço pode variar por marketplace. Preencha o valor correspondente a cada canal.</p>
+            </div>
+            <div id="mode1PriceInputs" class="modeInputs"></div>
+          </section>
+
+          <!-- Optional adjustments (custos extras, afiliados) -->
+<details class="formAccordion optionalAdjustments wizardStep is-hidden" data-step="1" id="commissionAccordion">
             <summary>Ajustes adicionais (opcional)</summary>
             <p class="formAccordion__intro">Marque apenas o que se aplica ao seu cenário.</p>
 
-            <!-- ── CARD: MARKETPLACES ───────────────────────────────── -->
-            <div class="adjCard" id="adjCard-marketplaces">
-              <button class="adjCard__header" type="button" aria-expanded="false" aria-controls="adjBody-marketplaces">
+            <!-- ── CARD: MARKETPLACES (removido — use "Personalizar comissão" acima) ──
+            (espaço reservado para compatibilidade) -->
+            <div class="adjCard" id="adjCard-marketplaces" style="display:none">
+              <div class="adjCard__body" id="adjBody-marketplaces"><div class="adjCard__inner">
+                <input id="mlCommissionToggle" type="checkbox" data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
+                <input id="sheinCommissionToggle" type="checkbox" data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
+                <input id="amazonDbaToggle" type="checkbox" checked data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
+                <select id="sheinCategory" class="is-hidden" aria-hidden="true" tabindex="-1"><option value="other" selected>other</option></select>
+                <select id="amazonOriginGroup" class="is-hidden" aria-hidden="true" tabindex="-1"><option value="sp_capital" selected>sp_capital</option></select>
+              </div></div>
+            </div>
+
+            <!-- ── CARD: AFILIADOS ──────────────────────────────────── -->
+            <div class="adjCard" id="adjCard-afiliados">
+              <button class="adjCard__header" type="button" aria-expanded="false" aria-controls="adjBody-afiliados">
                 <div class="adjCard__title">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                  <span>MARKETPLACES</span>
-                  <span class="adjCard__counter" id="adjCounter-marketplaces">0 ativos</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>AFILIADOS</span>
+                  <span class="adjCard__counter" id="adjCounter-afiliados">0 ativos</span>
                 </div>
                 <svg class="adjCard__chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
-              <div class="adjCard__body" id="adjBody-marketplaces">
+              <div class="adjCard__body" id="adjBody-afiliados">
                 <div class="adjCard__inner">
-
-                  <!-- ML comissão -->
-                  <div class="adjRow">
-                    <div class="adjRow__icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                    </div>
-                    <label class="check adjRow__label">
-                      <input id="mlCommissionToggle" type="checkbox" data-adj-group="marketplaces" />
-                      <span>Definir comissão Mercado Livre</span>
-                    </label>
-                  </div>
-                  <div id="mlCommissionBox" class="cardMini optionalInlineBox is-hidden">
-                    <div class="row2">
-                      <div class="field">
-                        <div class="label label-row">
-                          <span>ML Clássico (%)</span>
-                          <button class="info" type="button" aria-label="Info: Mercado Livre Clássico (%)" data-tooltip="Por padrão usamos 14%. Você pode editar conforme sua categoria/anúncio.">i</button>
-                        </div>
-                        <input id="mlClassicPct" type="number" step="0.01" min="0" value="14" />
-                      </div>
-                      <div class="field">
-                        <div class="label label-row">
-                          <span>ML Premium (%)</span>
-                          <button class="info" type="button" aria-label="Info: Mercado Livre Premium (%)" data-tooltip="Por padrão usamos 19%. Você pode editar conforme sua categoria/anúncio.">i</button>
-                        </div>
-                        <input id="mlPremiumPct" type="number" step="0.01" min="0" value="19" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- SHEIN comissão -->
-                  <div class="adjRow">
-                    <div class="adjRow__icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                    </div>
-                    <label class="check adjRow__label">
-                      <input id="sheinCommissionToggle" type="checkbox" data-adj-group="marketplaces" />
-                      <span>Definir comissão SHEIN</span>
-                    </label>
-                  </div>
-                  <div id="sheinCommissionBox" class="cardMini optionalInlineBox is-hidden">
-                    <div class="field">
-                      <div class="label label-row">
-                        <span>Categoria SHEIN</span>
-                        <button class="info" type="button" aria-label="Info: Categoria SHEIN" data-tooltip="A comissão da SHEIN varia por categoria: Vestuário feminino 20% e demais categorias 18%.">i</button>
-                      </div>
-                      <select id="sheinCategory">
-                        <option value="other" selected>Demais categorias (18%)</option>
-                        <option value="female">Vestuário feminino (20%)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- Amazon DBA -->
-                  <div class="adjRow">
-                    <div class="adjRow__icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                    </div>
-                    <label class="check adjRow__label">
-                      <input id="amazonDbaToggle" type="checkbox" checked data-adj-group="marketplaces" />
-                      <span>Incluir Amazon (DBA) no cálculo</span>
-                    </label>
-                  </div>
-                  <div id="amazonDbaBox" class="cardMini optionalInlineBox is-hidden" style="position:relative">
-                    <span class="pill adjCard__optPill">Opcional</span>
-                    <div class="field">
-                      <div class="label label-row">
-                        <span>Comissão Amazon (%)</span>
-                        <button class="info" type="button" aria-label="Info: Comissão Amazon (%)" data-tooltip="A comissão padrão da Amazon foi definida em 15%, mas você pode ajustar conforme sua categoria.">i</button>
-                      </div>
-                      <input id="amazonPct" type="number" step="0.01" min="0" value="15" />
-                    </div>
-                    <small>DBA usa o maior entre peso real e cúbico. Aqui usamos o peso informado.</small>
-                    <small>Se o peso não estiver ativo, calculamos com padrão de 0,5 kg.</small>
-                    <div id="amazonOriginWrap" class="field is-hidden">
-                      <div class="label label-row">
-                        <span>Origem do envio (DBA)</span>
-                        <button class="info" type="button" aria-label="Info: Origem do envio (DBA)" data-tooltip="A origem é exigida no bloco de produtos acima de R$ 200 na tabela DBA da Amazon.">i</button>
-                      </div>
-                      <select id="amazonOriginGroup">
-                        <option value="sp_capital">SP Capital</option>
-                        <option value="sul_sudeste_capitais">Outras capitais do Sul e Sudeste</option>
-                        <option value="sul_sudeste_interior">Interior do Sul e Sudeste</option>
-                        <option value="co_ne_no">Centro-Oeste, Norte e Nordeste</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- Afiliados -->
                   <div class="adjRow">
                     <div class="adjRow__icon">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
                     <label class="check adjRow__label">
-                      <input id="affToggle" type="checkbox" data-adj-group="marketplaces" />
+                      <input id="affToggle" type="checkbox" data-adj-group="afiliados" />
                       <span>Afiliados por canal (%)</span>
                     </label>
                   </div>
@@ -540,7 +499,6 @@
                       <input id="affTikTok" type="number" step="0.01" min="0" value="0" />
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>
@@ -624,32 +582,16 @@
 
           </details>
 
-          <section class="formBlock wizardStep is-hidden" data-step="3" id="mode1PriceSection">
-            <div class="formBlock__head">
-              <h3>Preço de venda por marketplace</h3>
-              <p id="calcModeMicrocopy">Preço pode variar por marketplace. Preencha o valor correspondente a cada canal.</p>
-            </div>
-            <div id="mode1PriceInputs" class="modeInputs"></div>
-          </section>
-
-          <details class="formInfoDetails wizardStep is-hidden" data-step="3">
+          <details class="formInfoDetails wizardStep is-hidden" data-step="1">
             <summary>Como calculamos?</summary>
             <p>Regra: custos fixos e lucro em R$ somam no custo. Depois, somamos incidências em % (comissão + imposto [+ lucro% se escolhido] + custos%) e calculamos: <strong>Preço = custo ajustado ÷ (1 − incidências)</strong>.</p>
           </details>
 
-          <section class="formBlock wizardStep is-hidden simulationSummary" data-step="3" id="simulationSummaryBlock" aria-live="polite">
-            <div class="formBlock__head">
-              <h3>Resumo da simulação</h3>
-              <p>Antes de calcular, confira o que está ativo e em qual ordem entra no preço sugerido.</p>
-            </div>
-            <div id="simulationSummaryContent"></div>
-          </section>
+          <div class="formDivider wizardStep is-hidden" data-step="1"></div>
 
-          <div class="formDivider wizardStep is-hidden" data-step="3"></div>
-
-          <section class="formBlock formBlock--actions wizardStep is-hidden" data-step="3">
+          <section class="formBlock formBlock--actions wizardStep is-hidden" data-step="1">
             <div class="actions wizardActions">
-              <button id="wizardBackStep3" class="btn btn--ghost" type="button">Voltar</button>
+              <button id="wizardBackStep1" class="btn btn--ghost" type="button">Voltar</button>
               <button id="recalc" class="btn btn--primary" type="button">Calcular</button>
             </div>
 
