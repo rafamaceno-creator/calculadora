@@ -716,6 +716,55 @@ body.theme-dark .leadCapture__head p{color:#94a3b8}
   .marketplaceChip{min-height:72px}
 }
 
+/* ===== Price or Margin row ===== */
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end}
+.priceOrMarginRow{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:20px;
+  align-items:start;
+  margin:16px 0;
+  padding:18px;
+  border:1.5px solid color-mix(in srgb,var(--accent) 28%,var(--stroke) 72%);
+  border-radius:16px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent-soft) 55%,#fff),#fff 80%);
+}
+.priceOrMargin__side{display:flex;flex-direction:column;gap:8px}
+.priceOrMargin__side .formBlock__head{margin-bottom:0}
+.priceOrMargin__side .formBlock__head h3{font-size:15px;margin:0}
+.priceOrMargin__side .formBlock__head p{margin:3px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
+.priceOrMargin__or{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding-top:36px;
+}
+.priceOrMargin__or span{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  border:1px solid var(--stroke);
+  background:#fff;
+  font-size:11px;
+  font-weight:800;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  flex-shrink:0;
+}
+@media(max-width:768px){
+  .row3{grid-template-columns:1fr 1fr}
+  .priceOrMarginRow{grid-template-columns:1fr;gap:14px}
+  .priceOrMargin__or{padding-top:0;justify-content:flex-start}
+  .priceOrMargin__or span{width:28px;height:28px;font-size:10px}
+}
+@media(max-width:480px){
+  .row3{grid-template-columns:1fr}
+}
+
 /* ===== Premium WOW Refresh (visual only) ===== */
 :root{
   --bg:#edf2ff;
