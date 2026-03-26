@@ -271,99 +271,169 @@
             </div>
           </div>
 
-          <!-- ── Personalizar comissão ── -->
-          <div class="adjRow" style="margin-top:16px">
-            <div class="adjRow__icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            </div>
-            <label class="check adjRow__label">
-              <input id="customCommissionToggle" type="checkbox" />
-              <span>Personalizar comissão marketplace</span>
-            </label>
-          </div>
-          <div id="customCommissionBox" class="cardMini optionalInlineBox is-hidden">
-            <div class="advGrid">
-              <div class="field">
-                <div class="label label-row">
-                  <span>Amazon (%)</span>
-                  <button class="info" type="button" aria-label="Info: Comissão Amazon (%)" data-tooltip="Comissão padrão da Amazon é 15%. Ajuste conforme sua categoria.">i</button>
-                </div>
-                <div class="inputWrap">
-                  <input id="amazonPct" type="number" step="0.01" min="0" value="15" />
-                  <span class="inputSuffix">%</span>
-                </div>
+          <!-- ── CUSTOS EXTRAS ── -->
+          <div class="adjCard is-open" id="adjCard-custos" style="margin-top:16px">
+            <button class="adjCard__header" type="button" aria-expanded="true" aria-controls="adjBody-custos">
+              <div class="adjCard__title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>CUSTOS EXTRAS</span>
+                <span class="adjCard__counter" id="adjCounter-custos">0 ativos</span>
               </div>
-              <div class="field">
-                <div class="label label-row">
-                  <span>ML Premium (%)</span>
-                  <button class="info" type="button" aria-label="Info: Mercado Livre Premium (%)" data-tooltip="Comissão padrão ML Premium é 19%. Ajuste conforme sua categoria/anúncio.">i</button>
-                </div>
-                <div class="inputWrap">
-                  <input id="mlPremiumPct" type="number" step="0.01" min="0" value="19" />
-                  <span class="inputSuffix">%</span>
-                </div>
-              </div>
-              <div class="field">
-                <div class="label label-row">
-                  <span>ML Clássico (%)</span>
-                  <button class="info" type="button" aria-label="Info: Mercado Livre Clássico (%)" data-tooltip="Comissão padrão ML Clássico é 14%. Ajuste conforme sua categoria/anúncio.">i</button>
-                </div>
-                <div class="inputWrap">
-                  <input id="mlClassicPct" type="number" step="0.01" min="0" value="14" />
-                  <span class="inputSuffix">%</span>
-                </div>
-              </div>
-              <div class="field">
-                <div class="label label-row">
-                  <span>SHEIN (%)</span>
-                  <button class="info" type="button" aria-label="Info: Comissão SHEIN (%)" data-tooltip="Comissão padrão SHEIN: 18% (demais) ou 20% (vestuário feminino). Ajuste conforme sua categoria.">i</button>
-                </div>
-                <div class="inputWrap">
-                  <input id="sheinPct" type="number" step="0.01" min="0" value="18" />
-                  <span class="inputSuffix">%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── Ajustes adicionais (accordion) ── -->
-          <details class="formAccordion optionalAdjustments" id="commissionAccordion" style="margin-top:16px">
-            <summary>Ajustes adicionais (opcional)</summary>
-            <p class="formAccordion__intro">Marque apenas o que se aplica ao seu cenário.</p>
-
-            <!-- hidden compat fields -->
-            <div class="adjCard" id="adjCard-marketplaces" style="display:none">
-              <div class="adjCard__body" id="adjBody-marketplaces"><div class="adjCard__inner">
-                <input id="mlCommissionToggle" type="checkbox" data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
-                <input id="sheinCommissionToggle" type="checkbox" data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
-                <input id="amazonDbaToggle" type="checkbox" checked data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
-                <select id="sheinCategory" class="is-hidden" aria-hidden="true" tabindex="-1"><option value="other" selected>other</option></select>
-                <select id="amazonOriginGroup" class="is-hidden" aria-hidden="true" tabindex="-1"><option value="sp_capital" selected>sp_capital</option></select>
-              </div></div>
-            </div>
-
-            <!-- ── CARD: AFILIADOS ──────────────────────────────────── -->
-            <div class="adjCard is-open" id="adjCard-afiliados">
-              <button class="adjCard__header" type="button" aria-expanded="true" aria-controls="adjBody-afiliados">
-                <div class="adjCard__title">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  <span>AFILIADOS</span>
-                  <span class="adjCard__counter" id="adjCounter-afiliados">0 ativos</span>
-                </div>
-                <svg class="adjCard__chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="adjCard__body" id="adjBody-afiliados">
-                <div class="adjCard__inner">
-                  <div class="adjRow">
-                    <div class="adjRow__icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>
-                    <label class="check adjRow__label">
-                      <input id="affToggle" type="checkbox" data-adj-group="afiliados" />
-                      <span>Afiliados por canal (%)</span>
-                    </label>
+              <svg class="adjCard__chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="adjCard__body" id="adjBody-custos">
+              <div class="adjCard__inner">
+                <div class="adjRow">
+                  <div class="adjRow__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                   </div>
-                  <div id="affBox" class="cardMini optionalInlineBox affGrid is-hidden">
+                  <label class="check adjRow__label">
+                    <input id="advToggle" type="checkbox" data-adj-group="custos" />
+                    <span>Aplicar custos percentuais/fixos extras</span>
+                  </label>
+                </div>
+                <div id="advBox" class="optionalInlineBox is-hidden">
+                  <div class="advGrid">
+                    <div class="advItem">
+                      <div class="label label-row">
+                        <label class="check">
+                          <input id="adsToggle" type="checkbox" />
+                          <span>Custo de Ads</span>
+                        </label>
+                        <button class="info" type="button" aria-label="Info: Custo de Ads" data-tooltip="Informe quanto do seu faturamento é gasto em ads (%). Ex: se a cada R$ 100 vendidos você gasta R$ 8 em anúncios, preencha 8%.">i</button>
+                      </div>
+                      <div class="row2">
+                        <select id="adsType"><option value="pct">Em %</option><option value="brl">Em R$</option></select>
+                        <input id="adsValue" type="number" step="0.01" min="0" value="0" />
+                      </div>
+                    </div>
+                    <div class="advItem">
+                      <div class="label label-row">
+                        <label class="check">
+                          <input id="returnToggle" type="checkbox" />
+                          <span>Taxa de devolução</span>
+                        </label>
+                        <button class="info" type="button" aria-label="Info: Custo de devolução" data-tooltip="Estimativa de devolução/troca. Pode ser percentual do faturamento ou valor fixo por venda.">i</button>
+                      </div>
+                      <div class="row2">
+                        <select id="returnType"><option value="pct">Em %</option><option value="brl">Em R$</option></select>
+                        <input id="returnValue" type="number" step="0.01" min="0" value="0" />
+                      </div>
+                    </div>
+                    <div class="advItem">
+                      <label class="check"><input id="costFixedToggle" type="checkbox" /><span>Custo fixo por pedido</span></label>
+                      <div class="row2">
+                        <select id="costFixedType"><option value="brl" selected>Em R$</option><option value="pct">Em %</option></select>
+                        <input id="costFixedValue" type="number" step="0.01" min="0" value="0" />
+                      </div>
+                    </div>
+                    <div class="advItem"><label class="check"><input id="difalToggle" type="checkbox" /><span>DIFAL (%)</span></label><input id="difalValue" type="number" step="0.01" min="0" value="0" /></div>
+                    <div class="advItem"><label class="check"><input id="pisToggle" type="checkbox" /><span>PIS (%)</span></label><input id="pisValue" type="number" step="0.01" min="0" value="0" /></div>
+                    <div class="advItem"><label class="check"><input id="cofinsToggle" type="checkbox" /><span>COFINS (%)</span></label><input id="cofinsValue" type="number" step="0.01" min="0" value="0" /></div>
+                    <div class="advItem">
+                      <label class="check"><input id="otherToggle" type="checkbox" /><span>Outro custo</span></label>
+                      <div class="row2">
+                        <select id="otherType"><option value="pct">Em %</option><option value="brl">Em R$</option></select>
+                        <input id="otherValue" type="number" step="0.01" min="0" value="0" />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="hint">Regras: itens em R$ entram como custo fixo. Itens em % entram como incidência.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── COMISSÕES MARKETPLACE ── -->
+          <div class="adjCard is-open" id="adjCard-comissoes" style="margin-top:16px">
+            <button class="adjCard__header" type="button" aria-expanded="true" aria-controls="adjBody-comissoes">
+              <div class="adjCard__title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span>COMISSÕES MARKETPLACE</span>
+              </div>
+              <svg class="adjCard__chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="adjCard__body" id="adjBody-comissoes">
+              <div class="adjCard__inner">
+                <div class="adjRow">
+                  <div class="adjRow__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                  </div>
+                  <label class="check adjRow__label">
+                    <input id="customCommissionToggle" type="checkbox" />
+                    <span>Personalizar comissão marketplace</span>
+                  </label>
+                </div>
+                <div id="customCommissionBox" class="cardMini optionalInlineBox is-hidden">
+                  <div class="advGrid">
+                    <div class="field">
+                      <div class="label label-row">
+                        <span>Amazon (%)</span>
+                        <button class="info" type="button" aria-label="Info: Comissão Amazon (%)" data-tooltip="Comissão padrão da Amazon é 15%. Ajuste conforme sua categoria.">i</button>
+                      </div>
+                      <div class="inputWrap">
+                        <input id="amazonPct" type="number" step="0.01" min="0" value="15" />
+                        <span class="inputSuffix">%</span>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <div class="label label-row">
+                        <span>ML Premium (%)</span>
+                        <button class="info" type="button" aria-label="Info: Mercado Livre Premium (%)" data-tooltip="Comissão padrão ML Premium é 19%. Ajuste conforme sua categoria/anúncio.">i</button>
+                      </div>
+                      <div class="inputWrap">
+                        <input id="mlPremiumPct" type="number" step="0.01" min="0" value="19" />
+                        <span class="inputSuffix">%</span>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <div class="label label-row">
+                        <span>ML Clássico (%)</span>
+                        <button class="info" type="button" aria-label="Info: Mercado Livre Clássico (%)" data-tooltip="Comissão padrão ML Clássico é 14%. Ajuste conforme sua categoria/anúncio.">i</button>
+                      </div>
+                      <div class="inputWrap">
+                        <input id="mlClassicPct" type="number" step="0.01" min="0" value="14" />
+                        <span class="inputSuffix">%</span>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <div class="label label-row">
+                        <span>SHEIN (%)</span>
+                        <button class="info" type="button" aria-label="Info: Comissão SHEIN (%)" data-tooltip="Comissão padrão SHEIN: 18% (demais) ou 20% (vestuário feminino). Ajuste conforme sua categoria.">i</button>
+                      </div>
+                      <div class="inputWrap">
+                        <input id="sheinPct" type="number" step="0.01" min="0" value="18" />
+                        <span class="inputSuffix">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── AFILIADOS ── -->
+          <div class="adjCard is-open" id="adjCard-afiliados" style="margin-top:16px">
+            <button class="adjCard__header" type="button" aria-expanded="true" aria-controls="adjBody-afiliados">
+              <div class="adjCard__title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>AFILIADOS</span>
+                <span class="adjCard__counter" id="adjCounter-afiliados">0 ativos</span>
+              </div>
+              <svg class="adjCard__chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="adjCard__body" id="adjBody-afiliados">
+              <div class="adjCard__inner">
+                <div class="adjRow">
+                  <div class="adjRow__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
+                  <label class="check adjRow__label">
+                    <input id="affToggle" type="checkbox" data-adj-group="afiliados" />
+                    <span>Afiliados por canal (%)</span>
+                  </label>
+                </div>
+                <div id="affBox" class="cardMini optionalInlineBox affGrid is-hidden">
                     <div class="field">
                       <div class="label label-row">
                         <span>Afiliados Shopee (%)</span>
@@ -390,84 +460,16 @@
               </div>
             </div>
 
-            <!-- ── CARD: CUSTOS EXTRAS ──────────────────────────────── -->
-            <div class="adjCard is-open" id="adjCard-custos">
-              <button class="adjCard__header" type="button" aria-expanded="true" aria-controls="adjBody-custos">
-                <div class="adjCard__title">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  <span>CUSTOS EXTRAS</span>
-                  <span class="adjCard__counter" id="adjCounter-custos">0 ativos</span>
-                </div>
-                <svg class="adjCard__chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="adjCard__body" id="adjBody-custos">
-                <div class="adjCard__inner">
-
-                  <!-- Custos percentuais/fixos -->
-                  <div class="adjRow">
-                    <div class="adjRow__icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    </div>
-                    <label class="check adjRow__label">
-                      <input id="advToggle" type="checkbox" data-adj-group="custos" />
-                      <span>Aplicar custos percentuais/fixos extras</span>
-                    </label>
-                  </div>
-                  <div id="advBox" class="optionalInlineBox is-hidden">
-                    <div class="advGrid">
-                      <div class="advItem">
-                        <div class="label label-row">
-                          <label class="check">
-                            <input id="adsToggle" type="checkbox" />
-                            <span>Custo de Ads</span>
-                          </label>
-                          <button class="info" type="button" aria-label="Info: Custo de Ads" data-tooltip="Informe quanto do seu faturamento é gasto em ads (%). Ex: se a cada R$ 100 vendidos você gasta R$ 8 em anúncios, preencha 8%.">i</button>
-                        </div>
-                        <div class="row2">
-                          <select id="adsType"><option value="pct">Em %</option><option value="brl">Em R$</option></select>
-                          <input id="adsValue" type="number" step="0.01" min="0" value="0" />
-                        </div>
-                      </div>
-                      <div class="advItem">
-                        <div class="label label-row">
-                          <label class="check">
-                            <input id="returnToggle" type="checkbox" />
-                            <span>Taxa de devolução</span>
-                          </label>
-                          <button class="info" type="button" aria-label="Info: Custo de devolução" data-tooltip="Estimativa de devolução/troca. Pode ser percentual do faturamento ou valor fixo por venda.">i</button>
-                        </div>
-                        <div class="row2">
-                          <select id="returnType"><option value="pct">Em %</option><option value="brl">Em R$</option></select>
-                          <input id="returnValue" type="number" step="0.01" min="0" value="0" />
-                        </div>
-                      </div>
-                      <div class="advItem">
-                        <label class="check"><input id="costFixedToggle" type="checkbox" /><span>Custo fixo por pedido</span></label>
-                        <div class="row2">
-                          <select id="costFixedType"><option value="brl" selected>Em R$</option><option value="pct">Em %</option></select>
-                          <input id="costFixedValue" type="number" step="0.01" min="0" value="0" />
-                        </div>
-                      </div>
-                      <div class="advItem"><label class="check"><input id="difalToggle" type="checkbox" /><span>DIFAL (%)</span></label><input id="difalValue" type="number" step="0.01" min="0" value="0" /></div>
-                      <div class="advItem"><label class="check"><input id="pisToggle" type="checkbox" /><span>PIS (%)</span></label><input id="pisValue" type="number" step="0.01" min="0" value="0" /></div>
-                      <div class="advItem"><label class="check"><input id="cofinsToggle" type="checkbox" /><span>COFINS (%)</span></label><input id="cofinsValue" type="number" step="0.01" min="0" value="0" /></div>
-                      <div class="advItem">
-                        <label class="check"><input id="otherToggle" type="checkbox" /><span>Outro custo</span></label>
-                        <div class="row2">
-                          <select id="otherType"><option value="pct">Em %</option><option value="brl">Em R$</option></select>
-                          <input id="otherValue" type="number" step="0.01" min="0" value="0" />
-                        </div>
-                      </div>
-                    </div>
-                    <div class="hint">Regras: itens em R$ entram como custo fixo. Itens em % entram como incidência.</div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-
-
-          </details>
+          <!-- hidden compat fields -->
+          <div id="adjCard-marketplaces" style="display:none">
+            <div id="adjBody-marketplaces"><div class="adjCard__inner">
+              <input id="mlCommissionToggle" type="checkbox" data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
+              <input id="sheinCommissionToggle" type="checkbox" data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
+              <input id="amazonDbaToggle" type="checkbox" checked data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
+              <select id="sheinCategory" class="is-hidden" aria-hidden="true" tabindex="-1"><option value="other" selected>other</option></select>
+              <select id="amazonOriginGroup" class="is-hidden" aria-hidden="true" tabindex="-1"><option value="sp_capital" selected>sp_capital</option></select>
+            </div></div>
+          </div>
 
           <details class="formInfoDetails" style="margin-top:14px">
             <summary>Como calculamos?</summary>
