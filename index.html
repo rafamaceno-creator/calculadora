@@ -166,285 +166,172 @@
 
     <section id="sec-precificacao" class="sectionCard">
       <h2>Precificação</h2>
-      <p class="sectionMicrocopy">Preencha os dados principais para descobrir o preço ideal com lucro real.</p>
+      <p class="sectionMicrocopy">Preencha os custos, selecione os marketplaces e informe o preço de venda ou a margem desejada.</p>
       <div class="grid">
       <div class="card pricingCard">
         <div class="card__inner">
-          <!-- Progress stepper -->
-          <div class="wizardStepper" id="wizardStepper" aria-label="Progresso do formulário">
-            <div class="wizardStepper__track" aria-hidden="true">
-              <div class="wizardStepper__fill" id="wizardStepperFill"></div>
-            </div>
-            <div class="wizardStepper__items" aria-hidden="true">
-              <div class="wizardStepper__item" data-stepper-step="0">
-                <div class="wizardStepper__dot">
-                  <svg class="wizardStepper__check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 6.5l2.8 2.8 5-5.6"/></svg>
-                </div>
-                <span class="wizardStepper__label">Objetivo</span>
-              </div>
-              <div class="wizardStepper__item" data-stepper-step="1">
-                <div class="wizardStepper__dot">
-                  <svg class="wizardStepper__check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 6.5l2.8 2.8 5-5.6"/></svg>
-                </div>
-                <span class="wizardStepper__label">Dados</span>
-              </div>
-              <div class="wizardStepper__item" data-stepper-step="2">
-                <div class="wizardStepper__dot">
-                  <svg class="wizardStepper__check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 6.5l2.8 2.8 5-5.6"/></svg>
-                </div>
-                <span class="wizardStepper__label">Resultado</span>
-              </div>
-            </div>
+          <!-- ── Marketplace selector ── -->
+          <div class="field">
+            <div class="label">Marketplaces</div>
+            <div id="marketplaceSelector" class="marketplaceSelector" aria-label="Selecionar marketplaces"></div>
           </div>
-          <!-- Hidden live region for a11y -->
-          <div id="wizardProgress" class="sr-only" aria-live="polite">Passo 0 de 4</div>
 
-          <section class="formBlock wizardStep" data-step="0">
-            <div class="formBlock__head">
-              <h3>O que você precisa saber hoje?</h3>
+          <!-- ── Nome do cálculo ── -->
+          <div class="field">
+            <div class="label label-row">
+              <span>Nome do cálculo / produto</span>
+              <button class="info" type="button" aria-label="Info: Nome do cálculo / produto" data-tooltip="Dê um nome para identificar este cálculo no PDF e no salvamento local. Ex: Camiseta Dry Fit Preta.">i</button>
             </div>
-            <p class="modeInstruction" id="calcModeInstruction">Escolha um modo para continuar</p>
+            <input id="calcName" type="text" maxlength="80" placeholder="Ex: Camiseta Dry Fit Preta" />
+          </div>
 
-            <div class="wizardSummary" aria-live="polite">
-              <div class="wizardSummary__head">
-                <h4>Mapa do escopo</h4>
-                <p id="wizardSummaryTime">Tempo estimado: 0 min</p>
-              </div>
-              <ul class="wizardSummary__list" id="wizardSummaryList">
-                <li>
-                  <span>Etapa 1 · Escolha do objetivo</span>
-                  <span class="wizardSummary__badge wizardSummary__badge--required">Obrigatório</span>
-                </li>
-                <li>
-                  <span>Etapa 2 · Dados e marketplaces</span>
-                  <span class="wizardSummary__badge wizardSummary__badge--required">Obrigatório</span>
-                </li>
-              </ul>
-            </div>
-
-            <div id="calcModeCards" class="modeCards" role="group" aria-label="Escolher modo de cálculo" aria-describedby="calcModeInstruction">
-              <button class="modeCard modeCard--teal" type="button" data-mode="real" aria-pressed="false">
-                <span class="modeCard__check" aria-hidden="true">
-                  <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-                    <path d="M7.7 14.2 3.8 10.3a1 1 0 1 1 1.4-1.4l2.5 2.5 7.1-7.1a1 1 0 0 1 1.4 1.4l-8.5 8.5a1 1 0 0 1-1.4 0Z"></path>
-                  </svg>
-                </span>
-                <span class="modeCard__icon modeCard__icon--teal" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
-                    <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
-                    <path d="M2 20h20"/>
-                  </svg>
-                </span>
-                <strong>Quanto estou ganhando de verdade?</strong>
-                <p>Coloque o preço que você já pratica e descubra seu lucro real — após comissão, taxas e custos do marketplace.</p>
-              </button>
-              <button class="modeCard modeCard--blue" type="button" data-mode="ideal" aria-pressed="false">
-                <span class="modeCard__check" aria-hidden="true">
-                  <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-                    <path d="M7.7 14.2 3.8 10.3a1 1 0 1 1 1.4-1.4l2.5 2.5 7.1-7.1a1 1 0 0 1 1.4 1.4l-8.5 8.5a1 1 0 0 1-1.4 0Z"></path>
-                  </svg>
-                </span>
-                <span class="modeCard__icon modeCard__icon--blue" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Z"/>
-                    <path d="M12 6v6l4 2"/>
-                  </svg>
-                </span>
-                <strong>Por quanto devo vender?</strong>
-                <p>Informe seu custo e a margem que quer ter. O sistema calcula o preço certo para cada marketplace.</p>
-              </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="field is-hidden" id="calcModeField">
-              <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo de cálculo">
-                <input id="mode_real" type="radio" name="calcMode" value="real" />
-                <label for="mode_real">Lucro real</label>
-                <input id="mode_ideal" type="radio" name="calcMode" value="ideal" />
-                <label for="mode_ideal">Preço ideal</label>
-              </div>
-            </div>
-          </section>
-
-          <section class="formBlock wizardStep is-hidden" data-step="1">
-            <div class="formBlock__head">
-              <h3>Dados do cálculo</h3>
-              <p>Selecione os marketplaces e preencha os dados do produto, margem e ajustes.</p>
-            </div>
-
-            <!-- Marketplace selector -->
-            <div class="field">
-              <div class="label">Marketplaces</div>
-              <div id="marketplaceSelector" class="marketplaceSelector" aria-label="Selecionar marketplaces"></div>
-            </div>
-
-            <!-- Product data -->
+          <!-- ── Custo + Imposto + Peso ── -->
+          <div class="formRow row3">
             <div class="field">
               <div class="label label-row">
-                <span>Nome do cálculo / produto</span>
-                <button class="info" type="button" aria-label="Info: Nome do cálculo / produto" data-tooltip="Dê um nome para identificar este cálculo no PDF e no salvamento local. Ex: Camiseta Dry Fit Preta.">i</button>
+                <span>Custo total (R$)</span>
+                <button class="info" type="button" aria-label="Info: Custo total (R$)" data-tooltip="O custo total do produto antes da venda: compra + impostos/encargos de compra. Ex: preço do fornecedor + ICMS-ST (se houver) + frete de compra, se você já embute no custo.">i</button>
               </div>
-              <input id="calcName" type="text" maxlength="80" placeholder="Ex: Camiseta Dry Fit Preta" />
-            </div>
-
-            <div class="formRow row2">
-              <div class="field">
-                <div class="label label-row">
-                  <span>Custo total (R$)</span>
-                  <button class="info" type="button" aria-label="Info: Custo total (R$)" data-tooltip="O custo total do produto antes da venda: compra + impostos/encargos de compra. Ex: preço do fornecedor + ICMS-ST (se houver) + frete de compra, se você já embute no custo.">i</button>
-                </div>
-                <div class="inputWrap">
-                  <span class="inputPrefix">R$</span>
-                  <input id="cost" type="number" step="0.01" min="0" value="60" />
-                </div>
-              </div>
-
-              <div class="field">
-                <div class="label label-row">
-                  <span>Imposto de venda (%)</span>
-                  <button class="info" type="button" aria-label="Info: Imposto de venda (%)" data-tooltip="Percentual de imposto que incide na venda (sobre o preço de venda). Use a alíquota efetiva do seu cenário.">i</button>
-                </div>
-                <div class="inputWrap">
-                  <input id="tax" type="number" step="0.01" min="0" value="10" />
-                  <span class="inputSuffix">%</span>
-                </div>
-              </div>
-
-              <div class="field">
-                <div class="label label-row">
-                  <span>Peso (opcional)</span>
-                  <button class="info" type="button" aria-label="Info: Peso (opcional)" data-tooltip="Peso global usado nas regras dos marketplaces que dependem de peso. Se não informar, o sistema mantém o padrão atual de 0,5 kg.">i</button>
-                </div>
-                <div class="formRow row2">
-                  <div class="inputWrap">
-                    <input id="globalWeightInput" type="number" step="0.001" min="0" placeholder="Ex: 0.5" />
-                  </div>
-                  <select id="globalWeightUnit" aria-label="Unidade do peso global">
-                    <option value="kg" selected>kg</option>
-                    <option value="g">g</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Profit goal -->
-            <div class="formBlock" id="profitGoalSection">
-            <div class="formBlock__head">
-              <h3 id="profitGoalHeading">Margem desejada</h3>
-              <p>Defina sua margem em valor fixo ou em percentual.</p>
-            </div>
-
-            <div class="field">
-              <div class="label label-row">
-                <span>Modo da meta</span>
-                <button class="info" type="button" aria-label="Info: Modo da meta" data-tooltip="Escolha se o lucro desejado será um valor fixo em reais (R$) ou uma margem em % sobre o preço de venda.">i</button>
-              </div>
-              <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo da meta">
-                <input id="meta_reais" type="radio" name="profitMode" value="brl" checked />
-                <label for="meta_reais">Em R$</label>
-                <input id="meta_percent" type="radio" name="profitMode" value="pct" />
-                <label for="meta_percent">Em %</label>
-              </div>
-              <select id="profitType" class="is-hidden" aria-hidden="true" tabindex="-1">
-                <option value="brl" selected>Em R$ (lucro em reais)</option>
-                <option value="pct">Em % (margem sobre o preço)</option>
-              </select>
-            </div>
-
-            <div id="profitFieldBRL" class="field">
-              <div class="label">Lucro desejado (R$)</div>
               <div class="inputWrap">
                 <span class="inputPrefix">R$</span>
-                <input id="profitValueBRL" type="number" step="0.01" min="0" value="10" />
+                <input id="cost" type="number" step="0.01" min="0" value="60" />
               </div>
             </div>
-
-            <div id="profitFieldPCT" class="field is-hidden">
-              <div class="label">Lucro desejado (%)</div>
+            <div class="field">
+              <div class="label label-row">
+                <span>Imposto de venda (%)</span>
+                <button class="info" type="button" aria-label="Info: Imposto de venda (%)" data-tooltip="Percentual de imposto que incide na venda (sobre o preço de venda). Use a alíquota efetiva do seu cenário.">i</button>
+              </div>
               <div class="inputWrap">
-                <input id="profitValuePct" type="number" step="0.01" min="0" value="10" />
+                <input id="tax" type="number" step="0.01" min="0" value="10" />
                 <span class="inputSuffix">%</span>
               </div>
             </div>
-
-            <input id="profitValue" class="is-hidden" type="number" step="0.01" min="0" value="10" tabindex="-1" aria-hidden="true" />
+            <div class="field">
+              <div class="label label-row">
+                <span>Peso (opcional)</span>
+                <button class="info" type="button" aria-label="Info: Peso (opcional)" data-tooltip="Peso global usado nas regras dos marketplaces que dependem de peso. Se não informar, o sistema mantém o padrão de 0,5 kg.">i</button>
+              </div>
+              <div class="formRow row2">
+                <div class="inputWrap">
+                  <input id="globalWeightInput" type="number" step="0.001" min="0" placeholder="Ex: 0.5" />
+                </div>
+                <select id="globalWeightUnit" aria-label="Unidade do peso global">
+                  <option value="kg" selected>kg</option>
+                  <option value="g">g</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          </section>
-
-          <!-- Personalizar comissão marketplace -->
-          <section class="formBlock wizardStep is-hidden" data-step="1">
-            <div class="adjRow">
-              <div class="adjRow__icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <!-- ── PREÇO DE VENDA  OU  MARGEM DESEJADA ── -->
+          <div class="priceOrMarginRow">
+            <div class="priceOrMargin__side">
+              <div class="formBlock__head">
+                <h3>Preço de Venda</h3>
+                <p>Você já tem um preço definido? Informe aqui para ver quanto está ganhando em cada canal.</p>
               </div>
-              <label class="check adjRow__label">
-                <input id="customCommissionToggle" type="checkbox" />
-                <span>Personalizar comissão marketplace</span>
-              </label>
-            </div>
-            <div id="customCommissionBox" class="cardMini optionalInlineBox is-hidden">
-              <div class="advGrid">
-                <div class="field">
-                  <div class="label label-row">
-                    <span>Amazon (%)</span>
-                    <button class="info" type="button" aria-label="Info: Comissão Amazon (%)" data-tooltip="Comissão padrão da Amazon é 15%. Ajuste conforme sua categoria.">i</button>
-                  </div>
-                  <div class="inputWrap">
-                    <input id="amazonPct" type="number" step="0.01" min="0" value="15" />
-                    <span class="inputSuffix">%</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <div class="label label-row">
-                    <span>ML Premium (%)</span>
-                    <button class="info" type="button" aria-label="Info: Mercado Livre Premium (%)" data-tooltip="Comissão padrão ML Premium é 19%. Ajuste conforme sua categoria/anúncio.">i</button>
-                  </div>
-                  <div class="inputWrap">
-                    <input id="mlPremiumPct" type="number" step="0.01" min="0" value="19" />
-                    <span class="inputSuffix">%</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <div class="label label-row">
-                    <span>ML Clássico (%)</span>
-                    <button class="info" type="button" aria-label="Info: Mercado Livre Clássico (%)" data-tooltip="Comissão padrão ML Clássico é 14%. Ajuste conforme sua categoria/anúncio.">i</button>
-                  </div>
-                  <div class="inputWrap">
-                    <input id="mlClassicPct" type="number" step="0.01" min="0" value="14" />
-                    <span class="inputSuffix">%</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <div class="label label-row">
-                    <span>SHEIN (%)</span>
-                    <button class="info" type="button" aria-label="Info: Comissão SHEIN (%)" data-tooltip="Comissão padrão SHEIN: 18% (demais) ou 20% (vestuário feminino). Ajuste conforme sua categoria.">i</button>
-                  </div>
-                  <div class="inputWrap">
-                    <input id="sheinPct" type="number" step="0.01" min="0" value="18" />
-                    <span class="inputSuffix">%</span>
-                  </div>
-                </div>
+              <div class="inputWrap">
+                <span class="inputPrefix">R$</span>
+                <input id="salePrice" type="number" step="0.01" min="0" placeholder="Ex: 99,90" />
               </div>
             </div>
-          </section>
 
-          <!-- Price inputs for "real" mode -->
-          <section class="formBlock wizardStep is-hidden" data-step="1" id="mode1PriceSection">
-            <div class="formBlock__head">
-              <h3>Preço de venda por marketplace</h3>
-              <p id="calcModeMicrocopy">Preço pode variar por marketplace. Preencha o valor correspondente a cada canal.</p>
+            <div class="priceOrMargin__or" aria-hidden="true"><span>ou</span></div>
+
+            <div class="priceOrMargin__side">
+              <div class="formBlock__head">
+                <h3>Margem desejada</h3>
+                <p>Informe quanto quer ganhar e o sistema calcula o preço ideal por marketplace.</p>
+              </div>
+              <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo da meta">
+                <input id="meta_reais" type="radio" name="profitMode" value="brl" />
+                <label for="meta_reais">Em R$</label>
+                <input id="meta_percent" type="radio" name="profitMode" value="pct" checked />
+                <label for="meta_percent">Em %</label>
+              </div>
+              <div id="profitFieldBRL" class="field is-hidden" style="margin-top:8px">
+                <div class="inputWrap">
+                  <span class="inputPrefix">R$</span>
+                  <input id="profitValueBRL" type="number" step="0.01" min="0" value="10" />
+                </div>
+              </div>
+              <div id="profitFieldPCT" class="field" style="margin-top:8px">
+                <div class="inputWrap">
+                  <input id="profitValuePct" type="number" step="0.01" min="0" value="10" />
+                  <span class="inputSuffix">%</span>
+                </div>
+              </div>
+              <!-- hidden sync fields -->
+              <select id="profitType" class="is-hidden" aria-hidden="true" tabindex="-1">
+                <option value="brl">Em R$ (lucro em reais)</option>
+                <option value="pct" selected>Em % (margem sobre o preço)</option>
+              </select>
+              <input id="profitValue" class="is-hidden" type="number" step="0.01" min="0" value="10" tabindex="-1" aria-hidden="true" />
             </div>
-            <div id="mode1PriceInputs" class="modeInputs"></div>
-          </section>
+          </div>
 
-          <!-- Optional adjustments (custos extras, afiliados) -->
-<section class="formAccordion optionalAdjustments wizardStep is-hidden" data-step="1" id="commissionAccordion">
-            <p class="formAccordion__intro">Ajustes adicionais (opcional) — marque apenas o que se aplica ao seu cenário.</p>
+          <!-- ── Personalizar comissão ── -->
+          <div class="adjRow" style="margin-top:16px">
+            <div class="adjRow__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </div>
+            <label class="check adjRow__label">
+              <input id="customCommissionToggle" type="checkbox" />
+              <span>Personalizar comissão marketplace</span>
+            </label>
+          </div>
+          <div id="customCommissionBox" class="cardMini optionalInlineBox is-hidden">
+            <div class="advGrid">
+              <div class="field">
+                <div class="label label-row">
+                  <span>Amazon (%)</span>
+                  <button class="info" type="button" aria-label="Info: Comissão Amazon (%)" data-tooltip="Comissão padrão da Amazon é 15%. Ajuste conforme sua categoria.">i</button>
+                </div>
+                <div class="inputWrap">
+                  <input id="amazonPct" type="number" step="0.01" min="0" value="15" />
+                  <span class="inputSuffix">%</span>
+                </div>
+              </div>
+              <div class="field">
+                <div class="label label-row">
+                  <span>ML Premium (%)</span>
+                  <button class="info" type="button" aria-label="Info: Mercado Livre Premium (%)" data-tooltip="Comissão padrão ML Premium é 19%. Ajuste conforme sua categoria/anúncio.">i</button>
+                </div>
+                <div class="inputWrap">
+                  <input id="mlPremiumPct" type="number" step="0.01" min="0" value="19" />
+                  <span class="inputSuffix">%</span>
+                </div>
+              </div>
+              <div class="field">
+                <div class="label label-row">
+                  <span>ML Clássico (%)</span>
+                  <button class="info" type="button" aria-label="Info: Mercado Livre Clássico (%)" data-tooltip="Comissão padrão ML Clássico é 14%. Ajuste conforme sua categoria/anúncio.">i</button>
+                </div>
+                <div class="inputWrap">
+                  <input id="mlClassicPct" type="number" step="0.01" min="0" value="14" />
+                  <span class="inputSuffix">%</span>
+                </div>
+              </div>
+              <div class="field">
+                <div class="label label-row">
+                  <span>SHEIN (%)</span>
+                  <button class="info" type="button" aria-label="Info: Comissão SHEIN (%)" data-tooltip="Comissão padrão SHEIN: 18% (demais) ou 20% (vestuário feminino). Ajuste conforme sua categoria.">i</button>
+                </div>
+                <div class="inputWrap">
+                  <input id="sheinPct" type="number" step="0.01" min="0" value="18" />
+                  <span class="inputSuffix">%</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
-            <!-- ── CARD: MARKETPLACES (removido — use "Personalizar comissão" acima) ──
-            (espaço reservado para compatibilidade) -->
+          <!-- ── Ajustes adicionais (accordion) ── -->
+          <details class="formAccordion optionalAdjustments" id="commissionAccordion" style="margin-top:16px">
+            <summary>Ajustes adicionais (opcional)</summary>
+            <p class="formAccordion__intro">Marque apenas o que se aplica ao seu cenário.</p>
+
+            <!-- hidden compat fields -->
             <div class="adjCard" id="adjCard-marketplaces" style="display:none">
               <div class="adjCard__body" id="adjBody-marketplaces"><div class="adjCard__inner">
                 <input id="mlCommissionToggle" type="checkbox" data-adj-group="marketplaces" class="is-hidden" aria-hidden="true" tabindex="-1" />
@@ -580,71 +467,46 @@
             </div>
 
 
-          </section>
+          </details>
 
-          <details class="formInfoDetails wizardStep is-hidden" data-step="1">
+          <details class="formInfoDetails" style="margin-top:14px">
             <summary>Como calculamos?</summary>
             <p>Regra: custos fixos e lucro em R$ somam no custo. Depois, somamos incidências em % (comissão + imposto [+ lucro% se escolhido] + custos%) e calculamos: <strong>Preço = custo ajustado ÷ (1 − incidências)</strong>.</p>
           </details>
 
-          <div class="formDivider wizardStep is-hidden" data-step="1"></div>
+          <div class="formDivider" style="margin-top:16px"></div>
 
-          <section class="formBlock formBlock--actions wizardStep is-hidden" data-step="1">
-            <div class="actions wizardActions">
-              <button id="wizardBackStep1" class="btn btn--ghost" type="button">Voltar</button>
+          <section class="formBlock formBlock--actions">
+            <div class="actions">
               <button id="recalc" class="btn btn--primary" type="button">Calcular</button>
             </div>
-
             <div class="actions actions--stacked formActionsSecondary">
               <button id="saveSimulation" class="btn btn--ghost btn--wide" type="button">Salvar simulação</button>
               <select id="savedSimulations" aria-label="Simulações salvas">
                 <option value="">Simulações salvas</option>
               </select>
             </div>
-
           </section>
-
-          <section class="formBlock wizardStep is-hidden" data-step="4">
-            <div class="formBlock__head">
-              <h3>Resultado</h3>
-              <p>Confira o resultado por marketplace selecionado.</p>
-            </div>
-            <div id="resultTransparencySummary" class="resultTransparencySummary" aria-live="polite"></div>
-            <div class="actions wizardActions">
-              <button id="wizardEditData" class="btn btn--ghost" type="button">Editar dados</button>
-              <button id="wizardNewCalc" class="btn btn--primary" type="button">Novo cálculo</button>
-            </div>
-          </section>
-
-
-
 
         </div>
       </div>
 
-      <div class="wizardResultsContainer is-hidden">
       <div class="card stickyResultsCard">
         <div class="card__inner">
           <h2>Resultados</h2>
-          <!-- Comparativo removido para priorizar leitura rápida do preço ideal por marketplace -->
           <div id="results" class="resultList"></div>
-
           <div id="reportRoot" class="reportRoot" aria-live="polite"></div>
-
           <div id="shareBox" class="shareBox"></div>
-
           <div class="hr"></div>
-
           <div class="actions">
             <a class="btn btn--primary js-cta-whatsapp" data-action="cta-whatsapp-community" href="https://chat.whatsapp.com/Ff9jaV8Lj1K4Qm2bNNIQdy" target="_blank" rel="noopener">Entrar na Comunidade WhatsApp</a>
             <a class="btn btn--ghost js-cta-instagram" data-action="cta-instagram" href="https://www.instagram.com/macenorafa/" target="_blank" rel="noopener">Seguir no Instagram</a>
           </div>
-
           <p class="footnote">Sem spam. Só conteúdo útil para vendedor de marketplace.</p>
         </div>
       </div>
       </div>
-      </div>
+    </section>
 
       <section class="yt-section" id="videos">
       <div class="yt-header">

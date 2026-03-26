@@ -1885,20 +1885,19 @@ function renderCurrentPriceAnalysis(state) {
     return;
   }
 
-  const hasAnyPrice = activeMPs.some((mp) => String(UX_PRICE_VALUES[mp.key] || "").trim() !== "");
+  const price = Math.max(0, toNumber(document.querySelector("#salePrice")?.value));
 
-  if (!hasAnyPrice) {
+  if (!price) {
     resultsEl.innerHTML = `
       <div class="hint" style="padding:1.25rem;text-align:center;line-height:1.6;">
-        <strong>Preencha os preços de venda</strong><br>
-        <small>Volte ao passo anterior e informe o valor cobrado em cada marketplace para ver seu lucro real.</small>
+        <strong>Preencha o preço de venda</strong><br>
+        <small>Informe o valor que você cobra para ver seu lucro real por marketplace.</small>
       </div>
     `;
     return;
   }
 
   const cards = activeMPs.map((mp) => {
-    const price = getCurrentPriceForMarketplace(mp.key);
     const analysis = calculateMarketplaceAtPrice({
       price,
       cost: state.cost,
@@ -1913,7 +1912,7 @@ function renderCurrentPriceAnalysis(state) {
   });
 
   resultsEl.innerHTML = cards.join("");
-  trackGA4Event("current_profit_calculate", { mode: "per_marketplace" });
+  trackGA4Event("current_profit_calculate", { mode: "global_price" });
 }
 
 function renderScaleSimulation(state) {
@@ -2767,7 +2766,8 @@ let wizardStep = 0;
 let LAST_CALC_CONTEXT = null;
 
 function getCalcMode() {
-  return document.querySelector('input[name="calcMode"]:checked')?.value || "";
+  const salePrice = toNumber(document.querySelector("#salePrice")?.value);
+  return salePrice > 0 ? "real" : "ideal";
 }
 
 function getSelectedMarketplaces() {
@@ -2833,30 +2833,8 @@ function renderMode1PriceInputs() {
 }
 
 function toggleUxModeSections() {
-  const mode = getCalcMode();
-  const hasMode = Boolean(mode);
-  const mode1PriceSection = document.querySelector("#mode1PriceSection");
-  const profitGoalSection = document.querySelector("#profitGoalSection");
-  const hint = document.querySelector("#calcModeMicrocopy");
-
-  if (!hasMode) {
-    mode1PriceSection?.classList.add("is-hidden");
-    profitGoalSection?.classList.add("is-hidden");
-    if (hint) hint.textContent = "";
-    return;
-  }
-
-  const isStep1 = wizardStep === 1;
-  mode1PriceSection?.classList.toggle("is-hidden", !(mode === "real" && isStep1));
-  profitGoalSection?.classList.toggle("is-hidden", !(mode === "ideal" && isStep1));
-  const heading = document.querySelector("#profitGoalHeading");
-  if (heading) heading.textContent = "Margem desejada";
-
-  if (hint) {
-    hint.textContent = mode === "real"
-      ? "Preço pode variar por marketplace. Preencha o valor correspondente a cada canal."
-      : "Vamos calcular o preço ideal por marketplace com base na margem informada.";
-  }
+  // In the flat single-screen layout, all sections are always visible.
+  // No toggling needed.
 }
 
 function formatPct(value) {
@@ -2987,113 +2965,22 @@ function renderResultTransparencySummary(context = LAST_CALC_CONTEXT) {
   `;
 }
 
-function validateStep(step) {
-  if (step === 1) {
-    return getSelectedMarketplaces().length > 0 && Boolean(getCalcMode());
-  }
-  return true;
-}
-
-
-function updateWizardSummary() {
-  const summary = document.querySelector(".wizardSummary");
-  if (!summary) return;
-
-  const estimatedTime = document.querySelector("#wizardSummaryTime");
-  if (estimatedTime) {
-    estimatedTime.textContent = `Tempo estimado: 3 min`;
-  }
-
-  const items = summary.querySelectorAll(".wizardSummary__list li");
-  items.forEach((item, index) => {
-    item.classList.toggle("is-done", wizardStep > index);
-    item.classList.toggle("is-current", wizardStep === index);
-  });
-}
-
+function validateStep() { return true; }
+function updateWizardSummary() {}
 function applyWizardResultFilter() {
   const selected = new Set(getSelectedMarketplaces());
   document.querySelectorAll("#results .marketplaceCard").forEach((card) => {
     const title = card.querySelector(".cardTitle")?.textContent?.trim() || "";
     const key = MARKETPLACE_TITLE_TO_KEY[title];
-    if (!key) {
-      card.classList.remove("is-hidden");
-      return;
-    }
+    if (!key) { card.classList.remove("is-hidden"); return; }
     card.classList.toggle("is-hidden", !selected.has(key));
   });
 }
-
-function updateStepperDots(step) {
-  // step 0 = objetivo, step 1 = dados, step 4 = resultado (3-item stepper)
-  document.querySelectorAll(".wizardStepper__item").forEach((el) => {
-    const s = parseInt(el.dataset.stepperStep, 10);
-    const isDone = (s === 0 && step >= 1) || (s === 1 && step >= 4);
-    const isActive = (s === 0 && step === 0) || (s === 1 && step === 1) || (s === 2 && step >= 4);
-    el.classList.toggle("is-done", isDone);
-    el.classList.toggle("is-active", isActive);
-  });
-  const fill = document.querySelector("#wizardStepperFill");
-  if (fill) {
-    const pct = step === 0 ? 0 : step === 1 ? 50 : 100;
-    fill.style.width = pct + "%";
-  }
-}
-
-function setWizardStep(step) {
-  wizardStep = clamp(step, 0, 4);
-  renderWizardUI();
-}
-
-function renderWizardUI() {
-  if (!getCalcMode() && wizardStep > 0) {
-    wizardStep = 0;
-  }
-
-  document.querySelectorAll(".wizardStep").forEach((el) => {
-    const step = Number(el.dataset.step || 0);
-    el.classList.toggle("is-hidden", step !== wizardStep);
-  });
-
-  const progress = document.querySelector("#wizardProgress");
-  const visibleStep = wizardStep === 4 ? 2 : Math.min(wizardStep, 2);
-  if (progress) progress.textContent = `Passo ${visibleStep} de 2`;
-
-  updateStepperDots(wizardStep);
-  updateWizardSummary();
-
-  const recalcBtn = document.querySelector("#recalc");
-  if (recalcBtn && wizardStep === 1) recalcBtn.disabled = !validateStep(1);
-
-  const resultsContainer = document.querySelector(".wizardResultsContainer");
-  if (resultsContainer) {
-    resultsContainer.classList.toggle("is-hidden", wizardStep !== 4);
-  }
-
-  const mode = getCalcMode();
-  document.querySelectorAll(".modeCard").forEach((card) => {
-    const isSelected = card.dataset.mode === mode;
-    card.classList.toggle("is-selected", isSelected);
-    card.setAttribute("aria-pressed", String(isSelected));
-  });
-
-  toggleUxModeSections();
-  syncExtraCostsCardVisibility();
-
-  if (wizardStep === 4) {
-    applyWizardResultFilter();
-    renderResultTransparencySummary(LAST_CALC_CONTEXT);
-  }
-}
-
-function handleNext() {
-  if (wizardStep === 1 && !validateStep(1)) return;
-  setWizardStep(wizardStep + 1);
-}
-
-function handleBack() {
-  setWizardStep(wizardStep - 1);
-}
+function updateStepperDots() {}
+function setWizardStep() {}
+function renderWizardUI() {}
+function handleNext() {}
+function handleBack() {}
 
 function uxRecalc() {
   recalc({ source: "auto" });
@@ -3107,109 +2994,40 @@ function debounceUxRecalc() {
 
 function initUxRefactor() {
   buildMarketplaceSelector();
-  renderMode1PriceInputs();
 
+  // Default profit mode to %
   const profitValuePct = document.querySelector("#profitValuePct");
   const metaPercent = document.querySelector("#meta_percent");
   if (profitValuePct && metaPercent) {
     profitValuePct.value = "10";
     metaPercent.checked = true;
-    document.querySelector("#profitType").value = "pct";
-    document.querySelector("#profitValue").value = "10";
+    const profitType = document.querySelector("#profitType");
+    const profitValue = document.querySelector("#profitValue");
+    if (profitType) profitType.value = "pct";
+    if (profitValue) profitValue.value = "10";
     document.querySelector("#profitFieldBRL")?.classList.add("is-hidden");
     document.querySelector("#profitFieldPCT")?.classList.remove("is-hidden");
   }
 
-  const selectCalcMode = (mode) => {
-    if (!mode) return;
-    const real = document.querySelector("#mode_real");
-    const ideal = document.querySelector("#mode_ideal");
-    if (mode === "real" && real) {
-      real.checked = true;
-      real.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    if (mode === "ideal" && ideal) {
-      ideal.checked = true;
-      ideal.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    setWizardStep(1);
-  };
-
-  const calcModeCards = document.querySelector("#calcModeCards");
-  const handleCalcModeCardInteraction = (event) => {
-    const card = event.target.closest?.(".modeCard");
-    if (!card) return;
-    selectCalcMode(card.dataset.mode);
-  };
-
-  const handleCalcModeCardKeydown = (event) => {
-    const card = event.target.closest?.(".modeCard");
-    const isActionKey = event.key === "Enter" || event.key === " " || event.code === "Space";
-    if (!card || !isActionKey) return;
-    event.preventDefault();
-    selectCalcMode(card.dataset.mode);
-  };
-
-  calcModeCards?.addEventListener("click", handleCalcModeCardInteraction);
-  calcModeCards?.addEventListener("keydown", handleCalcModeCardKeydown);
-
-  document.querySelector("#mode1PriceInputs")?.addEventListener("input", (event) => {
-    const input = event.target.closest("[data-ux-price-marketplace]");
-    if (!input) return;
-    UX_PRICE_VALUES[input.dataset.uxPriceMarketplace] = input.value;
-    debounceUxRecalc();
-  });
-
   document.querySelector("#marketplaceSelector")?.addEventListener("change", () => {
     UX_SELECTED_MARKETPLACES = UX_MARKETPLACES.map((mp) => mp.key).filter((key) => document.querySelector(`#ux_mp_${key}`)?.checked);
-    renderMode1PriceInputs();
-    renderWizardUI();
     uxRecalc();
   });
 
-  document.querySelectorAll('input[name="calcMode"]').forEach((el) => el.addEventListener("change", () => {
-    if (wizardStep === 0 && getCalcMode()) {
-      setWizardStep(1);
-      return;
-    }
-    toggleUxModeSections();
-    renderWizardUI();
-  }));
-
-  ["#cost", "#tax", "#globalWeightInput", "#profitValueBRL", "#profitValuePct"].forEach((selector) => {
+  ["#cost", "#tax", "#globalWeightInput", "#profitValueBRL", "#profitValuePct", "#salePrice"].forEach((selector) => {
     document.querySelector(selector)?.addEventListener("input", debounceUxRecalc);
   });
   document.querySelector("#globalWeightUnit")?.addEventListener("change", uxRecalc);
-
-  document.querySelector("#wizardBackStep1")?.addEventListener("click", handleBack);
-  document.querySelector("#wizardEditData")?.addEventListener("click", () => setWizardStep(1));
-  document.querySelector("#wizardNewCalc")?.addEventListener("click", () => {
-    document.querySelectorAll('input[name="calcMode"]').forEach((el) => {
-      el.checked = false;
-    });
-    setWizardStep(0);
-  });
-
 
   document.querySelector("#recalc")?.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopImmediatePropagation();
     recalc({ source: "manual" });
-    applyWizardResultFilter();
-    setWizardStep(4);
-  });
-
-  document.querySelectorAll('input[name="calcMode"]').forEach((el) => {
-    el.checked = false;
+    const results = document.querySelector("#results");
+    scrollToWithTopbarOffset(results);
   });
 
   uxRecalc();
-  setWizardStep(0);
-  renderWizardUI();
-  window.setTimeout(() => {
-    setWizardStep(0);
-    renderWizardUI();
-  }, 0);
 }
 
 function initApp() {
