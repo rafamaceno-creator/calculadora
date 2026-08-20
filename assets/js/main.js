@@ -5,15 +5,43 @@
 
 /* ===== Constants ===== */
 
+/* ===== SHOPEE =====
+   Política de comissão vigente desde 01/03/2026:
+   - Abaixo de R$8: 50% do valor do item (sem taxa fixa)
+   - R$8 a R$79,99: 20% + R$4
+   - R$80 a R$99,99: 14% + R$16
+   - R$100 a R$199,99: 14% + R$20
+   - Acima de R$200: 14% + R$26
+   O teto de R$100 de comissão foi removido e o Programa de Frete Grátis
+   passou a ser obrigatório (o custo já está embutido no percentual).
+*/
 const SHOPEE_FAIXAS = [
-  { min: 0, max: 79.99, pct: 0.20, fixed: 4.00, label: "Até R$79,99" },
+  { min: 0, max: 7.99, pct: 0.50, fixed: 0, label: "Abaixo de R$8" },
+  { min: 8, max: 79.99, pct: 0.20, fixed: 4.00, label: "R$8 a R$79,99" },
   { min: 80, max: 99.99, pct: 0.14, fixed: 16.00, label: "R$80 a R$99,99" },
   { min: 100, max: 199.99, pct: 0.14, fixed: 20.00, label: "R$100 a R$199,99" },
-  { min: 200, max: 499.99, pct: 0.14, fixed: 40.00, label: "R$200 a R$499,99" },
-  { min: 500, max: Infinity, pct: 0.14, fixed: 80.00, label: "R$500+" }
+  { min: 200, max: Infinity, pct: 0.14, fixed: 26.00, label: "Acima de R$200" }
 ];
 
-const TIKTOK = { pct: 0.12, fixed: 4.00 };
+// Ponto de partida da iteração: faixa de ticket mais comum na plataforma.
+const SHOPEE_FAIXA_PADRAO = SHOPEE_FAIXAS[1];
+
+/* ===== TIKTOK SHOP =====
+   Comissão vigente desde 15/07/2026:
+   - Abaixo de R$50: 10%, sem taxa fixa
+   - R$50 ou mais: 6% + R$6 por item vendido
+   O Programa de Frete Grátis (PTE) soma 6% sobre o valor do produto. É
+   opcional, mas fica ativo por padrão por ser a configuração usada pela
+   maioria dos sellers — e era o que o percentual único de 12% já embutia.
+*/
+const TIKTOK_PTE_PCT = 0.06;
+
+const TIKTOK_FAIXAS = [
+  { min: 0, max: 49.99, pct: 0.10 + TIKTOK_PTE_PCT, fixed: 0, label: "Abaixo de R$50" },
+  { min: 50, max: Infinity, pct: 0.06 + TIKTOK_PTE_PCT, fixed: 6.00, label: "R$50 ou mais" }
+];
+
+const TIKTOK_FAIXA_PADRAO = TIKTOK_FAIXAS[1];
 
 const DEFAULT_CFG = {};
 const cfg = {
@@ -415,6 +443,41 @@ function solvePrice({
     totalPercentCosts,
     totalFixedCosts
   };
+}
+
+// Compara só pelo piso da faixa: os `max` da tabela oficial (7,99 / 79,99 …)
+// deixariam preços como R$ 7,995 sem faixa nenhuma.
+function faixaByPrice(faixas, price, fallback) {
+  const p = Math.max(0, toNumber(price));
+  for (let i = faixas.length - 1; i >= 0; i -= 1) {
+    if (p >= faixas[i].min) return faixas[i];
+  }
+  return faixas[0] || fallback;
+}
+
+function shopeeFaixaByPrice(price) {
+  return faixaByPrice(SHOPEE_FAIXAS, price, SHOPEE_FAIXA_PADRAO);
+}
+
+function tiktokFaixaByPrice(price) {
+  return faixaByPrice(TIKTOK_FAIXAS, price, TIKTOK_FAIXA_PADRAO);
+}
+
+/* Shopee e TikTok Shop cobram por faixa de preço, então a taxa depende do
+   preço que estamos justamente tentando descobrir. Iteramos até a faixa
+   parar de mudar. */
+function solvePriceComFaixa(resolveFaixa, faixaInicial, params) {
+  let currentFaixa = faixaInicial;
+  let result = solvePrice({ ...params, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed });
+
+  for (let i = 0; i < 6; i += 1) {
+    const faixa = resolveFaixa(Number.isFinite(result.price) ? result.price : 0);
+    if (faixa === currentFaixa) break;
+    currentFaixa = faixa;
+    result = solvePrice({ ...params, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed });
+  }
+
+  return { result, faixa: currentFaixa };
 }
 
 /* ===== Advanced vars ===== */
@@ -1124,22 +1187,16 @@ function computeForAllMarketplaces(inputState) {
   const { taxPct, profitType, profitValue, mlClassicPct, mlPremiumPct, adv, weightData, sheinCustomPct, amazonDbaEnabled, amazonPct, amazonOriginGroup } = calcConfig;
   const weightKg = weightData.kg;
 
-  const tiktok = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: TIKTOK.pct, marketplaceFixed: TIKTOK.fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.tiktok });
+  const tiktokSolved = solvePriceComFaixa(tiktokFaixaByPrice, TIKTOK_FAIXA_PADRAO, { cost, taxPct, profitType, profitValue, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.tiktok });
+  const tiktok = tiktokSolved.result;
 
   const sheinPct = sheinCustomPct != null ? sheinCustomPct : SHEIN.pctOther;
   const sheinFixed = sheinFixedByWeight(weightKg);
   const shein = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: sheinPct, marketplaceFixed: sheinFixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra });
 
-  let currentFaixa = SHOPEE_FAIXAS[0];
-  let iterations = 0;
-  let shopeeRaw = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.shopee });
-  while (iterations < 6) {
-    const faixa = SHOPEE_FAIXAS.find((f) => shopeeRaw.price >= f.min && shopeeRaw.price <= f.max) || currentFaixa;
-    if (faixa === currentFaixa) break;
-    currentFaixa = faixa;
-    shopeeRaw = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.shopee });
-    iterations += 1;
-  }
+  const shopeeSolved = solvePriceComFaixa(shopeeFaixaByPrice, SHOPEE_FAIXA_PADRAO, { cost, taxPct, profitType, profitValue, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.shopee });
+  const shopeeRaw = shopeeSolved.result;
+  const currentFaixa = shopeeSolved.faixa;
 
   const solveML = (mlPct) => {
     let r = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: mlPct, marketplaceFixed: 0, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.ml });
@@ -1338,17 +1395,17 @@ function recalc(options = {}) {
   const amazonOriginGroup = document.querySelector("#amazonOriginGroup")?.value || "sp_capital";
   const amazonWeightKg = weightData.kg;
 
-  /* ===== TIKTOK SHOP ===== */
-  const tiktok = solvePrice({
+  /* ===== TIKTOK SHOP (iterativo) ===== */
+  const tiktokSolved = solvePriceComFaixa(tiktokFaixaByPrice, TIKTOK_FAIXA_PADRAO, {
     cost,
     taxPct,
     profitType,
     profitValue,
-    marketplacePct: TIKTOK.pct,
-    marketplaceFixed: TIKTOK.fixed,
     fixedCosts: adv.fixedBRL,
     percentCosts: adv.pctExtra + adv.affiliate.tiktok
   });
+  const tiktok = tiktokSolved.result;
+  const ttFee = tiktokSolved.faixa;
 
   /* ===== SHEIN ===== */
   const sheinPct = customCommEnabled
@@ -1368,50 +1425,14 @@ function recalc(options = {}) {
   });
 
   /* ===== SHOPEE (iterativo) ===== */
-  function solveShopee() {
-    let currentFaixa = SHOPEE_FAIXAS[0];
-    let price = 0;
-    let iterations = 0;
-
-    while (iterations < 6) {
-      const result = solvePrice({
-        cost,
-        taxPct,
-        profitType,
-        profitValue,
-        marketplacePct: currentFaixa.pct,
-        marketplaceFixed: currentFaixa.fixed,
-        fixedCosts: adv.fixedBRL,
-        percentCosts: adv.pctExtra + adv.affiliate.shopee
-      });
-
-      price = Number.isFinite(result.price) ? result.price : 0;
-
-      const faixa = SHOPEE_FAIXAS.find((f) => price >= f.min && price <= f.max) || currentFaixa;
-
-      if (faixa === currentFaixa) {
-        return { result, faixa: currentFaixa };
-      }
-
-      currentFaixa = faixa;
-      iterations++;
-    }
-
-    const finalResult = solvePrice({
-      cost,
-      taxPct,
-      profitType,
-      profitValue,
-      marketplacePct: currentFaixa.pct,
-      marketplaceFixed: currentFaixa.fixed,
-      fixedCosts: adv.fixedBRL,
-      percentCosts: adv.pctExtra + adv.affiliate.shopee
-    });
-
-    return { result: finalResult, faixa: currentFaixa };
-  }
-
-  const shopeeData = solveShopee();
+  const shopeeData = solvePriceComFaixa(shopeeFaixaByPrice, SHOPEE_FAIXA_PADRAO, {
+    cost,
+    taxPct,
+    profitType,
+    profitValue,
+    fixedCosts: adv.fixedBRL,
+    percentCosts: adv.pctExtra + adv.affiliate.shopee
+  });
   const shopeeRaw = shopeeData.result;
   const shFee = shopeeData.faixa;
   const shopeeAntecipa = document.querySelector("#shopeeAntecipa")?.checked || false;
@@ -1598,17 +1619,21 @@ function recalc(options = {}) {
     ),
     resultCardHTML(
       "TikTok Shop",
-      `12% + ${brl(4)}`,
+      `${(ttFee.pct * 100).toFixed(0)}% + ${brl(ttFee.fixed)}`,
       tiktok,
       cost,
       taxPct,
       profitType,
       profitValue,
-      TIKTOK.pct,
-      TIKTOK.fixed,
+      ttFee.pct,
+      ttFee.fixed,
       adv.details,
       adv.affiliate.tiktok,
-      [],
+      [
+        { k: "Faixa aplicada", v: ttFee.label },
+        { k: "Comissão", v: `${((ttFee.pct - TIKTOK_PTE_PCT) * 100).toFixed(0)}%` },
+        { k: "Programa de Frete Grátis", v: `${(TIKTOK_PTE_PCT * 100).toFixed(0)}%` }
+      ],
       { marketplaceClass: "mp-tiktok", marketplaceIcon: "🎵" }
     ),
     resultCardHTML(
@@ -1698,7 +1723,7 @@ function recalc(options = {}) {
 
   const marketplaceState = [
     { key: "shopee", title: "Shopee", marketplacePct: shFee.pct, marketplaceFixed: shFee.fixed, percentCosts: adv.pctExtra + adv.affiliate.shopee, fixedCosts: adv.fixedBRL },
-    { key: "tiktok", title: "TikTok Shop", marketplacePct: TIKTOK.pct, marketplaceFixed: TIKTOK.fixed, percentCosts: adv.pctExtra + adv.affiliate.tiktok, fixedCosts: adv.fixedBRL },
+    { key: "tiktok", title: "TikTok Shop", marketplacePct: ttFee.pct, marketplaceFixed: ttFee.fixed, percentCosts: adv.pctExtra + adv.affiliate.tiktok, fixedCosts: adv.fixedBRL },
     { key: "shein", title: "SHEIN", marketplacePct: sheinPct, marketplaceFixed: sheinFixed, percentCosts: adv.pctExtra, fixedCosts: adv.fixedBRL },
     ...(amazonDbaEnabled && amazonData ? [{ key: "amazon", title: "Amazon (DBA)", marketplacePct: amazonPct, marketplaceFixed: amazonData.fee, percentCosts: adv.pctExtra + adv.affiliate.amazon, fixedCosts: adv.fixedBRL }] : []),
     { key: "mlClassic", title: "Mercado Livre — Clássico", marketplacePct: mlClassicPct, marketplaceFixed: mlClassic.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL },
@@ -2857,7 +2882,7 @@ function buildSimulationSummaryContext() {
   const perMarketplace = selectedKeys.map((key) => {
     if (key === "mlClassic") return { key, label: "Mercado Livre — Clássico", commissionPct: mlClassicPct, affiliatePct: adv.affiliate.ml };
     if (key === "mlPremium") return { key, label: "Mercado Livre — Premium", commissionPct: mlPremiumPct, affiliatePct: adv.affiliate.ml };
-    if (key === "tiktok") return { key, label: "TikTok Shop", commissionPct: TIKTOK.pct, affiliatePct: adv.affiliate.tiktok };
+    if (key === "tiktok") return { key, label: "TikTok Shop", commissionPct: TIKTOK_FAIXA_PADRAO.pct, affiliatePct: adv.affiliate.tiktok };
     if (key === "shein") {
       const pct = customCommEnabled ? Math.max(0, toNumber(document.querySelector("#sheinPct")?.value)) / 100 : SHEIN.pctOther;
       return { key, label: "SHEIN", commissionPct: pct, affiliatePct: 0 };
@@ -2866,7 +2891,7 @@ function buildSimulationSummaryContext() {
       const pct = Math.max(0, customCommEnabled ? toNumber(document.querySelector("#amazonPct")?.value) : 15) / 100;
       return { key, label: "Amazon (DBA)", commissionPct: pct, affiliatePct: adv.affiliate.amazon };
     }
-    return { key, label: "Shopee", commissionPct: SHOPEE_FAIXAS[0].pct, affiliatePct: adv.affiliate.shopee };
+    return { key, label: "Shopee", commissionPct: SHOPEE_FAIXA_PADRAO.pct, affiliatePct: adv.affiliate.shopee };
   });
 
   const totalVariablePct = taxPct + adv.pctExtra + (profitType === "pct" ? (profitValue / 100) : 0);
