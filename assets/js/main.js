@@ -333,7 +333,23 @@ function amazonDbaFee({ price, weightKg, originGroup }) {
   return toNumber(originRow?.[weightBand]);
 }
 
-/* ===== Mercado Livre: tabela de custo fixo ===== */
+/* ===== Mercado Livre: custo por unidade vendida =====
+   Desde 02/03/2026 só há cobrança em itens abaixo de R$79 — acima disso o
+   anúncio paga apenas a comissão da categoria. Abaixo de R$79 o valor
+   deixou de ser tabelado por faixa de preço e passou a variar por peso,
+   dimensões e cubagem; mantemos a estimativa por peso, já que o número
+   exato de cada anúncio sai do simulador oficial do Mercado Livre.
+*/
+const ML_LIMITE_CUSTO_UNIDADE = 79;
+
+const ML_CUSTO_UNIDADE_POR_PESO = {
+  "0-0.3": 6.25,
+  "0.3-0.5": 6.25,
+  "0.5-1": 6.75,
+  "1-2": 6.75,
+  "2-5": 6.75,
+  "5+": 6.75
+};
 
 function mlWeightBand(kg) {
   const w = Math.max(0, toNumber(kg));
@@ -345,49 +361,22 @@ function mlWeightBand(kg) {
   return "5+";
 }
 
-function mlPriceBand(price) {
-  const p = Math.max(0, toNumber(price));
-  if (p < 12.5) return "<12.5";
-  if (p < 79) return "12.5-79";
-  if (p < 100) return "79-100";
-  if (p < 120) return "100-120";
-  if (p < 150) return "120-150";
-  if (p < 200) return "150-199.99";
-  return "200+";
+function mlCustoUnidadePorPeso(weightKg) {
+  return toNumber(ML_CUSTO_UNIDADE_POR_PESO[mlWeightBand(weightKg)] ?? ML_CUSTO_UNIDADE_POR_PESO["0.3-0.5"]);
 }
 
-const ML_FIXED_TABLE = {
-  "0-0.3": {
-    "<12.5": 6.25, "12.5-79": 6.25, "79-100": 14.35, "100-120": 16.45,
-    "120-150": 16.45, "150-199.99": 18.45, "200+": 18.45
-  },
-  "0.3-0.5": {
-    "<12.5": 6.25, "12.5-79": 6.25, "79-100": 14.35, "100-120": 16.45,
-    "120-150": 16.45, "150-199.99": 18.45, "200+": 18.45
-  },
-  "0.5-1": {
-    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 16.35, "100-120": 18.45,
-    "120-150": 18.45, "150-199.99": 20.45, "200+": 20.45
-  },
-  "1-2": {
-    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 18.35, "100-120": 20.45,
-    "120-150": 20.45, "150-199.99": 22.45, "200+": 22.45
-  },
-  "2-5": {
-    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 20.35, "100-120": 22.45,
-    "120-150": 22.45, "150-199.99": 24.45, "200+": 24.45
-  },
-  "5+": {
-    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 24.35, "100-120": 26.45,
-    "120-150": 26.45, "150-199.99": 28.45, "200+": 28.45
-  }
-};
+// Duas faixas: abaixo de R$79 paga o custo por unidade, acima paga só comissão.
+function mlFaixas(mlPct, weightKg) {
+  return [
+    { min: 0, pct: mlPct, fixed: mlCustoUnidadePorPeso(weightKg), label: "Abaixo de R$79" },
+    { min: ML_LIMITE_CUSTO_UNIDADE, pct: mlPct, fixed: 0, label: "R$79 ou mais" }
+  ];
+}
 
-function mlFixedByTable(price, weightKg) {
-  const wb = mlWeightBand(weightKg);
-  const pb = mlPriceBand(price);
-  const row = ML_FIXED_TABLE[wb] || ML_FIXED_TABLE["0.3-0.5"];
-  return toNumber(row[pb] ?? row["12.5-79"] ?? 0);
+function solveMercadoLivre(mlPct, weightKg, params) {
+  const faixas = mlFaixas(mlPct, weightKg);
+  const solved = solvePriceComFaixa((price) => faixaByPrice(faixas, price, faixas[0]), faixas[0], params);
+  return { r: solved.result, fixed: solved.faixa.fixed };
 }
 
 /* ===== Pricing solver ===== */
@@ -463,21 +452,55 @@ function tiktokFaixaByPrice(price) {
   return faixaByPrice(TIKTOK_FAIXAS, price, TIKTOK_FAIXA_PADRAO);
 }
 
-/* Shopee e TikTok Shop cobram por faixa de preço, então a taxa depende do
-   preço que estamos justamente tentando descobrir. Iteramos até a faixa
-   parar de mudar. */
+/* Mesma saída de solvePrice, mas para um preço já definido: o lucro deixa
+   de ser a meta e passa a ser o que sobra naquele preço. */
+function resultAtPrice(price, { cost, taxPct, marketplacePct, marketplaceFixed, fixedCosts, percentCosts }) {
+  const safePrice = Math.max(0, toNumber(price));
+  const tax = Math.max(0, taxPct) / 100;
+  const mpFixed = Number.isFinite(marketplaceFixed) ? marketplaceFixed : 0;
+  const extraFixed = Number.isFinite(fixedCosts) ? fixedCosts : 0;
+
+  const totalPercentCosts = clamp((marketplacePct || 0) + tax + (percentCosts || 0), 0, 0.95);
+  const commissionValue = safePrice * (marketplacePct || 0) + mpFixed;
+  const profitBRL = safePrice * (1 - (marketplacePct || 0) - tax - (percentCosts || 0)) - Math.max(0, cost) - extraFixed - mpFixed;
+
+  return {
+    price: safePrice,
+    commissionValue,
+    received: safePrice - commissionValue,
+    profitBRL,
+    profitPctReal: safePrice > 0 ? profitBRL / safePrice : 0,
+    totalPercentCosts,
+    totalFixedCosts: extraFixed + mpFixed
+  };
+}
+
+/* Shopee, TikTok Shop e o custo por unidade do Mercado Livre cobram por
+   faixa de preço, então a taxa depende do preço que estamos justamente
+   tentando descobrir. Iteramos até a faixa parar de mudar. */
 function solvePriceComFaixa(resolveFaixa, faixaInicial, params) {
   let currentFaixa = faixaInicial;
-  let result = solvePrice({ ...params, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed });
+  const visitadas = [];
 
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < 8; i += 1) {
+    const result = solvePrice({ ...params, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed });
     const faixa = resolveFaixa(Number.isFinite(result.price) ? result.price : 0);
-    if (faixa === currentFaixa) break;
+
+    if (faixa === currentFaixa) return { result, faixa: currentFaixa };
+
+    // Duas faixas se revezando (a de baixo empurra o preço para cima, a de
+    // cima puxa de volta): o equilíbrio é a própria fronteira entre elas.
+    if (visitadas.indexOf(faixa) !== -1) {
+      const fronteira = faixa.min > currentFaixa.min ? faixa : currentFaixa;
+      const fronteiraParams = { ...params, marketplacePct: fronteira.pct, marketplaceFixed: fronteira.fixed };
+      return { result: resultAtPrice(fronteira.min, fronteiraParams), faixa: fronteira };
+    }
+
+    visitadas.push(currentFaixa);
     currentFaixa = faixa;
-    result = solvePrice({ ...params, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed });
   }
 
-  return { result, faixa: currentFaixa };
+  return { result: solvePrice({ ...params, marketplacePct: currentFaixa.pct, marketplaceFixed: currentFaixa.fixed }), faixa: currentFaixa };
 }
 
 /* ===== Advanced vars ===== */
@@ -1198,12 +1221,7 @@ function computeForAllMarketplaces(inputState) {
   const shopeeRaw = shopeeSolved.result;
   const currentFaixa = shopeeSolved.faixa;
 
-  const solveML = (mlPct) => {
-    let r = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: mlPct, marketplaceFixed: 0, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.ml });
-    const fixed = Number.isFinite(r.price) ? mlFixedByTable(r.price, weightKg) : 0;
-    r = solvePrice({ cost, taxPct, profitType, profitValue, marketplacePct: mlPct, marketplaceFixed: fixed, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.ml });
-    return { r, fixed };
-  };
+  const solveML = (mlPct) => solveMercadoLivre(mlPct, weightKg, { cost, taxPct, profitType, profitValue, fixedCosts: adv.fixedBRL, percentCosts: adv.pctExtra + adv.affiliate.ml });
 
   const mlClassic = solveML(mlClassicPct);
   const mlPremium = solveML(mlPremiumPct);
@@ -1498,31 +1516,14 @@ function recalc(options = {}) {
 
   /* ===== MERCADO LIVRE ===== */
   function solveML(mlPct) {
-    let r = solvePrice({
+    return solveMercadoLivre(mlPct, weightKg, {
       cost,
       taxPct,
       profitType,
       profitValue,
-      marketplacePct: mlPct,
-      marketplaceFixed: 0,
       fixedCosts: adv.fixedBRL,
       percentCosts: adv.pctExtra + adv.affiliate.ml
     });
-
-    const fixed = Number.isFinite(r.price) ? mlFixedByTable(r.price, weightKg) : 0;
-
-    r = solvePrice({
-      cost,
-      taxPct,
-      profitType,
-      profitValue,
-      marketplacePct: mlPct,
-      marketplaceFixed: fixed,
-      fixedCosts: adv.fixedBRL,
-      percentCosts: adv.pctExtra + adv.affiliate.ml
-    });
-
-    return { r, fixed };
   }
 
   const mlClassic = solveML(mlClassicPct);
@@ -1690,7 +1691,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo fixo (tabela)", v: brl(mlClassic.fixed) },
+        { k: "Custo por unidade vendida", v: mlClassic.fixed > 0 ? brl(mlClassic.fixed) : "isento (acima de R$79)" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
@@ -1708,7 +1709,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo fixo (tabela)", v: brl(mlPremium.fixed) },
+        { k: "Custo por unidade vendida", v: mlPremium.fixed > 0 ? brl(mlPremium.fixed) : "isento (acima de R$79)" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
