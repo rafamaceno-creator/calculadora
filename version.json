@@ -1,5 +1,5 @@
 {
   "app": "calculadora",
-  "build": "20260820-3",
+  "build": "20260821-1",
   "note": "Se este valor nao aparece no dominio, o deploy/roteamento nao foi atualizado"
 }

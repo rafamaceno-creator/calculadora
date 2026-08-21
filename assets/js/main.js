@@ -1268,7 +1268,12 @@ const Bulk = {
     this.renderBulkRows();
     trackGA4Event("bulk_add_row");
   },
+  /* parseCSV já devolve o custo como número, e bulkCalculate chama esta
+     função de novo sobre esse número. Sem a saída antecipada, o "." do
+     valor decimal era removido como se fosse separador de milhar e
+     "145,90" importado do CSV virava 1459. */
   parseMoney(value) {
+    if (typeof value === "number") return Number.isFinite(value) ? Math.max(0, value) : 0;
     return toNumber(String(value || "").replace(/R\$/gi, "").replace(/\./g, "").replace(",", "."));
   },
   parseCSV(text) {
@@ -1277,7 +1282,11 @@ const Bulk = {
     const sep = lines[0].includes(";") ? ";" : ",";
     const parsed = lines.map((line) => line.split(sep).map((cell) => cell.trim()));
     const hasHeader = /nome/i.test(parsed[0]?.[0] || "") && /custo/i.test(parsed[0]?.[1] || "");
-    const rows = (hasHeader ? parsed.slice(1) : parsed).map((cols) => ({ name: cols[0] || "Produto", cost: this.parseMoney(cols[1]) })).filter((row) => row.name || row.cost > 0);
+    // Guarda o custo como veio do arquivo, para o campo mostrar "145,90" e
+    // não "145.9". A conversão para número acontece no cálculo.
+    const rows = (hasHeader ? parsed.slice(1) : parsed)
+      .map((cols) => ({ name: cols[0] || "Produto", cost: cols[1] || "" }))
+      .filter((row) => row.name || this.parseMoney(row.cost) > 0);
     return rows;
   },
   bulkCalculate(rows) {

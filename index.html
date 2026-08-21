@@ -472,6 +472,43 @@
       </div>
     </section>
 
+    <section id="sec-massivo" class="sectionCard bulkSection">
+      <h2>Calcular vários produtos de uma vez</h2>
+      <p class="sectionMicrocopy">Informe nome e custo de cada produto. O imposto, a meta de lucro e os custos extras usados são os mesmos que você configurou acima, então preencha aquela parte antes.</p>
+
+      <div class="bulkToolbar">
+        <button id="bulkAddRow" class="btn" type="button">Adicionar linha</button>
+        <label class="btn bulkImport" for="bulkCsvInput">
+          Importar CSV
+          <input id="bulkCsvInput" type="file" accept=".csv,text/csv" />
+        </label>
+        <button id="bulkCalculate" class="btn btn--primary" type="button">Calcular todos</button>
+        <button id="bulkExport" class="btn" type="button" disabled>Exportar CSV</button>
+      </div>
+      <p class="fieldHint">O CSV precisa de duas colunas, nome e custo. Cabeçalho é opcional. Prefira ponto e vírgula como separador: com vírgula, um custo como <code>89,90</code> fica ambíguo e é lido como 89.</p>
+
+      <div class="bulkTableWrap">
+        <table class="bulkTable">
+          <caption class="visuallyHidden">Produtos para calcular em lote</caption>
+          <thead>
+            <tr><th scope="col">Nome do produto</th><th scope="col">Custo (R$)</th></tr>
+          </thead>
+          <tbody id="bulkRows"></tbody>
+        </table>
+      </div>
+
+      <div id="bulkResultsWrap" class="bulkResultsWrap is-hidden">
+        <h3>Preço sugerido por canal</h3>
+        <div class="bulkTableWrap">
+          <table class="bulkTable bulkTable--results">
+            <caption class="visuallyHidden">Preço sugerido de cada produto em cada marketplace</caption>
+            <thead id="bulkResultsHead"></thead>
+            <tbody id="bulkResultsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <section class="pitch sectionCard">
       <h2>Para quem é esta calculadora</h2>
       <p class="pitch__lead">Vendedor de marketplace que precisa saber, antes de anunciar, se o preço fecha a conta. Cada canal cobra comissão, taxa fixa e frete de um jeito diferente, e a diferença entre eles muda o preço final em dezenas de reais.</p>
