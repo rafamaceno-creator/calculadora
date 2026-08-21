@@ -767,14 +767,13 @@ body.theme-dark .leadCapture__head p{color:#94a3b8}
 
 /* ===== Premium WOW Refresh (visual only) ===== */
 :root{
-  --bg:#edf2ff;
+  --bg:#f4f6f9;
   --surface:rgba(255,255,255,.78);
   --surface-soft:rgba(255,255,255,.56);
   --stroke:rgba(148,163,184,.34);
   --text:#0f172a;
   --muted:#526177;
   --accent:#0f9d92;
-  --accent-2:#7c3aed;
   --ring:0 0 0 3px color-mix(in srgb,var(--accent) 24%, transparent);
   --glass-blur:16px;
   --radius-sm:12px;
@@ -786,27 +785,9 @@ body.theme-dark .leadCapture__head p{color:#94a3b8}
 }
 
 body{
-  background:
-    radial-gradient(1200px 700px at -10% -15%,rgba(15,157,146,.18),transparent 55%),
-    radial-gradient(900px 550px at 100% 0%,rgba(124,58,237,.16),transparent 58%),
-    linear-gradient(160deg,#eef2ff 0%,#f5f8ff 50%,#eef8fb 100%);
+  background:var(--bg);
   letter-spacing:-.004em;
 }
-body::before,
-body::after{
-  content:"";
-  position:fixed;
-  inset:auto;
-  width:36vmax;
-  height:36vmax;
-  border-radius:50%;
-  filter:blur(80px);
-  opacity:.2;
-  pointer-events:none;
-  z-index:-2;
-}
-body::before{top:-10vmax;left:-10vmax;background:#16a394}
-body::after{right:-12vmax;bottom:-12vmax;background:#7c3aed}
 
 .appShell{position:relative;z-index:1}
 .appShell::before{
@@ -850,14 +831,7 @@ details,
 .sectionCard:hover,
 .card:hover{box-shadow:var(--shadow-md)}
 .pricingCard{position:relative;overflow:hidden}
-.pricingCard::before{
-  content:"";
-  position:absolute;
-  inset:0 0 auto 0;
-  height:140px;
-  background:linear-gradient(130deg,rgba(15,157,146,.12),rgba(124,58,237,.12));
-  pointer-events:none;
-}
+
 .pricingCard .card__inner{position:relative;z-index:1}
 
 .btn{
@@ -967,7 +941,7 @@ input::placeholder{color:#95a0b2}
   width:40px;
   height:40px;
   border-radius:12px;
-  background:linear-gradient(135deg,rgba(15,157,146,.18),rgba(124,58,237,.12));
+  background:var(--accent-soft);
   pointer-events:none;
 }
 .modeCard strong{font-size:19px;position:relative;z-index:1}
@@ -1053,17 +1027,11 @@ body.theme-dark{
   --text:#e2e8f0;
   --muted:#a8b4c7;
   --accent:#2dd4bf;
-  --accent-2:#a78bfa;
   --shadow-sm:0 10px 24px rgba(2,6,23,.5);
   --shadow-md:0 18px 40px rgba(2,6,23,.56);
   --shadow-lg:0 28px 70px rgba(2,6,23,.62);
 }
-body.theme-dark{
-  background:
-    radial-gradient(1000px 600px at -10% -10%,rgba(45,212,191,.16),transparent 60%),
-    radial-gradient(900px 520px at 110% 0%,rgba(167,139,250,.14),transparent 60%),
-    linear-gradient(160deg,#020617,#0b1228 55%,#071327 100%);
-}
+body.theme-dark{background:var(--bg)}
 body.theme-dark .btn--ghost,
 body.theme-dark input,
 body.theme-dark select,
@@ -1568,7 +1536,7 @@ body.theme-dark .mpBadge{color:rgba(255,255,255,.45);}
   gap:6px;
   padding:10px 14px;
   border-bottom:1px solid var(--stroke);
-  background:linear-gradient(90deg,rgba(15,157,146,.08),rgba(124,58,237,.08));
+  background:var(--accent-soft);
 }
 .heroMockup__dot{
   width:10px;height:10px;border-radius:50%;flex:0 0 auto;
@@ -1975,3 +1943,260 @@ body.theme-dark .adjCard__inner .cardMini{background:rgba(30,41,59,.5)}
   .wizardStepper__label{font-size:8px;letter-spacing:.02em}
   .wizardStepper__item.is-active .wizardStepper__dot{width:18px;height:18px}
 }
+
+/* =========================================================
+   Redesign da ferramenta: caminho explícito, densidade e
+   correções de layout. Escrito por último para vencer as
+   regras anteriores sem ter de reescrevê-las.
+   ========================================================= */
+
+/* --- Correção de overflow: itens de grid/flex têm min-width:auto por
+   padrão, então conteúdo largo empurra a coluna além do container e o
+   overflow:hidden do card corta o que sobra. --- */
+.grid > *,
+.card__inner,
+.modePanel,
+.marketplaceChip{min-width:0}
+.card{overflow:visible}
+
+/* --- Cabeçalho da ferramenta --- */
+.toolSection{padding-top:24px}
+.toolIntro{max-width:60ch}
+.toolIntro h1{
+  margin:0;
+  font-size:clamp(24px,3.2vw,34px);
+  line-height:1.15;
+  letter-spacing:-.022em;
+  font-weight:800;
+}
+.toolIntro__sub{margin:10px 0 0;color:var(--muted);font-size:15px;line-height:1.55}
+
+/* --- Escolha de caminho: a decisão que organiza o resto da tela --- */
+.pathPicker{margin:22px 0 20px;padding:0;border:0}
+.pathPicker__legend{
+  padding:0;
+  margin-bottom:10px;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.pathPicker__options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.pathCard{
+  position:relative;
+  display:block;
+  padding:16px 18px;
+  border:1px solid var(--stroke);
+  border-radius:var(--radius-sm);
+  background:var(--surface);
+  cursor:pointer;
+  transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.pathCard input{position:absolute;opacity:0;width:0;height:0}
+.pathCard:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--stroke))}
+.pathCard:has(input:checked){
+  border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent);
+  background:color-mix(in srgb,var(--accent-soft) 55%,var(--surface));
+}
+.pathCard:has(input:focus-visible){outline:3px solid rgba(13,148,136,.24);outline-offset:2px}
+.pathCard__body{display:block}
+.pathCard__title{display:block;font-weight:700;font-size:15px;line-height:1.3;color:var(--text)}
+.pathCard__desc{display:block;margin-top:5px;font-size:13px;line-height:1.45;color:var(--muted)}
+
+/* --- Painel do caminho ativo --- */
+.modePanel{
+  margin:4px 0 16px;
+  padding:16px 18px;
+  border:1px solid var(--stroke);
+  border-radius:var(--radius-sm);
+  background:var(--surface-soft,#f8fafc);
+}
+.modePanel.is-hidden{display:none}
+.modePanel__head h3{margin:0;font-size:16px;font-weight:700;letter-spacing:-.01em}
+.modePanel__head p{margin:4px 0 12px;color:var(--muted);font-size:13px;line-height:1.45}
+.modePanel .field{margin-top:10px}
+.modePanel .label{display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text)}
+
+/* --- Bloco de contexto abaixo da ferramenta --- */
+.pitch__lead{margin:12px 0 0;max-width:70ch;color:var(--muted);line-height:1.6}
+.pitch__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:24px}
+.pitch__item h3{margin:0 0 6px;font-size:15px;font-weight:700;letter-spacing:-.01em}
+.pitch__item p{margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+
+/* --- Nomes de marketplace: quebram entre palavras, nunca no meio delas,
+   e nunca com reticências. --- */
+.marketplaceChip__label,
+.marketplaceChip span{overflow-wrap:normal;word-break:normal;hyphens:none;white-space:normal;text-overflow:clip;overflow:visible}
+
+@media (max-width:768px){
+  .pathPicker__options{grid-template-columns:1fr}
+  .pitch__grid{grid-template-columns:1fr;gap:18px}
+  .toolSection{padding-top:18px}
+}
+
+/* --- Cartões de resultado: a cor da marca identifica o canal, não pinta o
+   cartão inteiro. Com seis canais lado a lado, seis acentos competindo
+   impedem a única coisa que essa tela precisa permitir: comparar números. --- */
+.resultCard{
+  border-color:var(--stroke);
+  background:var(--surface);
+}
+.resultCard:hover{
+  border-color:color-mix(in srgb,var(--accent) 40%,var(--stroke));
+  box-shadow:var(--shadow-sm);
+}
+.resultCard .pill{
+  border-color:var(--stroke);
+  background:color-mix(in srgb,var(--muted) 8%,transparent);
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.resultCard .incidenceGroupTitle{color:var(--text)}
+/* a faixa de 3px no topo e o ícone continuam com a cor do canal */
+
+/* --- Hierarquia do resultado: o número é o dado, o rótulo diz o que ele é.
+   O rótulo precisa ser legível, e o número não precisa gritar. --- */
+.resultAccordion__priceLabel{
+  font-size:12px;
+  letter-spacing:.04em;
+  color:var(--muted);
+  font-weight:600;
+  text-transform:none;
+}
+.resultAccordion__priceValue{
+  font-size:clamp(26px,2.4vw,30px);
+  font-weight:800;
+  letter-spacing:-.02em;
+  color:var(--text);
+  font-variant-numeric:tabular-nums;
+}
+.resultAccordion__right{min-width:150px}
+.resultAccordion__left .cardTitle,
+.resultCard .cardTitle{
+  font-size:14px;
+  line-height:1.25;
+  text-transform:none;
+  letter-spacing:0;
+  overflow-wrap:break-word;
+}
+
+/* --- Título da ferramenta em duas linhas, não três --- */
+.toolIntro h1{max-width:26ch;font-size:clamp(23px,2.5vw,31px)}
+
+/* --- Topbar: uma linha, uma ação principal. Os outros CTAs já existem
+   no rodapé do painel de resultados e no fim da página. --- */
+.topbar__inner{min-height:64px}
+.nav{gap:4px}
+.nav .js-cta-whatsapp,
+.nav .js-cta-instagram{display:none}
+
+@media (max-width:768px){
+  .resultAccordion__priceValue{font-size:clamp(24px,7vw,28px)}
+  .toolIntro h1{font-size:clamp(22px,6vw,26px)}
+}
+
+/* --- Título em duas linhas: a coluna de texto pode usar mais largura --- */
+.toolIntro h1{max-width:34ch}
+.toolIntro__sub{max-width:62ch}
+
+/* --- Contraste do CTA da topbar: o gradiente do botão primário deixava
+   o rótulo verde-escuro sobre fundo teal. --- */
+.btn--primary,
+.btn--primary:hover,
+.btn--cta{color:#fff}
+
+/* --- Ícone de ajuda junto do rótulo, não empurrado para a margem oposta.
+   Com o rótulo em duas linhas, o space-between soltava o ícone no ar. --- */
+.label-row{justify-content:flex-start;align-items:baseline;gap:6px}
+.label-row > span:first-child{flex:0 1 auto}
+.info{flex:0 0 auto;width:18px;height:18px;font-size:11px;font-weight:700;align-self:center}
+
+/* --- Densidade: a ferramenta é uma tela de trabalho, não uma landing.
+   Menos ar entre blocos que são lidos em sequência. --- */
+.field{margin-bottom:14px}
+.pricingCard .card__inner{padding:20px}
+.sectionCard{padding:24px}
+
+/* --- No celular a chip de marketplace não cabe em duas colunas sem
+   espremer o nome do canal. Uma coluna, linha mais baixa. --- */
+@media (max-width:768px){
+  .marketplaceSelector{grid-template-columns:1fr;gap:8px}
+  .marketplaceChip{min-height:56px;padding:10px 12px}
+}
+@media (max-width:420px){
+  .toolIntro h1{font-size:22px;line-height:1.2}
+}
+
+/* --- Chip de marketplace: nome e variante em linhas próprias, marca de
+   seleção sem encostar no texto. As regras anteriores usam #id + classe,
+   então estas precisam da mesma especificidade para valer. --- */
+#marketplaceSelector .mpNameGroup{
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  min-width:0;
+  flex:1 1 auto;
+}
+#marketplaceSelector .mpName{white-space:normal;line-height:1.25}
+#marketplaceSelector .mpBadge{white-space:nowrap;font-size:12px;color:var(--muted)}
+#marketplaceSelector .marketplaceChip{gap:10px}
+#marketplaceSelector .mpCheck{margin-left:8px;flex:0 0 auto}
+
+@media (max-width:768px){
+  #marketplaceSelector.marketplaceSelector{grid-template-columns:1fr;gap:8px}
+  #marketplaceSelector .marketplaceChip{min-height:52px;padding:10px 12px}
+  #marketplaceSelector .mpNameGroup{flex-direction:row;align-items:baseline;gap:6px;flex-wrap:wrap}
+}
+
+/* --- Contraste da descrição do caminho: sobre o fundo tingido do cartão
+   selecionado, o cinza padrão não alcançava 4.5:1. --- */
+.pathCard__desc{color:#475569}
+.pathCard:has(input:checked) .pathCard__desc{color:#3f4d5f}
+
+/* --- Ícone de ajuda alinhado ao rótulo em uma única linha --- */
+.label-row{align-items:center}
+.info{align-self:auto}
+
+/* =========================================================
+   Tema escuro: cores que estavam fixas no CSS e por isso
+   sumiam quando o fundo invertia.
+   ========================================================= */
+body.theme-dark .label,
+body.theme-dark .modePanel .label{color:var(--text)}
+body.theme-dark .cardTitle,
+body.theme-dark .resultCard .cardTitle,
+body.theme-dark .resultAccordion__left .cardTitle{color:var(--text)}
+body.theme-dark .info{background:transparent;border-color:var(--stroke);color:var(--text)}
+body.theme-dark .pathCard{background:var(--surface)}
+body.theme-dark .pathCard:has(input:checked){
+  background:color-mix(in srgb,var(--accent) 12%,var(--surface));
+  border-color:var(--accent);
+}
+body.theme-dark .pathCard__desc,
+body.theme-dark .pathCard:has(input:checked) .pathCard__desc{color:var(--muted)}
+body.theme-dark .pathPicker__legend{color:var(--muted)}
+body.theme-dark .modePanel{background:var(--surface-soft);border-color:var(--stroke)}
+body.theme-dark .resultCard{background:var(--surface)}
+body.theme-dark .resultCard .pill{
+  background:color-mix(in srgb,var(--muted) 16%,transparent);
+  color:var(--text);
+  border-color:var(--stroke);
+}
+body.theme-dark .resultAccordion__priceValue{color:var(--text)}
+body.theme-dark .pitch__item p,
+body.theme-dark .pitch__lead,
+body.theme-dark .toolIntro__sub{color:var(--muted)}
+body.theme-dark .segmented{background:var(--surface-soft);border-color:var(--stroke)}
+body.theme-dark .segmented label{color:var(--muted)}
+body.theme-dark .segmented input:checked + label{background:var(--surface);color:var(--text)}
+
+/* --- Detalhamento do resultado: as linhas de "chave / valor" ficam numa
+   grid de duas colunas; sem min-width:0 o valor formatado empurra a
+   coluna para fora do cartão em telas estreitas. --- */
+.resultAccordion__body .k,
+.resultAccordion__body .v,
+.compareCard__rows .k,
+.compareCard__rows .v,
+.incidenceToggle{min-width:0;overflow-wrap:anywhere}

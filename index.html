@@ -100,73 +100,32 @@
   </header>
 
   <main class="container appShell">
-    <section class="hero">
-      <div class="hero__layout">
-        <div class="hero__text">
-          <span class="kicker">Simples no início • Completo no avançado</span>
-          <h1>Calculadora de Preço para Shopee, Mercado Livre e Amazon</h1>
-          <p>Simule taxas, comissões e custos por canal (Mercado Livre, Shopee, Amazon e outros) e descubra o preço mínimo e o preço ideal.</p>
-          <small class="hero__microcopy">100% gratuito. Sem login.</small>
-          <div class="hero__actions">
-            <a class="btn btn--primary" href="#sec-precificacao">Calcular agora</a>
-            <a class="btn btn--outline" href="#sec-como-funciona">Ver como funciona</a>
-          </div>
-        </div>
-        <div class="hero__mockup" aria-hidden="true">
-          <div class="heroMockup">
-            <div class="heroMockup__header">
-              <span class="heroMockup__dot heroMockup__dot--teal"></span>
-              <span class="heroMockup__dot heroMockup__dot--yellow"></span>
-              <span class="heroMockup__dot heroMockup__dot--red"></span>
-              <span class="heroMockup__title">Precificação</span>
-            </div>
-            <div class="heroMockup__body">
-              <div class="heroMockup__field">
-                <span class="heroMockup__label">Custo total</span>
-                <span class="heroMockup__input">R$ 60,00</span>
-              </div>
-              <div class="heroMockup__field">
-                <span class="heroMockup__label">Imposto de venda</span>
-                <span class="heroMockup__input">10%</span>
-              </div>
-              <div class="heroMockup__chips">
-                <span class="heroMockup__chip heroMockup__chip--active">Shopee</span>
-                <span class="heroMockup__chip heroMockup__chip--active">Mercado Livre</span>
-                <span class="heroMockup__chip">Amazon</span>
-              </div>
-              <div class="heroMockup__result">
-                <div class="heroMockup__resultRow">
-                  <span class="heroMockup__resultLabel">Shopee — Preço ideal</span>
-                  <span class="heroMockup__resultValue">R$ 98,50</span>
-                </div>
-                <div class="heroMockup__resultRow heroMockup__resultRow--secondary">
-                  <span class="heroMockup__resultLabel">ML Clássico</span>
-                  <span class="heroMockup__resultValue">R$ 107,20</span>
-                </div>
-              </div>
-              <div class="heroMockup__cta">Calcular agora →</div>
-            </div>
-          </div>
-        </div>
+    <section id="sec-precificacao" class="sectionCard toolSection">
+      <div class="toolIntro">
+        <h1>Calculadora de preço para Shopee, Mercado Livre, Amazon e mais</h1>
+        <p class="toolIntro__sub">Saiba por quanto vender para bater sua meta, ou quanto sobra no preço que já pratica.</p>
       </div>
-    </section>
 
-    <section id="sec-como-funciona" class="sectionCard sectionCard--howItWorks">
-      <h2>Como funciona</h2>
-      <ul class="howItWorksList">
-        <li>Preencha os dados principais de custo, impostos e sua meta de lucro.</li>
-        <li>Compare automaticamente os canais e veja taxas, comissão e lucro real por marketplace.</li>
-        <li>Ajuste o preço sugerido com segurança e evite vender no prejuízo.</li>
-      </ul>
-    </section>
+      <fieldset class="pathPicker">
+        <legend class="pathPicker__legend">O que você quer fazer?</legend>
+        <div class="pathPicker__options">
+          <label class="pathCard">
+            <input type="radio" name="calcMode" value="ideal" checked />
+            <span class="pathCard__body">
+              <span class="pathCard__title">Descobrir meu preço de venda</span>
+              <span class="pathCard__desc">Você diz quanto quer lucrar. Calculamos por quanto vender em cada canal.</span>
+            </span>
+          </label>
+          <label class="pathCard">
+            <input type="radio" name="calcMode" value="real" />
+            <span class="pathCard__body">
+              <span class="pathCard__title">Ver quanto estou ganhando</span>
+              <span class="pathCard__desc">Você diz o preço que já pratica. Mostramos o lucro real por canal.</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
 
-    <nav class="segmentMenu" aria-label="Menu de blocos">
-      <button class="segmentMenu__btn is-active" type="button" data-target="#sec-precificacao">Precificação</button>
-    </nav>
-
-    <section id="sec-precificacao" class="sectionCard">
-      <h2>Precificação</h2>
-      <p class="sectionMicrocopy">Preencha os custos, selecione os marketplaces e informe o preço de venda ou a margem desejada.</p>
       <div class="grid">
       <div class="card pricingCard">
         <div class="card__inner">
@@ -224,52 +183,55 @@
             </div>
           </div>
 
-          <!-- ── PREÇO DE VENDA  OU  MARGEM DESEJADA ── -->
-          <div class="priceOrMarginRow">
-            <div class="priceOrMargin__side">
-              <div class="formBlock__head">
-                <h3>Preço de Venda</h3>
-                <p>Você já tem um preço definido? Informe aqui para ver quanto está ganhando em cada canal.</p>
+          <!-- ── Painel do caminho escolhido ── -->
+          <div class="modePanel" data-mode-panel="ideal">
+            <div class="modePanel__head">
+              <h3>Quanto você quer lucrar</h3>
+              <p>Informe a meta e calculamos o preço de venda que a entrega em cada canal.</p>
+            </div>
+            <div class="segmented segmented--goal" role="radiogroup" aria-label="Formato da meta de lucro">
+              <input id="meta_reais" type="radio" name="profitMode" value="brl" />
+              <label for="meta_reais">Em R$</label>
+              <input id="meta_percent" type="radio" name="profitMode" value="pct" checked />
+              <label for="meta_percent">Em %</label>
+            </div>
+            <div id="profitFieldBRL" class="field is-hidden">
+              <label class="label" for="profitValueBRL">Lucro por venda</label>
+              <div class="inputWrap">
+                <span class="inputPrefix">R$</span>
+                <input id="profitValueBRL" type="number" step="0.01" min="0" value="10" />
               </div>
+            </div>
+            <div id="profitFieldPCT" class="field">
+              <label class="label" for="profitValuePct">Margem sobre o preço de venda</label>
+              <div class="inputWrap">
+                <input id="profitValuePct" type="number" step="0.01" min="0" value="10" />
+                <span class="inputSuffix">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modePanel is-hidden" data-mode-panel="real">
+            <div class="modePanel__head">
+              <h3>Seu preço de venda atual</h3>
+              <p>Informe o valor que você cobra hoje e mostramos quanto sobra em cada canal.</p>
+            </div>
+            <div class="field">
+              <label class="label" for="salePrice">Preço praticado</label>
               <div class="inputWrap">
                 <span class="inputPrefix">R$</span>
                 <input id="salePrice" type="number" step="0.01" min="0" placeholder="Ex: 99,90" />
               </div>
-            </div>
-
-            <div class="priceOrMargin__or" aria-hidden="true"><span>ou</span></div>
-
-            <div class="priceOrMargin__side">
-              <div class="formBlock__head">
-                <h3>Margem desejada</h3>
-                <p>Informe quanto quer ganhar e o sistema calcula o preço ideal por marketplace.</p>
-              </div>
-              <div class="segmented segmented--goal" role="radiogroup" aria-label="Modo da meta">
-                <input id="meta_reais" type="radio" name="profitMode" value="brl" />
-                <label for="meta_reais">Em R$</label>
-                <input id="meta_percent" type="radio" name="profitMode" value="pct" checked />
-                <label for="meta_percent">Em %</label>
-              </div>
-              <div id="profitFieldBRL" class="field is-hidden" style="margin-top:8px">
-                <div class="inputWrap">
-                  <span class="inputPrefix">R$</span>
-                  <input id="profitValueBRL" type="number" step="0.01" min="0" value="10" />
-                </div>
-              </div>
-              <div id="profitFieldPCT" class="field" style="margin-top:8px">
-                <div class="inputWrap">
-                  <input id="profitValuePct" type="number" step="0.01" min="0" value="10" />
-                  <span class="inputSuffix">%</span>
-                </div>
-              </div>
-              <!-- hidden sync fields -->
-              <select id="profitType" class="is-hidden" aria-hidden="true" tabindex="-1">
-                <option value="brl">Em R$ (lucro em reais)</option>
-                <option value="pct" selected>Em % (margem sobre o preço)</option>
-              </select>
-              <input id="profitValue" class="is-hidden" type="number" step="0.01" min="0" value="10" tabindex="-1" aria-hidden="true" />
+              <p class="fieldHint">Usamos o mesmo preço em todos os canais selecionados, para comparar lado a lado.</p>
             </div>
           </div>
+
+          <!-- campos espelho usados pelo motor de cálculo -->
+          <select id="profitType" class="is-hidden" aria-hidden="true" tabindex="-1">
+            <option value="brl">Em R$ (lucro em reais)</option>
+            <option value="pct" selected>Em % (margem sobre o preço)</option>
+          </select>
+          <input id="profitValue" class="is-hidden" type="number" step="0.01" min="0" value="10" tabindex="-1" aria-hidden="true" />
 
           <!-- ── CUSTOS EXTRAS ── -->
           <div class="adjCard is-open" id="adjCard-custos" style="margin-top:16px">
@@ -495,7 +457,7 @@
 
       <div class="card stickyResultsCard">
         <div class="card__inner">
-          <h2>Resultados</h2>
+          <h2 id="resultsTitle">Por quanto vender em cada canal</h2>
           <div id="results" class="resultList"></div>
           <div id="reportRoot" class="reportRoot" aria-live="polite"></div>
           <div id="shareBox" class="shareBox"></div>
@@ -508,6 +470,34 @@
         </div>
       </div>
       </div>
+    </section>
+
+    <section class="pitch sectionCard">
+      <h2>Para quem é esta calculadora</h2>
+      <p class="pitch__lead">Vendedor de marketplace que precisa saber, antes de anunciar, se o preço fecha a conta. Cada canal cobra comissão, taxa fixa e frete de um jeito diferente, e a diferença entre eles muda o preço final em dezenas de reais.</p>
+      <div class="pitch__grid">
+        <div class="pitch__item">
+          <h3>Seis canais na mesma conta</h3>
+          <p>Shopee, Mercado Livre Clássico e Premium, TikTok Shop, SHEIN e Amazon, com as tabelas de comissão vigentes e as faixas de preço de cada um.</p>
+        </div>
+        <div class="pitch__item">
+          <h3>Custos que costumam ficar de fora</h3>
+          <p>Imposto de venda, anúncios, devolução, comissão de afiliado e custo fixo por pedido entram no cálculo e aparecem discriminados no resultado.</p>
+        </div>
+        <div class="pitch__item">
+          <h3>Sem login, sem custo</h3>
+          <p>Os dados ficam no seu navegador. Dá para salvar simulações, exportar em PDF e comparar produtos em lote.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-como-funciona" class="sectionCard sectionCard--howItWorks">
+      <h2>Como funciona</h2>
+      <ul class="howItWorksList">
+        <li>Preencha os dados principais de custo, impostos e sua meta de lucro.</li>
+        <li>Compare automaticamente os canais e veja taxas, comissão e lucro real por marketplace.</li>
+        <li>Ajuste o preço sugerido com segurança e evite vender no prejuízo.</li>
+      </ul>
     </section>
 
       <section class="yt-section" id="videos">

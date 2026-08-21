@@ -32,7 +32,7 @@ const SHOPEE_FAIXA_PADRAO = SHOPEE_FAIXAS[1];
    - R$50 ou mais: 6% + R$6 por item vendido
    O Programa de Frete Grátis (PTE) soma 6% sobre o valor do produto. É
    opcional, mas fica ativo por padrão por ser a configuração usada pela
-   maioria dos sellers — e era o que o percentual único de 12% já embutia.
+   maioria dos sellers, e era o que o percentual único de 12% já embutia.
 */
 const TIKTOK_PTE_PCT = 0.06;
 
@@ -334,7 +334,7 @@ function amazonDbaFee({ price, weightKg, originGroup }) {
 }
 
 /* ===== Mercado Livre: custo por unidade vendida =====
-   Desde 02/03/2026 só há cobrança em itens abaixo de R$79 — acima disso o
+   Desde 02/03/2026 só há cobrança em itens abaixo de R$79. Acima disso o
    anúncio paga apenas a comissão da categoria. Abaixo de R$79 o valor
    deixou de ser tabelado por faixa de preço e passou a variar por peso,
    dimensões e cubagem; mantemos a estimativa por peso, já que o número
@@ -786,7 +786,7 @@ function mode1ResultCardHTML(title, price, analysis, cost, mp, taxPct) {
         </div>
         <div class="resultAccordion__right">
           <div class="resultAccordion__priceLabel">LUCRO REAL</div>
-          <div class="resultAccordion__priceValue">—</div>
+          <div class="resultAccordion__priceValue">-</div>
         </div>
         <span class="resultAccordion__chevron" aria-hidden="true">▾</span>
       </div>
@@ -867,7 +867,7 @@ function resultCardHTML(
   extraRows = [],
   options = {}
 ) {
-  const price = Number.isFinite(r.price) ? brl(r.price) : "—";
+  const price = Number.isFinite(r.price) ? brl(r.price) : "-";
   const received = brl(r.received);
   const profitLine = `${brl(r.profitBRL)} (${(r.profitPctReal * 100).toFixed(2)}%)`;
   const incidencesPct = `${(r.totalPercentCosts * 100).toFixed(2)}%`;
@@ -908,7 +908,7 @@ function resultCardHTML(
         .map((group) => {
           const rows = group.items
             .map((item) => {
-              const pctText = item.pct > 0 ? `${(item.pct * 100).toFixed(2)}%` : "—";
+              const pctText = item.pct > 0 ? `${(item.pct * 100).toFixed(2)}%` : "-";
               const kindText = item.kind === "fixed" ? "custo fixo" : "entra no total %";
               return `<div class="k">${item.label}<small>${kindText}</small></div><div class="v">${pctText} • ${brl(item.brl)}</div>`;
             })
@@ -916,7 +916,7 @@ function resultCardHTML(
           return `<div class="incidenceGroupTitle">${group.group}</div>${rows}`;
         })
         .join("")
-    : `<div class="k">—</div><div class="v">—</div>`;
+    : `<div class="k">-</div><div class="v">-</div>`;
 
   const extraHTML = extraRows
     .map((row) => `<div class="k">${row.k}</div><div class="v">${row.v}</div>`)
@@ -1679,7 +1679,7 @@ function recalc(options = {}) {
       )
     ] : []),
     resultCardHTML(
-      "Mercado Livre — Clássico",
+      "Mercado Livre · Clássico",
       `${(mlClassicPct * 100).toFixed(2)}%`,
       mlClassic.r,
       cost,
@@ -1697,7 +1697,7 @@ function recalc(options = {}) {
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
     ),
     resultCardHTML(
-      "Mercado Livre — Premium",
+      "Mercado Livre · Premium",
       `${(mlPremiumPct * 100).toFixed(2)}%`,
       mlPremium.r,
       cost,
@@ -1727,8 +1727,8 @@ function recalc(options = {}) {
     { key: "tiktok", title: "TikTok Shop", marketplacePct: ttFee.pct, marketplaceFixed: ttFee.fixed, percentCosts: adv.pctExtra + adv.affiliate.tiktok, fixedCosts: adv.fixedBRL },
     { key: "shein", title: "SHEIN", marketplacePct: sheinPct, marketplaceFixed: sheinFixed, percentCosts: adv.pctExtra, fixedCosts: adv.fixedBRL },
     ...(amazonDbaEnabled && amazonData ? [{ key: "amazon", title: "Amazon (DBA)", marketplacePct: amazonPct, marketplaceFixed: amazonData.fee, percentCosts: adv.pctExtra + adv.affiliate.amazon, fixedCosts: adv.fixedBRL }] : []),
-    { key: "mlClassic", title: "Mercado Livre — Clássico", marketplacePct: mlClassicPct, marketplaceFixed: mlClassic.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL },
-    { key: "mlPremium", title: "Mercado Livre — Premium", marketplacePct: mlPremiumPct, marketplaceFixed: mlPremium.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL }
+    { key: "mlClassic", title: "Mercado Livre · Clássico", marketplacePct: mlClassicPct, marketplaceFixed: mlClassic.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL },
+    { key: "mlPremium", title: "Mercado Livre · Premium", marketplacePct: mlPremiumPct, marketplaceFixed: mlPremium.fixed, percentCosts: adv.pctExtra + adv.affiliate.ml, fixedCosts: adv.fixedBRL }
   ];
 
   const computedResults = [
@@ -1736,8 +1736,8 @@ function recalc(options = {}) {
     { key: "tiktok", title: "TikTok Shop", price: tiktok.price, profitBRL: tiktok.profitBRL, marginPct: tiktok.profitPctReal * 100 },
     { key: "shein", title: "SHEIN", price: shein.price, profitBRL: shein.profitBRL, marginPct: shein.profitPctReal * 100 },
     ...(amazonDbaEnabled && amazonData ? [{ key: "amazon", title: "Amazon (DBA)", price: amazonData.result.price, profitBRL: amazonData.result.profitBRL, marginPct: amazonData.result.profitPctReal * 100 }] : []),
-    { key: "mlClassic", title: "Mercado Livre — Clássico", price: mlClassic.r.price, profitBRL: mlClassic.r.profitBRL, marginPct: mlClassic.r.profitPctReal * 100 },
-    { key: "mlPremium", title: "Mercado Livre — Premium", price: mlPremium.r.price, profitBRL: mlPremium.r.profitBRL, marginPct: mlPremium.r.profitPctReal * 100 }
+    { key: "mlClassic", title: "Mercado Livre · Clássico", price: mlClassic.r.price, profitBRL: mlClassic.r.profitBRL, marginPct: mlClassic.r.profitPctReal * 100 },
+    { key: "mlPremium", title: "Mercado Livre · Premium", price: mlPremium.r.price, profitBRL: mlPremium.r.profitBRL, marginPct: mlPremium.r.profitPctReal * 100 }
   ].map((item) => ({ ...item, totalCost: Math.max(0, item.price - item.profitBRL) }));
 
   const state = { marketplaces: marketplaceState, cost, taxPct, shopeeAntecipa, computedResults };
@@ -1765,6 +1765,10 @@ function recalc(options = {}) {
   }
 
   renderCurrentPriceAnalysis(state);
+  // Os cartões são montados para todos os canais; é aqui que a seleção do
+  // usuário passa a valer. Sem esta chamada o seletor de marketplaces não
+  // tinha efeito nenhum sobre a lista de resultados.
+  applyWizardResultFilter();
 
   if (calcMode !== "real") {
     renderScaleSimulation(state);
@@ -2134,7 +2138,7 @@ function ensureLeadCaptureBlock() {
       <div class="leadCapture__head">
         <div>
           <h3>Receba sua análise de precificação por email</h3>
-          <p>PDF gratuito com preços mínimos por marketplace, margens reais, composição de custos e taxas — pronto para usar no dia a dia.</p>
+          <p>PDF gratuito com preços mínimos por marketplace, margens reais, composição de custos e taxas, pronto para usar no dia a dia.</p>
         </div>
         <button class="leadCapture__close" type="button" aria-label="Fechar captura" data-action="dismiss-lead">✕</button>
       </div>
@@ -2582,7 +2586,7 @@ function bind() {
 }
 
 /* ------------------------------------------------------------------
-   Adj Cards — collapsible subsection cards in "Ajustes adicionais"
+   Adj Cards: collapsible subsection cards in "Ajustes adicionais"
    ------------------------------------------------------------------ */
 function updateAdjCounter(groupId) {
   const counter = document.querySelector(`#adjCounter-${groupId}`);
@@ -2712,7 +2716,13 @@ function bindSmoothScroll() {
     });
   });
 
-  resolveAndScroll(window.location.hash, { updateHash: true, replaceHash: true });
+  // Só rola no load quando o usuário chegou por um link com âncora. Sem hash,
+  // a página abre no topo, onde a calculadora agora vive.
+  if (window.location.hash) {
+    resolveAndScroll(window.location.hash, { updateHash: true, replaceHash: true });
+  } else {
+    setActiveSegmentButton(DEFAULT_SECTION);
+  }
 
   window.addEventListener("popstate", () => {
     resolveAndScroll(window.location.hash, { updateHash: true, replaceHash: true });
@@ -2733,7 +2743,7 @@ const UX_MARKETPLACES = [
   },
   {
     key: "mlClassic",
-    title: "Mercado Livre — Clássico",
+    title: "Mercado Livre · Clássico",
     faviconUrl: "https://www.google.com/s2/favicons?domain=mercadolivre.com.br&sz=64",
     logoAlt: "Mercado Livre",
     fallback: "ML",
@@ -2742,7 +2752,7 @@ const UX_MARKETPLACES = [
   },
   {
     key: "mlPremium",
-    title: "Mercado Livre — Premium",
+    title: "Mercado Livre · Premium",
     faviconUrl: "https://www.google.com/s2/favicons?domain=mercadolivre.com.br&sz=64",
     logoAlt: "Mercado Livre",
     fallback: "ML",
@@ -2778,8 +2788,8 @@ const UX_MARKETPLACES = [
 
 const MARKETPLACE_TITLE_TO_KEY = {
   "Shopee": "shopee",
-  "Mercado Livre — Clássico": "mlClassic",
-  "Mercado Livre — Premium": "mlPremium",
+  "Mercado Livre · Clássico": "mlClassic",
+  "Mercado Livre · Premium": "mlPremium",
   "TikTok Shop": "tiktok",
   "SHEIN": "shein",
   "Amazon (DBA)": "amazon"
@@ -2791,9 +2801,42 @@ let UX_RECALC_TIMER = null;
 let wizardStep = 0;
 let LAST_CALC_CONTEXT = null;
 
+/* Dois caminhos do produto:
+   - "real"  → o vendedor informa o preço que já pratica e vê quanto sobra
+   - "ideal" → o vendedor informa a meta de lucro e vê por quanto vender
+   O modo é uma escolha explícita na interface. O fallback pelo preço
+   preenchido continua valendo para links compartilhados antigos, que não
+   carregam o campo de modo. */
 function getCalcMode() {
-  const salePrice = toNumber(document.querySelector("#salePrice")?.value);
-  return salePrice > 0 ? "real" : "ideal";
+  const explicit = document.querySelector('input[name="calcMode"]:checked')?.value;
+  if (explicit === "real" || explicit === "ideal") return explicit;
+  return toNumber(document.querySelector("#salePrice")?.value) > 0 ? "real" : "ideal";
+}
+
+function applyCalcMode(mode) {
+  const isReal = mode === "real";
+  document.querySelectorAll("[data-mode-panel]").forEach((panel) => {
+    panel.classList.toggle("is-hidden", panel.dataset.modePanel !== mode);
+  });
+  const results = document.querySelector("#resultsTitle");
+  if (results) {
+    results.textContent = isReal ? "Quanto sobra por canal" : "Por quanto vender em cada canal";
+  }
+  document.querySelector("#sec-precificacao")?.setAttribute("data-calc-mode", mode);
+}
+
+function bindCalcMode() {
+  const inputs = document.querySelectorAll('input[name="calcMode"]');
+  if (!inputs.length) return;
+  inputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      if (!input.checked) return;
+      applyCalcMode(input.value);
+      trackGA4Event("calc_mode_change", { mode: input.value });
+      recalc({ source: "calc_mode" });
+    });
+  });
+  applyCalcMode(getCalcMode());
 }
 
 function getSelectedMarketplaces() {
@@ -2804,7 +2847,7 @@ function buildMarketplaceSelector() {
   const wrap = document.querySelector("#marketplaceSelector");
   if (!wrap) return;
   wrap.innerHTML = UX_MARKETPLACES.map((mp) => {
-    const displayName = mp.badge ? mp.title.split(" — ")[0] : mp.title;
+    const displayName = mp.badge ? mp.title.split(" · ")[0] : mp.title;
     return `
     <label class="marketplaceChip" data-mp="${mp.key}" for="ux_mp_${mp.key}">
       <input class="marketplaceChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" aria-label="${mp.title}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
@@ -2843,11 +2886,11 @@ function renderMode1PriceInputs() {
   }
   wrap.innerHTML = selected.map((key) => {
     const mp = UX_MARKETPLACES.find((item) => item.key === key);
-    const shortName = (mp?.title || key).split(" — ")[0].split(" (")[0];
+    const shortName = (mp?.title || key).split(" · ")[0].split(" (")[0];
     return `
       <div class="field cardMini">
         <div class="label label-row">
-          <span>Preço de venda — ${mp?.title || key}</span>
+          <span>Preço de venda: ${mp?.title || key}</span>
         </div>
         <div class="inputWrap">
           <span class="inputPrefix">R$</span>
@@ -2881,8 +2924,8 @@ function buildSimulationSummaryContext() {
   const mlPremiumPct = (customCommEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
 
   const perMarketplace = selectedKeys.map((key) => {
-    if (key === "mlClassic") return { key, label: "Mercado Livre — Clássico", commissionPct: mlClassicPct, affiliatePct: adv.affiliate.ml };
-    if (key === "mlPremium") return { key, label: "Mercado Livre — Premium", commissionPct: mlPremiumPct, affiliatePct: adv.affiliate.ml };
+    if (key === "mlClassic") return { key, label: "Mercado Livre · Clássico", commissionPct: mlClassicPct, affiliatePct: adv.affiliate.ml };
+    if (key === "mlPremium") return { key, label: "Mercado Livre · Premium", commissionPct: mlPremiumPct, affiliatePct: adv.affiliate.ml };
     if (key === "tiktok") return { key, label: "TikTok Shop", commissionPct: TIKTOK_FAIXA_PADRAO.pct, affiliatePct: adv.affiliate.tiktok };
     if (key === "shein") {
       const pct = customCommEnabled ? Math.max(0, toNumber(document.querySelector("#sheinPct")?.value)) / 100 : SHEIN.pctOther;
@@ -2920,7 +2963,7 @@ function renderSimulationSummary(context = buildSimulationSummaryContext()) {
 
   const marketplaceRows = context.perMarketplace.length
     ? context.perMarketplace.map((item) => `<li><span>${item.label}</span><strong>${item.disabled ? "inativo" : formatPct(item.commissionPct)}</strong></li>`).join("")
-    : '<li><span>Nenhum marketplace selecionado</span><strong>—</strong></li>';
+    : '<li><span>Nenhum marketplace selecionado</span><strong>-</strong></li>';
 
   const affiliateRows = context.perMarketplace.length
     ? context.perMarketplace.map((item) => `<li><span>${item.label}</span><strong>${item.disabled ? "inativo" : formatPct(item.affiliatePct)}</strong></li>`).join("")
@@ -2985,7 +3028,7 @@ function renderResultTransparencySummary(context = LAST_CALC_CONTEXT) {
       </div>
       <div>
         <h4>Preço final recomendado</h4>
-        <ul>${lines || '<li><span>Sem resultado disponível</span><strong>—</strong></li>'}</ul>
+        <ul>${lines || '<li><span>Sem resultado disponível</span><strong>-</strong></li>'}</ul>
       </div>
     </div>
   `;
@@ -3078,6 +3121,7 @@ function initApp() {
   bindInputTracking();
   bindTooltipSystem();
   bindSmoothScroll();
+  bindCalcMode();
   bindSegmentMenuActiveState();
   bindBulk();
   bindAdjCards();
