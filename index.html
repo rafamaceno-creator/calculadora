@@ -13,15 +13,15 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://precificacao.rafamaceno.com.br/">
   <meta name="robots" content="index,follow" />
-  <meta name="app-build" content="20260220-4" />
+  <meta name="app-build" content="20260821-2" />
   <link rel="canonical" href="./" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260220-2" data-asset="true" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260821-2" data-asset="true" />
   <script>
-    const APP_VERSION = "20260220-2";
+    const APP_VERSION = "20260821-2";
 
     window.versionAssetPath = function versionAssetPath(path) {
       const url = new URL(path, window.location.href);
@@ -509,7 +509,7 @@
       </div>
     </section>
 
-    <section class="pitch sectionCard">
+    <section class="pitch supportSection">
       <h2>Para quem é esta calculadora</h2>
       <p class="pitch__lead">Vendedor de marketplace que precisa saber, antes de anunciar, se o preço fecha a conta. Cada canal cobra comissão, taxa fixa e frete de um jeito diferente, e a diferença entre eles muda o preço final em dezenas de reais.</p>
       <div class="pitch__grid">
@@ -528,13 +528,22 @@
       </div>
     </section>
 
-    <section id="sec-como-funciona" class="sectionCard sectionCard--howItWorks">
+    <section id="sec-como-funciona" class="supportSection">
       <h2>Como funciona</h2>
-      <ul class="howItWorksList">
-        <li>Preencha os dados principais de custo, impostos e sua meta de lucro.</li>
-        <li>Compare automaticamente os canais e veja taxas, comissão e lucro real por marketplace.</li>
-        <li>Ajuste o preço sugerido com segurança e evite vender no prejuízo.</li>
-      </ul>
+      <ol class="steps">
+        <li class="steps__item">
+          <h3>Informe custo e imposto</h3>
+          <p>O custo do produto, a alíquota que incide na venda e, se quiser, anúncios, devolução e comissão de afiliado.</p>
+        </li>
+        <li class="steps__item">
+          <h3>Escolha o caminho</h3>
+          <p>Diga a meta de lucro para descobrir o preço, ou o preço que já pratica para ver quanto sobra.</p>
+        </li>
+        <li class="steps__item">
+          <h3>Compare os canais</h3>
+          <p>Cada marketplace aparece com sua comissão, taxa fixa e lucro real, lado a lado.</p>
+        </li>
+      </ol>
     </section>
 
       <section class="yt-section" id="videos">
@@ -627,29 +636,34 @@
       </div>
     </section>
 
-    <section class="sectionCard strategicCta">
-      <h2>Quer que eu analise sua conta?</h2>
-      <p>Se você quer sair da teoria e ter um plano claro para escalar, agende sua hora comigo.</p>
-      <a class="btn btn--primary" data-action="cta-specialist" data-from="home-cta" href="/a-hora-com-o-especialista">Agendar análise estratégica</a>
+    <section class="ctaBand">
+      <div class="ctaBand__text">
+        <h2>Quer que eu analise sua conta?</h2>
+        <p>Se você quer sair da teoria e ter um plano claro para escalar, agende sua hora comigo.</p>
+      </div>
+      <a class="btn ctaBand__btn" data-action="cta-specialist" data-from="home-cta" href="/a-hora-com-o-especialista">Agendar análise</a>
     </section>
 
-    <section id="faq" class="faq">
-      <h2>Perguntas Frequentes</h2>
-
-      <article class="cardMini">
-        <h3>Quanto a Shopee cobra de comissão?</h3>
-        <p>A Shopee cobra comissão que varia conforme a categoria do produto, além de taxas fixas e custos logísticos. A calculadora considera automaticamente essas variáveis.</p>
-      </article>
-
-      <article class="cardMini">
-        <h3>Como calcular preço mínimo para não ter prejuízo?</h3>
-        <p>O preço mínimo é aquele que cobre custo do produto, comissão do marketplace, frete e impostos. A ferramenta faz esse cálculo automaticamente.</p>
-      </article>
-
-      <article class="cardMini">
-        <h3>Como calcular lucro no Mercado Livre?</h3>
-        <p>É necessário considerar comissão, frete, taxa de venda e impostos. A calculadora mostra o lucro real após todas as taxas.</p>
-      </article>
+    <section id="faq" class="supportSection">
+      <h2>Perguntas frequentes</h2>
+      <div class="faqList">
+        <details class="faqItem">
+          <summary>Quanto a Shopee cobra de comissão?</summary>
+          <p>Depende da faixa de preço do item. Até R$79,99 são 20% mais R$4 por item; de R$80 a R$99,99 são 14% mais R$16; de R$100 a R$199,99 são 14% mais R$20; acima de R$200 são 14% mais R$26. A calculadora aplica a faixa certa sozinha.</p>
+        </details>
+        <details class="faqItem">
+          <summary>Como calcular preço mínimo para não ter prejuízo?</summary>
+          <p>O preço mínimo cobre custo do produto, comissão do canal, taxa fixa e imposto, sem sobrar lucro. Use o caminho da meta de lucro com margem zero e o resultado é exatamente esse piso.</p>
+        </details>
+        <details class="faqItem">
+          <summary>Como calcular lucro no Mercado Livre?</summary>
+          <p>Some comissão da categoria, custo por unidade vendida quando o item fica abaixo de R$79 e o imposto sobre a venda. O caminho "ver quanto estou ganhando" faz essa conta a partir do preço que você já pratica.</p>
+        </details>
+        <details class="faqItem">
+          <summary>Os meus dados ficam salvos em algum servidor?</summary>
+          <p>Não. As simulações ficam no seu próprio navegador, e nada é enviado para nenhum servidor. Trocar de aparelho ou limpar os dados do site apaga o que estava salvo.</p>
+        </details>
+      </div>
     </section>
 
     <footer class="footer">
