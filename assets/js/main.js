@@ -381,52 +381,48 @@ function amazonDbaFee({ price, weightKg, originGroup }) {
 }
 
 /* ===== Mercado Livre: custo por unidade vendida =====
-   Desde 02/03/2026 só há cobrança em itens abaixo de R$79. Acima disso o
-   anúncio paga apenas a comissão da categoria. Abaixo de R$79 o valor
-   deixou de ser tabelado por faixa de preço e passou a variar por peso,
-   dimensões e cubagem. Os números abaixo são os do modelo antigo,
-   mantidos como ordem de grandeza: compilações de mercado citam algo
-   entre R$5,50 e R$6,50 hoje, e o valor exato de cada anúncio sai do
-   simulador oficial do Mercado Livre. O resultado marca este item como
-   estimado.
+   Cobrado só em itens abaixo de R$79; acima disso o anúncio paga apenas a
+   comissão da categoria. A tabela é por faixa de preço, e a primeira faixa
+   não é um valor fixo: até R$12,50 o vendedor paga metade do preço do
+   item por unidade vendida.
+
+   Desde 02/03/2026 o Mercado Livre acrescentou variação por peso, dimensão
+   e cubagem da embalagem sobre esse custo. Os valores por dimensão não são
+   publicados fora do simulador da conta, então a tabela abaixo é a base por
+   faixa de preço e o resultado marca o item como estimado.
 */
 const ML_LIMITE_CUSTO_UNIDADE = 79;
 
-const ML_CUSTO_UNIDADE_POR_PESO = {
-  "0-0.3": 6.25,
-  "0.3-0.5": 6.25,
-  "0.5-1": 6.75,
-  "1-2": 6.75,
-  "2-5": 6.75,
-  "5+": 6.75
-};
+const ML_CUSTO_UNIDADE_FAIXAS = [
+  { min: 0,     pctDoPreco: 0.50, fixed: 0,    label: "Até R$12,50 (metade do preço)" },
+  { min: 12.50, pctDoPreco: 0,    fixed: 6.25, label: "R$12,50 a R$28,99" },
+  { min: 29,    pctDoPreco: 0,    fixed: 6.50, label: "R$29 a R$49,99" },
+  { min: 50,    pctDoPreco: 0,    fixed: 6.75, label: "R$50 a R$78,99" },
+  { min: ML_LIMITE_CUSTO_UNIDADE, pctDoPreco: 0, fixed: 0, label: "R$79 ou mais (isento)" }
+];
 
-function mlWeightBand(kg) {
-  const w = Math.max(0, toNumber(kg));
-  if (w <= 0.3) return "0-0.3";
-  if (w <= 0.5) return "0.3-0.5";
-  if (w <= 1) return "0.5-1";
-  if (w <= 2) return "1-2";
-  if (w <= 5) return "2-5";
-  return "5+";
-}
-
-function mlCustoUnidadePorPeso(weightKg) {
-  return toNumber(ML_CUSTO_UNIDADE_POR_PESO[mlWeightBand(weightKg)] ?? ML_CUSTO_UNIDADE_POR_PESO["0.3-0.5"]);
-}
-
-// Duas faixas: abaixo de R$79 paga o custo por unidade, acima paga só comissão.
-function mlFaixas(mlPct, weightKg) {
-  return [
-    { min: 0, pct: mlPct, fixed: mlCustoUnidadePorPeso(weightKg), label: "Abaixo de R$79" },
-    { min: ML_LIMITE_CUSTO_UNIDADE, pct: mlPct, fixed: 0, label: "R$79 ou mais" }
-  ];
+/* A comissão da categoria é a mesma em todas as faixas; o que muda é o
+   custo por unidade, que na primeira faixa entra como percentual. */
+function mlFaixas(mlPct) {
+  return ML_CUSTO_UNIDADE_FAIXAS.map((f) => ({
+    min: f.min,
+    pct: mlPct + f.pctDoPreco,
+    fixed: f.fixed,
+    label: f.label,
+    custoUnidadePct: f.pctDoPreco
+  }));
 }
 
 function solveMercadoLivre(mlPct, weightKg, params) {
-  const faixas = mlFaixas(mlPct, weightKg);
-  const solved = solvePriceComFaixa((price) => faixaByPrice(faixas, price, faixas[0]), faixas[0], params);
-  return { r: solved.result, fixed: solved.faixa.fixed };
+  const faixas = mlFaixas(mlPct);
+  const solved = solvePriceComFaixa((price) => faixaByPrice(faixas, price, faixas[0]), faixas[1], params);
+  const faixa = solved.faixa;
+  // Na primeira faixa o custo é metade do preço, então o valor em reais só
+  // existe depois de resolver o preço.
+  const custoUnidade = faixa.custoUnidadePct > 0
+    ? Math.max(0, solved.result.price) * faixa.custoUnidadePct
+    : faixa.fixed;
+  return { r: solved.result, fixed: custoUnidade, faixa };
 }
 
 /* ===== Pricing solver ===== */
@@ -538,12 +534,26 @@ function solvePriceComFaixa(resolveFaixa, faixaInicial, params) {
 
     if (faixa === currentFaixa) return { result, faixa: currentFaixa };
 
-    // Duas faixas se revezando (a de baixo empurra o preço para cima, a de
-    // cima puxa de volta): o equilíbrio é a própria fronteira entre elas.
+    // Duas faixas se revezando (uma empurra o preço para cima, a outra puxa
+    // de volta): o equilíbrio é a própria fronteira entre elas. Qual das
+    // duas cobra ali depende de qual é a mais cara, então avalia as duas no
+    // preço de fronteira e fica com a que entrega mais lucro.
+    //
+    // Numa varredura de 1,26 mi de combinações para o Mercado Livre, um
+    // único caso fica abaixo da meta por centavos: custo R$10 com imposto
+    // 20%, margem 30% e 10% de custos extras, onde a soma passa de 60% e a
+    // faixa do custo por unidade cria uma descontinuidade sem preço que
+    // satisfaça meta e faixa ao mesmo tempo. Nesse extremo o preço sai
+    // conservador, nunca otimista.
     if (visitadas.indexOf(faixa) !== -1) {
-      const fronteira = faixa.min > currentFaixa.min ? faixa : currentFaixa;
-      const fronteiraParams = { ...params, marketplacePct: fronteira.pct, marketplaceFixed: fronteira.fixed };
-      return { result: resultAtPrice(fronteira.min, fronteiraParams), faixa: fronteira };
+      const alta = faixa.min > currentFaixa.min ? faixa : currentFaixa;
+      const preco = alta.min;
+      const candidatas = [faixa, currentFaixa].map((f) => ({
+        faixa: f,
+        result: resultAtPrice(preco, { ...params, marketplacePct: f.pct, marketplaceFixed: f.fixed })
+      }));
+      const melhor = candidatas.reduce((a, b) => (b.result.profitBRL > a.result.profitBRL ? b : a));
+      return { result: melhor.result, faixa: melhor.faixa };
     }
 
     visitadas.push(currentFaixa);
@@ -1746,7 +1756,8 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlClassic.fixed > 0 ? `${brl(mlClassic.fixed)} (estimado)` : "isento (acima de R$79)" },
+        { k: "Custo por unidade vendida", v: mlClassic.fixed > 0 ? `${brl(mlClassic.fixed)} (estimado)` : "isento" },
+        { k: "Faixa do custo por unidade", v: mlClassic.faixa?.label || "-" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
@@ -1764,7 +1775,8 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlPremium.fixed > 0 ? `${brl(mlPremium.fixed)} (estimado)` : "isento (acima de R$79)" },
+        { k: "Custo por unidade vendida", v: mlPremium.fixed > 0 ? `${brl(mlPremium.fixed)} (estimado)` : "isento" },
+        { k: "Faixa do custo por unidade", v: mlPremium.faixa?.label || "-" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
