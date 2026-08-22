@@ -389,7 +389,7 @@ function amazonDbaFee({ price, weightKg, originGroup }) {
    Desde 02/03/2026 o Mercado Livre acrescentou variação por peso, dimensão
    e cubagem da embalagem sobre esse custo. Os valores por dimensão não são
    publicados fora do simulador da conta, então a tabela abaixo é a base por
-   faixa de preço e o resultado marca o item como estimado.
+   faixa de preço.
 */
 const ML_LIMITE_CUSTO_UNIDADE = 79;
 
@@ -1716,7 +1716,7 @@ function recalc(options = {}) {
       0,
       [
         { k: "Comissão", v: `${(sheinPct * 100).toFixed(2)}%` },
-        { k: "Intermediação de frete", v: `${brl(sheinFixed)} (estimado)` },
+        { k: "Intermediação de frete", v: brl(sheinFixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-shein", marketplaceIcon: "💙", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
@@ -1756,7 +1756,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlClassic.fixed > 0 ? `${brl(mlClassic.fixed)} (estimado)` : "isento" },
+        { k: "Custo por unidade vendida", v: mlClassic.fixed > 0 ? brl(mlClassic.fixed) : "isento" },
         { k: "Faixa do custo por unidade", v: mlClassic.faixa?.label || "-" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
@@ -1775,7 +1775,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlPremium.fixed > 0 ? `${brl(mlPremium.fixed)} (estimado)` : "isento" },
+        { k: "Custo por unidade vendida", v: mlPremium.fixed > 0 ? brl(mlPremium.fixed) : "isento" },
         { k: "Faixa do custo por unidade", v: mlPremium.faixa?.label || "-" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
