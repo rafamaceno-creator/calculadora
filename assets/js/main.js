@@ -43,6 +43,53 @@ const TIKTOK_FAIXAS = [
 
 const TIKTOK_FAIXA_PADRAO = TIKTOK_FAIXAS[1];
 
+/* ===== COMISSÃO POR CATEGORIA =====
+   Mercado Livre e Amazon cobram percentuais diferentes conforme a
+   categoria do produto: no ML vai de 10% a 14% no Clássico (e cinco
+   pontos acima no Premium), e na Amazon de 9% a 15%. O app usava o teto
+   das duas faixas para tudo, o que inflava o preço sugerido em até 7% no
+   ML e 12% na Amazon.
+
+   Os percentuais abaixo vêm de compilações de mercado, não da tabela
+   oficial de cada canal, que só é acessível pelo painel do vendedor.
+   Servem como ponto de partida: "Outra categoria" mantém o teto, e o
+   bloco de comissão personalizada continua sobrescrevendo tudo. */
+const CATEGORIAS = [
+  { key: "outra",        label: "Outra categoria (usa o teto)", ml: 14, mlPremium: 19, amazon: 15 },
+  { key: "celulares",    label: "Celulares e telefonia",        ml: 11, mlPremium: 16, amazon: 12 },
+  { key: "informatica",  label: "Informática e eletrônicos",    ml: 11, mlPremium: 16, amazon: 12 },
+  { key: "eletro",       label: "Eletrodomésticos",             ml: 12, mlPremium: 17, amazon: 9 },
+  { key: "audio_tv",     label: "Áudio, TV e vídeo",            ml: 12, mlPremium: 17, amazon: 9 },
+  { key: "casa",         label: "Casa, móveis e decoração",     ml: 12, mlPremium: 17, amazon: 11 },
+  { key: "esporte",      label: "Esporte e lazer",              ml: 12, mlPremium: 17, amazon: 11 },
+  { key: "ferramentas",  label: "Ferramentas e construção",     ml: 13, mlPremium: 18, amazon: 11 },
+  { key: "beleza",       label: "Beleza e cuidado pessoal",     ml: 13, mlPremium: 18, amazon: 15 },
+  { key: "saude",        label: "Saúde e suplementos",          ml: 13, mlPremium: 18, amazon: 15 },
+  { key: "brinquedos",   label: "Brinquedos e hobbies",         ml: 13, mlPremium: 18, amazon: 15 },
+  { key: "bebes",        label: "Bebês e infantil",             ml: 13, mlPremium: 18, amazon: 15 },
+  { key: "moda",         label: "Moda, calçados e acessórios",  ml: 14, mlPremium: 19, amazon: 15 },
+  { key: "automotivo",   label: "Acessórios para veículos",     ml: 14, mlPremium: 19, amazon: 12 }
+];
+
+function getCategoria() {
+  const key = document.querySelector("#produtoCategoria")?.value;
+  return CATEGORIAS.find((c) => c.key === key) || CATEGORIAS[0];
+}
+
+/* A comissão personalizada, quando ligada, vence a categoria. */
+function comissoesPorCategoria() {
+  const custom = document.querySelector("#customCommissionToggle")?.checked;
+  const cat = getCategoria();
+  const ler = (sel, padrao) => (custom ? Math.max(0, toNumber(document.querySelector(sel)?.value)) : padrao) / 100;
+  return {
+    categoria: cat,
+    usandoCustom: !!custom,
+    mlClassicPct: ler("#mlClassicPct", cat.ml),
+    mlPremiumPct: ler("#mlPremiumPct", cat.mlPremium),
+    amazonPct: ler("#amazonPct", cat.amazon)
+  };
+}
+
 const DEFAULT_CFG = {};
 const cfg = {
   ...DEFAULT_CFG,
@@ -337,8 +384,11 @@ function amazonDbaFee({ price, weightKg, originGroup }) {
    Desde 02/03/2026 só há cobrança em itens abaixo de R$79. Acima disso o
    anúncio paga apenas a comissão da categoria. Abaixo de R$79 o valor
    deixou de ser tabelado por faixa de preço e passou a variar por peso,
-   dimensões e cubagem; mantemos a estimativa por peso, já que o número
-   exato de cada anúncio sai do simulador oficial do Mercado Livre.
+   dimensões e cubagem. Os números abaixo são os do modelo antigo,
+   mantidos como ordem de grandeza: compilações de mercado citam algo
+   entre R$5,50 e R$6,50 hoje, e o valor exato de cada anúncio sai do
+   simulador oficial do Mercado Livre. O resultado marca este item como
+   estimado.
 */
 const ML_LIMITE_CUSTO_UNIDADE = 79;
 
@@ -1187,9 +1237,7 @@ function getCalculationConfig() {
   const profitValue = Math.max(0, toNumber(document.querySelector("#profitValue")?.value));
 
   const customCommEnabled = document.querySelector("#customCommissionToggle")?.checked;
-  const mlClassicPct = (customCommEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
-  const mlPremiumPct = (customCommEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
-  const amazonPct = Math.max(0, customCommEnabled ? toNumber(document.querySelector("#amazonPct")?.value) : 15) / 100;
+  const { mlClassicPct, mlPremiumPct, amazonPct } = comissoesPorCategoria();
   const sheinCustomPct = customCommEnabled ? Math.max(0, toNumber(document.querySelector("#sheinPct")?.value)) / 100 : SHEIN.pctOther;
 
   const adv = getAdvancedVars();
@@ -1404,9 +1452,7 @@ function recalc(options = {}) {
   const profitValue = Math.max(0, toNumber(document.querySelector("#profitValue")?.value));
 
   const customCommEnabled = document.querySelector("#customCommissionToggle")?.checked;
-  const mlClassicPct = (customCommEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
-  const mlPremiumPct = (customCommEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
-  const amazonPct = Math.max(0, customCommEnabled ? toNumber(document.querySelector("#amazonPct")?.value) : 15) / 100;
+  const { mlClassicPct, mlPremiumPct, amazonPct } = comissoesPorCategoria();
 
   const adv = getAdvancedVars();
 
@@ -1660,7 +1706,7 @@ function recalc(options = {}) {
       0,
       [
         { k: "Comissão", v: `${(sheinPct * 100).toFixed(2)}%` },
-        { k: "Intermediação de frete", v: brl(sheinFixed) },
+        { k: "Intermediação de frete", v: `${brl(sheinFixed)} (estimado)` },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-shein", marketplaceIcon: "💙", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
@@ -1700,7 +1746,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlClassic.fixed > 0 ? brl(mlClassic.fixed) : "isento (acima de R$79)" },
+        { k: "Custo por unidade vendida", v: mlClassic.fixed > 0 ? `${brl(mlClassic.fixed)} (estimado)` : "isento (acima de R$79)" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
@@ -1718,7 +1764,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlPremium.fixed > 0 ? brl(mlPremium.fixed) : "isento (acima de R$79)" },
+        { k: "Custo por unidade vendida", v: mlPremium.fixed > 0 ? `${brl(mlPremium.fixed)} (estimado)` : "isento (acima de R$79)" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
@@ -2834,6 +2880,33 @@ function applyCalcMode(mode) {
   document.querySelector("#sec-precificacao")?.setAttribute("data-calc-mode", mode);
 }
 
+function renderCategoriaHint() {
+  const hint = document.querySelector("#categoriaHint");
+  if (!hint) return;
+  const { categoria, usandoCustom, mlClassicPct, mlPremiumPct, amazonPct } = comissoesPorCategoria();
+  const pct = (v) => `${(v * 100).toFixed(0)}%`;
+  hint.textContent = usandoCustom
+    ? "Comissão personalizada ligada: os percentuais informados abaixo estão valendo no lugar dos da categoria."
+    : `${categoria.label}: ML Clássico ${pct(mlClassicPct)}, ML Premium ${pct(mlPremiumPct)}, Amazon ${pct(amazonPct)}. Estimativa de mercado, confira na sua conta.`;
+}
+
+function bindCategoria() {
+  const select = document.querySelector("#produtoCategoria");
+  if (!select) return;
+  // O recálculo já é disparado pelo listener global de selects da seção;
+  // aqui só o aviso e o evento.
+  select.addEventListener("change", () => {
+    trackGA4Event("categoria_change", { categoria: select.value });
+    renderCategoriaHint();
+  });
+  // A comissão personalizada sobrepõe a categoria, então o aviso acompanha.
+  document.querySelector("#customCommissionToggle")?.addEventListener("change", renderCategoriaHint);
+  ["#mlClassicPct", "#mlPremiumPct", "#amazonPct"].forEach((sel) => {
+    document.querySelector(sel)?.addEventListener("input", renderCategoriaHint);
+  });
+  renderCategoriaHint();
+}
+
 function bindCalcMode() {
   const inputs = document.querySelectorAll('input[name="calcMode"]');
   if (!inputs.length) return;
@@ -2929,8 +3002,7 @@ function buildSimulationSummaryContext() {
   const selectedKeys = getSelectedMarketplaces();
 
   const customCommEnabled = document.querySelector("#customCommissionToggle")?.checked;
-  const mlClassicPct = (customCommEnabled ? toNumber(document.querySelector("#mlClassicPct")?.value) : 14) / 100;
-  const mlPremiumPct = (customCommEnabled ? toNumber(document.querySelector("#mlPremiumPct")?.value) : 19) / 100;
+  const { mlClassicPct, mlPremiumPct } = comissoesPorCategoria();
 
   const perMarketplace = selectedKeys.map((key) => {
     if (key === "mlClassic") return { key, label: "Mercado Livre · Clássico", commissionPct: mlClassicPct, affiliatePct: adv.affiliate.ml };
@@ -3131,6 +3203,7 @@ function initApp() {
   bindTooltipSystem();
   bindSmoothScroll();
   bindCalcMode();
+  bindCategoria();
   bindSegmentMenuActiveState();
   bindBulk();
   bindAdjCards();
