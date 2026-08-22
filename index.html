@@ -13,15 +13,15 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://precificacao.rafamaceno.com.br/">
   <meta name="robots" content="index,follow" />
-  <meta name="app-build" content="20260821-2" />
+  <meta name="app-build" content="20260821-5" />
   <link rel="canonical" href="./" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260821-2" data-asset="true" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260821-5" data-asset="true" />
   <script>
-    const APP_VERSION = "20260821-2";
+    const APP_VERSION = "20260821-5";
 
     window.versionAssetPath = function versionAssetPath(path) {
       const url = new URL(path, window.location.href);
@@ -181,6 +181,30 @@
                 </select>
               </div>
             </div>
+          </div>
+
+          <div class="field">
+            <div class="label label-row">
+              <span>Categoria do produto</span>
+              <button class="info" type="button" aria-label="Info: Categoria do produto" data-tooltip="Mercado Livre e Amazon cobram percentuais diferentes por categoria. Escolher a sua deixa o preço sugerido mais próximo do real. Shopee, TikTok Shop e SHEIN não variam por categoria.">i</button>
+            </div>
+            <select id="produtoCategoria">
+                  <option value="outra" selected>Outra categoria (usa o teto)</option>
+                  <option value="celulares">Celulares e telefonia</option>
+                  <option value="informatica">Informática e eletrônicos</option>
+                  <option value="eletro">Eletrodomésticos</option>
+                  <option value="audio_tv">Áudio, TV e vídeo</option>
+                  <option value="casa">Casa, móveis e decoração</option>
+                  <option value="esporte">Esporte e lazer</option>
+                  <option value="ferramentas">Ferramentas e construção</option>
+                  <option value="beleza">Beleza e cuidado pessoal</option>
+                  <option value="saude">Saúde e suplementos</option>
+                  <option value="brinquedos">Brinquedos e hobbies</option>
+                  <option value="bebes">Bebês e infantil</option>
+                  <option value="moda">Moda, calçados e acessórios</option>
+                  <option value="automotivo">Acessórios para veículos</option>
+            </select>
+            <p class="fieldHint" id="categoriaHint"></p>
           </div>
 
           <!-- ── Painel do caminho escolhido ── -->
