@@ -1619,7 +1619,7 @@ function recalc(options = {}) {
       adv.affiliate.shopee,
       [{ k: "Faixa aplicada", v: shFee.label }],
       {
-        showAntecipaToggle: true,
+        showAntecipaToggle: false,
         antecipaChecked: shopeeAntecipa,
         showAntecipaInfo: true,
         antecipaValue: custoAntecipa,
@@ -2757,6 +2757,7 @@ const UX_MARKETPLACES = [
     logoAlt: "Mercado Livre",
     fallback: "ML",
     badge: "Clássico",
+    chipLabel: "ML Clássico",
     brandClass: "brand-ml"
   },
   {
@@ -2767,6 +2768,7 @@ const UX_MARKETPLACES = [
     fallback: "ML",
     badge: "Premium",
     badgeClass: "mpBadge--premium",
+    chipLabel: "ML Premium",
     brandClass: "brand-ml"
   },
   {
@@ -2856,7 +2858,7 @@ function buildMarketplaceSelector() {
   const wrap = document.querySelector("#marketplaceSelector");
   if (!wrap) return;
   wrap.innerHTML = UX_MARKETPLACES.map((mp) => {
-    const displayName = mp.badge ? mp.title.split(" · ")[0] : mp.title;
+    const displayName = mp.chipLabel || (mp.badge ? mp.title.split(" · ")[0] : mp.title);
     return `
     <label class="marketplaceChip" data-mp="${mp.key}" for="ux_mp_${mp.key}">
       <input class="marketplaceChip__input" type="checkbox" id="ux_mp_${mp.key}" value="${mp.key}" aria-label="${mp.title}" ${UX_SELECTED_MARKETPLACES.includes(mp.key) ? "checked" : ""} />
@@ -2865,7 +2867,7 @@ function buildMarketplaceSelector() {
       </span>
       <span class="mpNameGroup">
         <span class="mpName">${displayName}</span>
-        ${mp.badge ? `<span class="mpBadge ${mp.badgeClass || ""}">· ${mp.badge}</span>` : ""}
+        ${!mp.chipLabel && mp.badge ? `<span class="mpBadge ${mp.badgeClass || ""}">· ${mp.badge}</span>` : ""}
       </span>
       <span class="mpCheck" aria-hidden="true"></span>
     </label>
