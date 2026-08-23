@@ -27,17 +27,19 @@ const SHOPEE_FAIXAS = [
 const SHOPEE_FAIXA_PADRAO = SHOPEE_FAIXAS[1];
 
 /* ===== TIKTOK SHOP =====
-   Comissão vigente desde 15/07/2026:
-   - Abaixo de R$50: 10%, sem taxa fixa
+   Comissão vigente:
+   - Abaixo de R$50: 10% + R$4 por item vendido
    - R$50 ou mais: 6% + R$6 por item vendido
    O Programa de Frete Grátis (PTE) soma 6% sobre o valor do produto. É
    opcional, mas fica ativo por padrão por ser a configuração usada pela
    maioria dos sellers, e era o que o percentual único de 12% já embutia.
+   Com o PTE somado, o vendedor vê 16% + R$4 abaixo de R$50 e 12% + R$6
+   a partir de R$50.
 */
 const TIKTOK_PTE_PCT = 0.06;
 
 const TIKTOK_FAIXAS = [
-  { min: 0, max: 49.99, pct: 0.10 + TIKTOK_PTE_PCT, fixed: 0, label: "Abaixo de R$50" },
+  { min: 0, max: 49.99, pct: 0.10 + TIKTOK_PTE_PCT, fixed: 4.00, label: "Abaixo de R$50" },
   { min: 50, max: Infinity, pct: 0.06 + TIKTOK_PTE_PCT, fixed: 6.00, label: "R$50 ou mais" }
 ];
 
