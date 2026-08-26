@@ -27,18 +27,12 @@ const SHOPEE_FAIXAS = [
 const SHOPEE_FAIXA_PADRAO = SHOPEE_FAIXAS[1];
 
 /* ===== TIKTOK SHOP =====
-   Comissão vigente desde 15/07/2026:
-   - Abaixo de R$50: 10%, sem taxa fixa
-   - R$50 ou mais: 6% + R$6 por item vendido
-   O Programa de Frete Grátis (PTE) soma 6% sobre o valor do produto. É
-   opcional, mas fica ativo por padrão por ser a configuração usada pela
-   maioria dos sellers, e era o que o percentual único de 12% já embutia.
+   Dois patamares, comissão e taxa fixa mudando juntas na fronteira de
+   R$50. Tabela do dono do site.
 */
-const TIKTOK_PTE_PCT = 0.06;
-
 const TIKTOK_FAIXAS = [
-  { min: 0, max: 49.99, pct: 0.10 + TIKTOK_PTE_PCT, fixed: 0, label: "Abaixo de R$50" },
-  { min: 50, max: Infinity, pct: 0.06 + TIKTOK_PTE_PCT, fixed: 6.00, label: "R$50 ou mais" }
+  { min: 0,  max: 49.99,   pct: 0.16, fixed: 4.00, label: "Até R$49,99" },
+  { min: 50, max: Infinity, pct: 0.12, fixed: 6.00, label: "R$50 ou mais" }
 ];
 
 const TIKTOK_FAIXA_PADRAO = TIKTOK_FAIXAS[1];
@@ -380,50 +374,74 @@ function amazonDbaFee({ price, weightKg, originGroup }) {
   return toNumber(originRow?.[weightBand]);
 }
 
-/* ===== Mercado Livre: custo por unidade vendida =====
-   Cobrado só em itens abaixo de R$79; acima disso o anúncio paga apenas a
-   comissão da categoria. A tabela é por faixa de preço, e a primeira faixa
-   não é um valor fixo: até R$12,50 o vendedor paga metade do preço do
-   item por unidade vendida.
+function mlWeightBand(kg) {
+  const w = Math.max(0, toNumber(kg));
+  if (w <= 0.3) return "0-0.3";
+  if (w <= 0.5) return "0.3-0.5";
+  if (w <= 1) return "0.5-1";
+  if (w <= 2) return "1-2";
+  if (w <= 5) return "2-5";
+  return "5+";
+}
 
-   Desde 02/03/2026 o Mercado Livre acrescentou variação por peso, dimensão
-   e cubagem da embalagem sobre esse custo. Os valores por dimensão não são
-   publicados fora do simulador da conta, então a tabela abaixo é a base por
-   faixa de preço.
+/* ===== Mercado Livre: taxa fixa =====
+   A taxa fixa por unidade vendida depende de duas coisas ao mesmo tempo:
+   o peso do item e a faixa de preço de venda. É cobrada em toda venda,
+   não só nas abaixo de R$79. Vem por cima da comissão da categoria, que
+   é 14% no Clássico e 19% no Premium.
+
+   Esta tabela é a do dono do site, apurada na operação dele. Não trocar
+   por número de compilação de mercado.
 */
-const ML_LIMITE_CUSTO_UNIDADE = 79;
+const ML_FIXED_TABLE = {
+  "0-0.3": {
+    "<12.5": 6.25, "12.5-79": 6.25, "79-100": 14.35, "100-120": 16.45,
+    "120-150": 16.45, "150-199.99": 18.45, "200+": 18.45
+  },
+  "0.3-0.5": {
+    "<12.5": 6.25, "12.5-79": 6.25, "79-100": 14.35, "100-120": 16.45,
+    "120-150": 16.45, "150-199.99": 18.45, "200+": 18.45
+  },
+  "0.5-1": {
+    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 16.35, "100-120": 18.45,
+    "120-150": 18.45, "150-199.99": 20.45, "200+": 20.45
+  },
+  "1-2": {
+    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 18.35, "100-120": 20.45,
+    "120-150": 20.45, "150-199.99": 22.45, "200+": 22.45
+  },
+  "2-5": {
+    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 20.35, "100-120": 22.45,
+    "120-150": 22.45, "150-199.99": 24.45, "200+": 24.45
+  },
+  "5+": {
+    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 24.35, "100-120": 26.45,
+    "120-150": 26.45, "150-199.99": 28.45, "200+": 28.45
+  }
+};
 
-const ML_CUSTO_UNIDADE_FAIXAS = [
-  { min: 0,     pctDoPreco: 0.50, fixed: 0,    label: "Até R$12,50 (metade do preço)" },
-  { min: 12.50, pctDoPreco: 0,    fixed: 6.25, label: "R$12,50 a R$28,99" },
-  { min: 29,    pctDoPreco: 0,    fixed: 6.50, label: "R$29 a R$49,99" },
-  { min: 50,    pctDoPreco: 0,    fixed: 6.75, label: "R$50 a R$78,99" },
-  { min: ML_LIMITE_CUSTO_UNIDADE, pctDoPreco: 0, fixed: 0, label: "R$79 ou mais (isento)" }
-];
-
-/* A comissão da categoria é a mesma em todas as faixas; o que muda é o
-   custo por unidade, que na primeira faixa entra como percentual. */
-function mlFaixas(mlPct) {
-  return ML_CUSTO_UNIDADE_FAIXAS.map((f) => ({
-    min: f.min,
-    pct: mlPct + f.pctDoPreco,
-    fixed: f.fixed,
-    label: f.label,
-    custoUnidadePct: f.pctDoPreco
-  }));
+/* O peso é conhecido antes do cálculo, então ele fixa a linha da tabela.
+   O que ainda depende do preço são as colunas, e é isso que vira faixa
+   para o solver resolver por iteração. */
+function mlFaixas(mlPct, weightKg) {
+  const linha = ML_FIXED_TABLE[mlWeightBand(weightKg)] || ML_FIXED_TABLE["0.3-0.5"];
+  return [
+    { min: 0,   pct: mlPct, fixed: linha["<12.5"],      label: "Abaixo de R$12,50" },
+    { min: 12.5, pct: mlPct, fixed: linha["12.5-79"],   label: "R$12,50 a R$78,99" },
+    { min: 79,  pct: mlPct, fixed: linha["79-100"],     label: "R$79 a R$99,99" },
+    { min: 100, pct: mlPct, fixed: linha["100-120"],    label: "R$100 a R$119,99" },
+    { min: 120, pct: mlPct, fixed: linha["120-150"],    label: "R$120 a R$149,99" },
+    { min: 150, pct: mlPct, fixed: linha["150-199.99"], label: "R$150 a R$199,99" },
+    { min: 200, pct: mlPct, fixed: linha["200+"],       label: "R$200 ou mais" }
+  ];
 }
 
 function solveMercadoLivre(mlPct, weightKg, params) {
-  const faixas = mlFaixas(mlPct);
+  const faixas = mlFaixas(mlPct, weightKg);
   const solved = solvePriceComFaixa((price) => faixaByPrice(faixas, price, faixas[0]), faixas[1], params);
-  const faixa = solved.faixa;
-  // Na primeira faixa o custo é metade do preço, então o valor em reais só
-  // existe depois de resolver o preço.
-  const custoUnidade = faixa.custoUnidadePct > 0
-    ? Math.max(0, solved.result.price) * faixa.custoUnidadePct
-    : faixa.fixed;
-  return { r: solved.result, fixed: custoUnidade, faixa };
+  return { r: solved.result, fixed: solved.faixa.fixed, faixa: solved.faixa };
 }
+
 
 /* ===== Pricing solver ===== */
 
@@ -1696,9 +1714,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.tiktok,
       [
-        { k: "Faixa aplicada", v: ttFee.label },
-        { k: "Comissão", v: `${((ttFee.pct - TIKTOK_PTE_PCT) * 100).toFixed(0)}%` },
-        { k: "Programa de Frete Grátis", v: `${(TIKTOK_PTE_PCT * 100).toFixed(0)}%` }
+        { k: "Faixa aplicada", v: ttFee.label }
       ],
       { marketplaceClass: "mp-tiktok", marketplaceIcon: "🎵" }
     ),
@@ -1756,8 +1772,8 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlClassic.fixed > 0 ? brl(mlClassic.fixed) : "isento" },
-        { k: "Faixa do custo por unidade", v: mlClassic.faixa?.label || "-" },
+        { k: "Taxa fixa", v: brl(mlClassic.fixed) },
+        { k: "Faixa de preço", v: mlClassic.faixa?.label || "-" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
@@ -1775,8 +1791,8 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlPremium.fixed > 0 ? brl(mlPremium.fixed) : "isento" },
-        { k: "Faixa do custo por unidade", v: mlPremium.faixa?.label || "-" },
+        { k: "Taxa fixa", v: brl(mlPremium.fixed) },
+        { k: "Faixa de preço", v: mlPremium.faixa?.label || "-" },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
