@@ -873,6 +873,11 @@ function resultCardHTML(
   const received = brl(r.received);
   const profitLine = `${brl(r.profitBRL)} (${(r.profitPctReal * 100).toFixed(2)}%)`;
   const incidencesPct = `${(r.totalPercentCosts * 100).toFixed(2)}%`;
+  const marketplaceFixedValue = Number.isFinite(marketplaceFixed) ? Math.max(0, marketplaceFixed) : 0;
+  const hasMarketplaceFixed = marketplaceFixedValue > 0.001;
+  const incidencesSummary = hasMarketplaceFixed
+    ? `${incidencesPct} + ${brl(marketplaceFixedValue)} de taxa fixa`
+    : incidencesPct;
 
   // Detalhamento (sem duplicar “resumo”)
   // -> NÃO colocamos "Lucro" aqui (fica só no resumo)
@@ -977,7 +982,7 @@ function resultCardHTML(
         <div class="k">LUCRO</div><div class="v">${profitLine}</div>
         <div class="k">TOTAL DE INCIDÊNCIAS</div><div class="v">
           <button class="incidenceToggle" type="button" aria-expanded="false" aria-controls="${accordionId}">
-            <span>Total de incidências (${incidencesPct})</span>
+            <span>Total de incidências (${incidencesSummary})</span>
             <span class="incidenceToggle__icon">▾</span>
           </button>
         </div>
