@@ -335,22 +335,46 @@ function amazonDbaFee({ price, weightKg, originGroup }) {
   return toNumber(originRow?.[weightBand]);
 }
 
-/* ===== Mercado Livre: custo por unidade vendida =====
-   Desde 02/03/2026 só há cobrança em itens abaixo de R$79. Acima disso o
-   anúncio paga apenas a comissão da categoria. Abaixo de R$79 o valor
-   deixou de ser tabelado por faixa de preço e passou a variar por peso,
-   dimensões e cubagem; mantemos a estimativa por peso, já que o número
-   exato de cada anúncio sai do simulador oficial do Mercado Livre.
+/* ===== Mercado Livre: custo fixo por unidade vendida =====
+   Não existe isenção acima de R$79: a cobrança segue a tabela por peso x
+   faixa de preço em todas as faixas. O que mudou lá em cima foi o frete
+   grátis para o comprador, não o custo fixo do vendedor.
 */
-const ML_LIMITE_CUSTO_UNIDADE = 79;
+const ML_PRICE_BANDS = [
+  { key: "<12.5", min: 0, label: "Abaixo de R$12,50" },
+  { key: "12.5-79", min: 12.5, label: "R$12,50 a R$78,99" },
+  { key: "79-100", min: 79, label: "R$79 a R$99,99" },
+  { key: "100-120", min: 100, label: "R$100 a R$119,99" },
+  { key: "120-150", min: 120, label: "R$120 a R$149,99" },
+  { key: "150-199.99", min: 150, label: "R$150 a R$199,99" },
+  { key: "200+", min: 200, label: "Acima de R$200" }
+];
 
-const ML_CUSTO_UNIDADE_POR_PESO = {
-  "0-0.3": 6.25,
-  "0.3-0.5": 6.25,
-  "0.5-1": 6.75,
-  "1-2": 6.75,
-  "2-5": 6.75,
-  "5+": 6.75
+const ML_FIXED_TABLE = {
+  "0-0.3": {
+    "<12.5": 6.25, "12.5-79": 6.25, "79-100": 14.35, "100-120": 16.45,
+    "120-150": 16.45, "150-199.99": 18.45, "200+": 18.45
+  },
+  "0.3-0.5": {
+    "<12.5": 6.25, "12.5-79": 6.25, "79-100": 14.35, "100-120": 16.45,
+    "120-150": 16.45, "150-199.99": 18.45, "200+": 18.45
+  },
+  "0.5-1": {
+    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 16.35, "100-120": 18.45,
+    "120-150": 18.45, "150-199.99": 20.45, "200+": 20.45
+  },
+  "1-2": {
+    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 18.35, "100-120": 20.45,
+    "120-150": 20.45, "150-199.99": 22.45, "200+": 22.45
+  },
+  "2-5": {
+    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 20.35, "100-120": 22.45,
+    "120-150": 22.45, "150-199.99": 24.45, "200+": 24.45
+  },
+  "5+": {
+    "<12.5": 6.75, "12.5-79": 6.75, "79-100": 24.35, "100-120": 26.45,
+    "120-150": 26.45, "150-199.99": 28.45, "200+": 28.45
+  }
 };
 
 function mlWeightBand(kg) {
@@ -363,22 +387,22 @@ function mlWeightBand(kg) {
   return "5+";
 }
 
-function mlCustoUnidadePorPeso(weightKg) {
-  return toNumber(ML_CUSTO_UNIDADE_POR_PESO[mlWeightBand(weightKg)] ?? ML_CUSTO_UNIDADE_POR_PESO["0.3-0.5"]);
-}
-
-// Duas faixas: abaixo de R$79 paga o custo por unidade, acima paga só comissão.
+/* O peso escolhe a linha da tabela; cada faixa de preço vira uma faixa do
+   solver, que itera até o preço parar de trocar de faixa. */
 function mlFaixas(mlPct, weightKg) {
-  return [
-    { min: 0, pct: mlPct, fixed: mlCustoUnidadePorPeso(weightKg), label: "Abaixo de R$79" },
-    { min: ML_LIMITE_CUSTO_UNIDADE, pct: mlPct, fixed: 0, label: "R$79 ou mais" }
-  ];
+  const row = ML_FIXED_TABLE[mlWeightBand(weightKg)] || ML_FIXED_TABLE["0.3-0.5"];
+  return ML_PRICE_BANDS.map((band) => ({
+    min: band.min,
+    pct: mlPct,
+    fixed: toNumber(row[band.key]),
+    label: band.label
+  }));
 }
 
 function solveMercadoLivre(mlPct, weightKg, params) {
   const faixas = mlFaixas(mlPct, weightKg);
   const solved = solvePriceComFaixa((price) => faixaByPrice(faixas, price, faixas[0]), faixas[0], params);
-  return { r: solved.result, fixed: solved.faixa.fixed };
+  return { r: solved.result, fixed: solved.faixa.fixed, faixa: solved.faixa };
 }
 
 /* ===== Pricing solver ===== */
@@ -1707,7 +1731,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlClassic.fixed > 0 ? brl(mlClassic.fixed) : "isento (acima de R$79)" },
+        { k: "Custo por unidade vendida", v: brl(mlClassic.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
@@ -1725,7 +1749,7 @@ function recalc(options = {}) {
       adv.details,
       adv.affiliate.ml,
       [
-        { k: "Custo por unidade vendida", v: mlPremium.fixed > 0 ? brl(mlPremium.fixed) : "isento (acima de R$79)" },
+        { k: "Custo por unidade vendida", v: brl(mlPremium.fixed) },
         { k: "Peso usado", v: `${weightKg.toFixed(3)} kg` }
       ],
       { marketplaceClass: "mp-ml", marketplaceIcon: "🟨", showAssumedWeightNote: true, assumedWeight: weightData.assumed }
