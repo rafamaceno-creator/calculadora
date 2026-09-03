@@ -96,10 +96,7 @@
      diferente; a nota diz de onde saiu o valor — e, quando é zero, por quê. */
   function fixedFeeNote(key, faixa) {
     if (key === "mlClassic" || key === "mlPremium") {
-      const limite = typeof ML_LIMITE_CUSTO_UNIDADE === "number" ? ML_LIMITE_CUSTO_UNIDADE : 79;
-      return faixa.fixed > 0
-        ? `custo por unidade vendida · abaixo de R$ ${limite}`
-        : `isento a partir de R$ ${limite}`;
+      return `custo por unidade vendida · ${faixa.label || "por peso e faixa de preço"}`;
     }
     if (key === "shein") return "intermediação de frete · por peso";
     if (key === "amazon") return "tarifa DBA · por preço e peso";
@@ -205,7 +202,7 @@
       } else {
         const solved = solveMercadoLivre(mlPct, weightKg, params);
         result = solved.r;
-        faixa = { pct: mlPct, fixed: solved.fixed };
+        faixa = solved.faixa || { pct: mlPct, fixed: solved.fixed };
       }
     } else if (key === "shein") {
       const pct = cfg.sheinCustomPct != null ? cfg.sheinCustomPct : SHEIN.pctOther;
