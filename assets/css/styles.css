@@ -516,6 +516,7 @@ html[data-theme="dark"] input[type="checkbox"], body.theme-dark input[type="chec
   font-variant-numeric: tabular-nums;
 }
 .kvGrid dt { color: var(--mut); margin: 0; }
+.kvGrid__note { display: block; font-size: 11px; line-height: 1.35; opacity: .8; margin-top: 2px; }
 .kvGrid dd { margin: 0; text-align: right; font-weight: 600; }
 .kvGrid dd.is-profit { color: var(--tealink); }
 .kvGrid dd.is-negative { color: var(--neg); }

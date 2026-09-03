@@ -80,9 +80,30 @@
     return extra.type === "brl" ? money(extra.value) : pctText(extra.value, 1);
   }
 
+  function pctLabel(pct) {
+    const value = Number(pct * 100);
+    return `${value.toFixed(value % 1 === 0 ? 0 : 2).replace(".", ",")}%`;
+  }
+
+  /* O card sempre mostra os dois componentes da cobrança do canal, mesmo
+     quando a taxa fixa é zero: "14,00%" sozinho deixava a dúvida se a taxa
+     não existe naquela faixa ou se o cálculo esqueceu dela. */
   function commissionPill(pct, fixed) {
-    const pctLabel = `${Number(pct * 100).toFixed(pct * 100 % 1 === 0 ? 0 : 2).replace(".", ",")}%`;
-    return fixed > 0 ? `${pctLabel} + ${money(fixed)}` : pctLabel;
+    return `${pctLabel(pct)} + ${money(fixed || 0)}`;
+  }
+
+  /* Cada canal chama a taxa fixa de um jeito e a cobra por uma regra
+     diferente; a nota diz de onde saiu o valor — e, quando é zero, por quê. */
+  function fixedFeeNote(key, faixa) {
+    if (key === "mlClassic" || key === "mlPremium") {
+      const limite = typeof ML_LIMITE_CUSTO_UNIDADE === "number" ? ML_LIMITE_CUSTO_UNIDADE : 79;
+      return faixa.fixed > 0
+        ? `custo por unidade vendida · abaixo de R$ ${limite}`
+        : `isento a partir de R$ ${limite}`;
+    }
+    if (key === "shein") return "intermediação de frete · por peso";
+    if (key === "amazon") return "tarifa DBA · por preço e peso";
+    return faixa.label || "";
   }
 
   /* ===== cálculo ===== */
@@ -228,6 +249,9 @@
       title: def.title,
       fav: favicon(def.domain),
       pill: key === "amazon" ? `${commissionPill(faixa.pct, faixa.fixed)} (DBA)` : commissionPill(faixa.pct, faixa.fixed),
+      commissionPct: faixa.pct,
+      fixedFee: faixa.fixed || 0,
+      fixedNote: fixedFeeNote(key, faixa),
       price,
       received: Number.isFinite(result.received) ? result.received : 0,
       profitBRL,
@@ -384,7 +408,8 @@
     const rows = [
       [ctx.isReal ? "Preço de venda" : "Preço sugerido", money(row.price), ""],
       ["Você recebe (após comissão)", money(row.received), ""],
-      ["Comissão do canal", row.pill, ""]
+      ["Comissão do canal", pctLabel(row.commissionPct), ""],
+      ["Taxa fixa do canal", money(row.fixedFee), "", row.fixedNote]
     ];
     if (row.antecipaFee > 0) rows.push(["Antecipa Shopee (2,5%)", `− ${money(row.antecipaFee)}`, ""]);
     rows.push(["Imposto de venda", pctText(ctx.taxPct), ""]);
@@ -447,7 +472,7 @@
 
     const dl = el.querySelector(".kvGrid");
     const html = buildRows(row, ctx)
-      .map(([k, v, cls]) => `<dt>${esc(k)}</dt><dd class="${cls}">${esc(v)}</dd>`)
+      .map(([k, v, cls, note]) => `<dt>${esc(k)}${note ? `<small class="kvGrid__note">${esc(note)}</small>` : ""}</dt><dd class="${cls}">${esc(v)}</dd>`)
       .join("");
     if (dl && dl.innerHTML !== html) dl.innerHTML = html;
   }
