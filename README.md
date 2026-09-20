@@ -64,3 +64,9 @@ Acesse **Administrador → Definições personalizadas → Criar dimensão perso
 - Para conferir se o token está configurado no servidor **sem expor o valor**, chame
   `/api/health.php?token=SEU_HEALTH_TOKEN` e veja `meta_capi_token_present`
   (e `meta_capi_test_code_present`). O endpoint devolve só `true`/`false`.
+
+## Endpoints de diagnóstico
+
+`/api/health.php` e `/api/health-env.php` exigem `?token=` igual ao `HEALTH_TOKEN`
+do `api/config.local.php`. Ambos respondem só `true`/`false` sobre o que está
+configurado — nunca o valor de nenhum segredo. Sem token, respondem 401.
