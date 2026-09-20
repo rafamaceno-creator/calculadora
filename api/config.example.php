@@ -21,3 +21,7 @@ const SMTP_MODE = 'SMTPS_465'; // SMTPS_465 | TLS_587
 // Protected diagnostic endpoints
 const EMAIL_TEST_TOKEN = '';
 const HEALTH_TOKEN = '';
+
+// Meta — API de Conversões (opcional). Coloque o token SÓ no api/config.local.php do servidor.
+// const META_CAPI_TOKEN = '';
+// const META_CAPI_TEST_CODE = ''; // só durante testes (ex.: TEST12345)

@@ -630,6 +630,9 @@
     state.step = next;
     render();
     if (typeof trackGA4Event === "function") trackGA4Event("wizard_step", { step: next, mode: isRealMode() ? "real" : "ideal" });
+    if (next === 4 && typeof trackMetaCalculoConcluido === "function") {
+      trackMetaCalculoConcluido({ origem: "passo_4", modo: isRealMode() ? "real" : "ideal" });
+    }
     const pane = q(".calcGrid");
     if (pane && typeof scrollToWithTopbarOffset === "function" && window.scrollY > pane.offsetTop) {
       scrollToWithTopbarOffset(pane);
