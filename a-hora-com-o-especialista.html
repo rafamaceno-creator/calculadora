@@ -65,6 +65,19 @@ ul {
   padding-left: 20px;
 }
 </style>
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7RHBD29L5S"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+try {
+  window.gtag('js', new Date());
+  window.gtag('config', 'G-7RHBD29L5S', { send_page_view: true });
+} catch (e) {
+  console.warn('GA4 indisponível', e);
+}
+</script>
+
 <!-- Meta Pixel Code -->
 <script>
 !function(f,b,e,v,n,t,s)
