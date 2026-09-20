@@ -46,3 +46,18 @@ Acesse **Administrador → Definições personalizadas → Criar dimensão perso
 - `assets/js/pdf-export.js` — relatório de impressão, montado a partir dos cards do Ledger.
 - `#results`, `#reportRoot` e `#shareBox` continuam no DOM ocultos: alimentam o filtro por
   canal e as rotinas legadas do motor.
+
+## Meta Pixel e API de Conversões
+
+- **Pixel (dataset):** `4410552279212380` — "Calculadora de Precificação".
+- Código base (PageView) no `<head>` de `index.html` e `a-hora-com-o-especialista.html`.
+  Fica fora de `obrigado.php` e `agendar.php`, porque essas URLs carregam `session_id`/token.
+- **CalculoConcluido** (evento personalizado): marca quem usou a calculadora, uma vez por visita,
+  ao chegar no passo 4 (Resultado) ou ao calcular em lote. Parâmetros: `origem` (`passo_4`|`lote`)
+  e `modo` (`ideal`|`real`). Não depende de e-mail.
+- **Lead:** disparado em `submitLeadCaptureForm` (`assets/js/main.js`) só depois que `/api/lead.php`
+  confirma o cadastro, com `eventID` = `meta_event_id` enviado no payload.
+- **API de Conversões:** `api/lead.php` chama `meta_capi_send_lead()` (`api/meta-capi.php`) depois de
+  responder ao navegador, com o mesmo `event_id` (deduplicação). E-mail e nome vão em SHA-256.
+- O token fica **só** no `api/config.local.php` do servidor: `const META_CAPI_TOKEN = '...';`
+  (opcional durante testes: `const META_CAPI_TEST_CODE = 'TEST12345';`). Sem token, nada é enviado.

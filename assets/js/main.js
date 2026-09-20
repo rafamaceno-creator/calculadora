@@ -112,6 +112,20 @@ function trackGA4Event(eventName, params = {}) {
   track(eventName, params);
 }
 
+/* Meta Pixel: marca quem de fato usou a calculadora (uma vez por visita).
+   Dispara ao chegar no passo 4 (Resultado) ou ao calcular em lote. */
+let __metaCalculoEnviado = false;
+
+function trackMetaCalculoConcluido(params = {}) {
+  if (__metaCalculoEnviado) return;
+  __metaCalculoEnviado = true;
+  try {
+    if (typeof window.fbq === "function") window.fbq("trackCustom", "CalculoConcluido", params);
+  } catch (error) {
+    console.warn("Meta Pixel bloqueado", error);
+  }
+}
+
 function setUserProperty(name, value) {
   if (typeof window.gtag === "function") {
     window.gtag("set", "user_properties", {
@@ -1417,6 +1431,7 @@ function bindBulk() {
     Bulk.results = results;
     Bulk.renderResults(results);
     trackGA4Event("bulk_calculate", { rows: rows.length });
+    if (rows.length > 0) trackMetaCalculoConcluido({ origem: "lote" });
   });
 
   document.querySelector("#bulkExport")?.addEventListener("click", () => {
@@ -2114,10 +2129,14 @@ async function submitLeadCaptureForm(event) {
     return;
   }
 
+  // Mesmo ID no pixel (navegador) e na API de Conversões (servidor) para a Meta não contar em dobro.
+  const metaEventId = "lead-" + (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+
   const payload = {
     nome,
     email,
     company,
+    meta_event_id: metaEventId,
     marketplace: leadCaptureState.marketplace || "unknown",
     resultado: {
       precoMinimo: leadCaptureState.result.precoMinimo || 0,
@@ -2151,6 +2170,11 @@ async function submitLeadCaptureForm(event) {
         method: "email_capture",
         marketplace: leadCaptureState.marketplace || "unknown"
       });
+    }
+
+    // Meta Pixel: Lead só quando o servidor confirmou o cadastro (ignora o campo anti-robô).
+    if (!company && typeof window.fbq === "function") {
+      window.fbq("track", "Lead", {}, { eventID: metaEventId });
     }
   } catch (error) {
     console.error("[lead-capture] erro ao enviar lead", error);

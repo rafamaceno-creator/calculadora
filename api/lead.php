@@ -6,6 +6,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/email_sender.php';
+require_once __DIR__ . '/meta-capi.php';
 
 function respond(array $payload, int $status = 200): void
 {
@@ -80,6 +81,22 @@ try {
 } catch (Throwable $exception) {
     respond(['success' => false, 'message' => 'lead_not_saved'], 500);
 }
+
+// Meta API de Conversões: envia o Lead depois que a resposta já foi entregue ao navegador.
+$metaLead = [
+    'event_id' => (string) ($input['meta_event_id'] ?? ''),
+    'nome' => $nome,
+    'email' => $email,
+    'page_url' => $pageUrl,
+];
+register_shutdown_function(static function () use ($metaLead): void {
+    if (function_exists('fastcgi_finish_request')) {
+        fastcgi_finish_request();
+    } elseif (function_exists('litespeed_finish_request')) {
+        litespeed_finish_request();
+    }
+    meta_capi_send_lead($metaLead);
+});
 
 $summaryBody = buildSummaryEmailBody($nome, $marketplace, $precoMinimo, $precoIdeal, $marketplacePrices);
 $subject = 'Seu resumo de precificação — ' . $marketplace;
