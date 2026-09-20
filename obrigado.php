@@ -7,6 +7,25 @@ declare(strict_types=1);
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pagamento confirmado | A Hora com o Especialista</title>
+
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7RHBD29L5S"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+    try {
+      window.gtag('js', new Date());
+      window.gtag('config', 'G-7RHBD29L5S', {
+        send_page_view: true,
+        /* A URL desta página carrega o session_id do Stripe, que vale como credencial:
+           quem tem ele consegue um token em /api/get-token.php. Por isso o page_location
+           é reescrito sem a query string — o Google nunca recebe o identificador. */
+        page_location: window.location.origin + window.location.pathname
+      });
+    } catch (e) {
+      console.warn('GA4 indisponível', e);
+    }
+  </script>
   <style>
     :root { color-scheme: light; }
     body {
@@ -91,12 +110,57 @@ declare(strict_types=1);
         fallbackActions.classList.remove('hidden');
       }
 
+      /* Valor espelhado de api/create-checkout-session.php (unit_amount 99700).
+         Se o preço mudar lá, mudar aqui também. */
+      const PURCHASE_VALUE_BRL = 997;
+      const PURCHASE_GUARD_KEY = 'purchase_tracked_' + sessionId;
+      let purchaseSent = false;
+
+      /* O session_id é credencial e não pode ir para o Google. O hash dá ao GA4 um
+         transaction_id estável para deduplicar a compra, sem ser reversível. */
+      async function hashedTransactionId() {
+        try {
+          if (!window.crypto || !window.crypto.subtle) return null;
+          const digest = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(sessionId));
+          return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+        } catch (error) {
+          return null;
+        }
+      }
+
+      async function trackPurchase() {
+        if (purchaseSent || typeof window.gtag !== 'function') return;
+        try {
+          if (localStorage.getItem(PURCHASE_GUARD_KEY)) return;
+        } catch (error) {
+          /* localStorage bloqueado: segue sem a guarda entre recarregamentos */
+        }
+        purchaseSent = true;
+
+        const payload = {
+          currency: 'BRL',
+          value: PURCHASE_VALUE_BRL,
+          items: [{ item_name: 'A Hora com o Especialista', price: PURCHASE_VALUE_BRL, quantity: 1 }]
+        };
+        const transactionId = await hashedTransactionId();
+        if (transactionId) payload.transaction_id = transactionId;
+
+        window.gtag('event', 'purchase', payload);
+
+        try {
+          localStorage.setItem(PURCHASE_GUARD_KEY, '1');
+        } catch (error) {
+          /* sem localStorage a compra ainda foi contada nesta visita */
+        }
+      }
+
       function applyToken(token) {
         const redirectParams = new URLSearchParams(utmParams);
         redirectParams.set('t', token);
         scheduleLink.href = '/agendar?' + redirectParams.toString();
         statusEl.textContent = 'Tudo certo! Seu acesso foi liberado.';
         successActions.classList.remove('hidden');
+        trackPurchase();
       }
 
       async function pollToken() {

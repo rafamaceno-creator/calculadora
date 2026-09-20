@@ -4,21 +4,44 @@
 
 - **Measurement ID (GA4):** `G-7RHBD29L5S`
 
+## Onde o GA4 está instalado
+
+`index.html`, `a-hora-com-o-especialista.html` e `obrigado.php`. Nesta última o
+`page_location` é reescrito sem a query string: a URL carrega o `session_id` do
+Stripe, que vale como credencial (quem tem ele obtém um token em
+`/api/get-token.php`), e não pode chegar ao Google.
+
 ## Eventos implementados
 
-- `usuario_engajado`
-- `perfil_ticket`
-- `export_pdf`
-- `cta_click`
+Os nomes abaixo saem do código (`assets/js/main.js` e `assets/js/ledger.js`) —
+confira lá antes de configurar qualquer coisa no painel do GA4.
+
+Funil principal:
+
+- `user_engaged` — primeira interação real do visitante
+- `profile_ticket` — faixa de ticket do usuário (parâmetro `faixa`)
 - `wizard_step` — navegação entre os 4 passos (parâmetros: `step`, `mode`)
-- `apply_cost_suggestion` — sugestão de custo extra aplicada no passo Resultado (parâmetros: `tipo`, `valor`, `unidade`)
+- `apply_cost_suggestion` — sugestão de custo extra aplicada (parâmetros: `tipo`, `valor`, `unidade`)
+- `export_pdf` — exportação do relatório (parâmetro `section`)
+- `generate_lead` — captura de e-mail confirmada pelo servidor (parâmetros: `method`, `marketplace`)
+- `click_specialist` — clique no CTA da Hora com o Especialista (parâmetro `section`)
+- `purchase` — pagamento confirmado em `obrigado.php` (parâmetros: `value` 997, `currency` BRL,
+  `transaction_id` = SHA-256 truncado do `session_id`, nunca o identificador cru)
+
+Há outros eventos de uso da ferramenta (`recalc`, `bulk_calculate`, `save_simulation`,
+`view_composition`, `share_whatsapp`, `copy_link` e afins) disparados pelos mesmos arquivos.
+
+**User property:** `perfil_ticket` é propriedade de usuário, não evento — não procure por
+ela na lista de eventos do GA4.
 
 ## Como configurar Key events no GA4
 
 1. Acesse **Administrador** no GA4.
-2. Em **Eventos**, localize os eventos:
+2. Em **Eventos**, localize:
+   - `purchase`
+   - `generate_lead`
+   - `click_specialist`
    - `export_pdf`
-   - `cta_click`
 3. Marque cada um como **Key event** (evento principal).
 
 ## Como criar dimensões personalizadas no GA4
