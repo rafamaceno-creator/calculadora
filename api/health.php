@@ -30,6 +30,12 @@ function readLastSanitizedLine(string $path): string
     return substr($line, 0, 240);
 }
 
+/* Diz apenas SE a constante existe e tem valor. Nunca devolve o valor em si. */
+function configValuePresent(string $name): bool
+{
+    return defined($name) && trim((string) constant($name)) !== '';
+}
+
 $token = (string) ($_GET['token'] ?? '');
 if (!defined('HEALTH_TOKEN') || $token === '' || !hash_equals((string) HEALTH_TOKEN, $token)) {
     respondHealth(['success' => false, 'message' => 'unauthorized'], 401);
@@ -53,5 +59,7 @@ respondHealth([
     'db_ok' => $dbOk,
     'smtp_config_present' => smtpConfigPresent(),
     'phpmailer_present' => $phpmailerPresent,
+    'meta_capi_token_present' => configValuePresent('META_CAPI_TOKEN'),
+    'meta_capi_test_code_present' => configValuePresent('META_CAPI_TEST_CODE'),
     'last_email_error_line' => readLastSanitizedLine(__DIR__ . '/email_errors.log'),
 ]);
