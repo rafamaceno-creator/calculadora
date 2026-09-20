@@ -61,3 +61,12 @@ Acesse **Administrador → Definições personalizadas → Criar dimensão perso
   responder ao navegador, com o mesmo `event_id` (deduplicação). E-mail e nome vão em SHA-256.
 - O token fica **só** no `api/config.local.php` do servidor: `const META_CAPI_TOKEN = '...';`
   (opcional durante testes: `const META_CAPI_TEST_CODE = 'TEST12345';`). Sem token, nada é enviado.
+- Para conferir se o token está configurado no servidor **sem expor o valor**, chame
+  `/api/health.php?token=SEU_HEALTH_TOKEN` e veja `meta_capi_token_present`
+  (e `meta_capi_test_code_present`). O endpoint devolve só `true`/`false`.
+
+## Endpoints de diagnóstico
+
+`/api/health.php` e `/api/health-env.php` exigem `?token=` igual ao `HEALTH_TOKEN`
+do `api/config.local.php`. Ambos respondem só `true`/`false` sobre o que está
+configurado — nunca o valor de nenhum segredo. Sem token, respondem 401.
