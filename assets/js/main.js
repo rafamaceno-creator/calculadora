@@ -8,7 +8,7 @@
 /* ===== SHOPEE =====
    Política de comissão vigente desde 01/03/2026:
    - Abaixo de R$8: 50% do valor do item (sem taxa fixa)
-   - R$8 a R$79,99: 20% + R$4
+   - R$8 a R$79,99: 20% + R$4,50
    - R$80 a R$99,99: 14% + R$16
    - R$100 a R$199,99: 14% + R$20
    - Acima de R$200: 14% + R$26
@@ -17,7 +17,7 @@
 */
 const SHOPEE_FAIXAS = [
   { min: 0, max: 7.99, pct: 0.50, fixed: 0, label: "Abaixo de R$8" },
-  { min: 8, max: 79.99, pct: 0.20, fixed: 4.00, label: "R$8 a R$79,99" },
+  { min: 8, max: 79.99, pct: 0.20, fixed: 4.50, label: "R$8 a R$79,99" },
   { min: 80, max: 99.99, pct: 0.14, fixed: 16.00, label: "R$80 a R$99,99" },
   { min: 100, max: 199.99, pct: 0.14, fixed: 20.00, label: "R$100 a R$199,99" },
   { min: 200, max: Infinity, pct: 0.14, fixed: 26.00, label: "Acima de R$200" }
